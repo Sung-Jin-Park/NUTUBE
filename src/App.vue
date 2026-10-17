@@ -154,8 +154,8 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 메인 콘텐츠 영역 -->
-    <v-main class="main-content">
+    <!-- 메인 콘텐츠 영역 (스크롤 감지 추가) -->
+    <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       <v-container fluid class="pa-2 pa-md-6">
         
         <!-- 대시보드 상단 배너 -->
@@ -205,8 +205,8 @@
                 class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0"
                 @click="playVideo(video)"
               >
-                <div class="shorts-thumbnail-wrapper position-relative">
-                  <v-img :src="video.thumbnail" height="200" cover class="align-end">
+                <div class="shorts-thumbnail-wrapper position-relative bg-black">
+                  <v-img :src="video.thumbnail" height="200" contain class="align-end">
                     <div class="shorts-badge">Shorts</div>
                   </v-img>
                   <div class="play-overlay">
@@ -240,8 +240,8 @@
             <v-row dense>
               <v-col v-for="video in normalVideos" :key="video.id" cols="12" sm="6" md="4" lg="3">
                 <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0" elevation="0" @click="playVideo(video)">
-                  <div class="video-thumbnail-wrapper position-relative">
-                    <v-img :src="video.thumbnail" class="video-thumb-img align-end" cover>
+                  <div class="video-thumbnail-wrapper position-relative bg-black">
+                    <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
                       <div class="video-duration-badge">HD</div>
                     </v-img>
                     <div class="play-overlay">
@@ -285,6 +285,22 @@
         </template>
 
       </v-container>
+
+      <!-- 메인 화면 스크롤 시 최상위로 이동하는 플로팅 버튼 -->
+      <v-slide-y-transition>
+        <v-btn
+          v-if="showMainScrollTop"
+          icon="mdi-chevron-up"
+          size="small"
+          color="deep-purple-darken-2"
+          variant="flat"
+          class="main-scroll-top-fab text-white"
+          title="최상위로 이동"
+          @click="scrollToTop(mainScrollRef)"
+        >
+          <v-icon icon="mdi-chevron-up" color="white" size="24"></v-icon>
+        </v-btn>
+      </v-slide-y-transition>
     </v-main>
 
     <!-- 시네마틱 영상 재생 모달 -->
@@ -296,8 +312,8 @@
           <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
         </div>
 
-        <!-- 모달 내부 전체 컨테이너 -->
-        <div class="modal-vertical-container" @scroll="handleModalScroll">
+        <!-- 모달 내부 전체 컨테이너 (세로 스크롤 및 상단 이동 버튼 오버랩 적용) -->
+        <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
           
           <!-- 1. 영상 플레이어 영역 -->
           <div class="video-container">
@@ -371,14 +387,15 @@
             <v-slide-y-transition>
               <v-btn
                 v-if="showCommentsScrollTop"
-                icon="mdi-chevron-up"
                 size="x-small"
-                color="accent"
+                color="deep-purple-darken-2"
                 variant="flat"
-                class="scroll-top-fab"
+                class="scroll-top-fab text-white"
                 title="댓글 상단으로 이동"
                 @click="scrollToTop(commentsScrollRef)"
-              ></v-btn>
+              >
+                <v-icon icon="mdi-chevron-up" color="white" size="18"></v-icon>
+              </v-btn>
             </v-slide-y-transition>
           </div>
 
@@ -400,7 +417,8 @@
                 class="related-video-item d-flex align-center mb-2 pa-2 rounded-lg cursor-pointer"
                 @click="playVideo(video)"
               >
-                <v-img :src="video.thumbnail" width="120" height="70" cover class="rounded-lg mr-3 flex-shrink-0"></v-img>
+                <!-- 관련 영상 썸네일 잘림 방지 (contain 적용) -->
+                <v-img :src="video.thumbnail" width="120" height="70" contain class="rounded-lg mr-3 flex-shrink-0 bg-black"></v-img>
                 <div class="overflow-hidden flex-grow-1">
                   <h4 class="text-white text-caption font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
                   <p class="text-grey-darken-1 text-caption mb-0">{{ video.creatorName }}</p>
@@ -410,16 +428,32 @@
             <v-slide-y-transition>
               <v-btn
                 v-if="showRelatedScrollTop"
-                icon="mdi-chevron-up"
                 size="x-small"
-                color="accent"
+                color="deep-purple-darken-2"
                 variant="flat"
-                class="scroll-top-fab"
+                class="scroll-top-fab text-white"
                 title="관련 영상 상단으로 이동"
                 @click="scrollToTop(relatedScrollRef)"
-              ></v-btn>
+              >
+                <v-icon icon="mdi-chevron-up" color="white" size="18"></v-icon>
+              </v-btn>
             </v-slide-y-transition>
           </div>
+
+          <!-- 모달 전체 세로 스크롤 시 최상위로 이동하는 플로팅 버튼 -->
+          <v-slide-y-transition>
+            <v-btn
+              v-if="showModalScrollTop"
+              size="small"
+              color="deep-purple-darken-2"
+              variant="flat"
+              class="modal-scroll-top-fab text-white"
+              title="최상위로 이동"
+              @click="scrollToTop(modalScrollRef)"
+            >
+              <v-icon icon="mdi-chevron-up" color="white" size="24"></v-icon>
+            </v-btn>
+          </v-slide-y-transition>
 
         </div>
       </v-card>
@@ -475,15 +509,25 @@ const activeMainTab = computed({
   }
 })
 
-const handleMainTabSelect = () => {
-  // 사용되지 않는 파라미터(val) 제거 완료
-}
+const handleMainTabSelect = () => {}
 
 // 스크롤 참조 및 상단 이동 버튼 노출 상태
+const mainScrollRef = ref(null)
+const modalScrollRef = ref(null)
 const commentsScrollRef = ref(null)
 const relatedScrollRef = ref(null)
+const showMainScrollTop = ref(false)
+const showModalScrollTop = ref(false)
 const showCommentsScrollTop = ref(false)
 const showRelatedScrollTop = ref(false)
+
+const checkMainScroll = (e) => {
+  showMainScrollTop.value = e.target.scrollTop > 100
+}
+
+const checkModalScroll = (e) => {
+  showModalScrollTop.value = e.target.scrollTop > 30
+}
 
 const checkCommentsScroll = (e) => {
   showCommentsScrollTop.value = e.target.scrollTop > 20
@@ -493,13 +537,16 @@ const checkRelatedScroll = (e) => {
   showRelatedScrollTop.value = e.target.scrollTop > 20
 }
 
-const handleModalScroll = () => {
-  // 사용되지 않는 파라미터(e) 및 콘솔로그 제거 완료
-}
-
 const scrollToTop = (el) => {
-  if (el) {
-    el.scrollTo({ top: 0, behavior: 'smooth' })
+  let targetElement = el
+  // v-main 컴포넌트 객체인 경우 실제 DOM 엘리먼트 추출
+  if (el && el.$el) {
+    targetElement = el.$el
+  }
+  if (targetElement && typeof targetElement.scrollTo === 'function') {
+    targetElement.scrollTo({ top: 0, behavior: 'smooth' })
+  } else if (targetElement) {
+    targetElement.scrollTop = 0
   }
 }
 
@@ -549,7 +596,7 @@ const getActiveApiKeyIndex = async () => {
     req.onsuccess = (e) => {
       const state = e.target.result
       const idx = (!state || state.date !== today) ? 0 : (state.currentIndex ?? 0)
-      currentApiKeyNumber.value = idx + 1 // 1부터 시작하도록 표기
+      currentApiKeyNumber.value = idx + 1
       resolve(idx)
     }
     req.onerror = () => resolve(0)
@@ -559,7 +606,7 @@ const getActiveApiKeyIndex = async () => {
 const saveNextApiKeyIndex = async (nextIndex) => {
   const db = await openDB()
   const today = getTodayString()
-  currentApiKeyNumber.value = nextIndex + 1 // 실시간 갱신
+  currentApiKeyNumber.value = nextIndex + 1
 
   return new Promise((resolve) => {
     const tx = db.transaction('meta', 'readwrite')
@@ -1152,6 +1199,11 @@ html, body {
   }
 }
 
+.main-content {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 64px);
+}
+
 .modal-vertical-container {
   max-height: calc(88vh - 40px);
   overflow-y: auto;
@@ -1216,11 +1268,27 @@ html, body {
   bottom: 12px;
   right: 12px;
   z-index: 5;
-  opacity: 0.9;
   box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
 }
-.scroll-top-fab:hover {
-  opacity: 1;
+
+.modal-scroll-top-fab {
+  position: sticky;
+  bottom: 20px;
+  float: right;
+  margin-right: 20px;
+  margin-bottom: 20px;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important;
+}
+
+.main-scroll-top-fab {
+  position: sticky;
+  bottom: 20px;
+  float: right;
+  margin-right: 20px;
+  margin-bottom: 20px;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important;
 }
 
 @media (max-width: 959px) {
