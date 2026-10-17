@@ -299,22 +299,25 @@
     <!-- 시네마틱 영상 재생 모달 -->
     <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
-        <!-- 타이틀바 -->
-        <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
-          <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate pr-2">{{ activeVideo?.title }}</span>
-          <div class="d-flex align-center">
-            <v-btn 
-              :icon="isLandscapeMode ? 'mdi-cellphone-portrait' : 'mdi-cellphone-landscape'" 
-              variant="text" 
-              size="x-small" 
-              color="accent" 
-              class="mr-2"
-              :title="isLandscapeMode ? '세로 모드로 전환' : '가로 확장 모드로 전환'"
-              @click="toggleLandscapeMode"
-            ></v-btn>
-            <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
-          </div>
+      <!-- 타이틀바 -->
+      <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
+        <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate pr-2">{{ activeVideo?.title }}</span>
+        <div class="d-flex align-center">
+          <!-- 가로/세로 전환 아이콘 버튼 (아이콘 정상 표시 보정) -->
+          <v-btn 
+            icon
+            variant="text" 
+            size="small" 
+            color="accent" 
+            class="mr-2"
+            :title="isLandscapeMode ? '세로 모드로 전환' : '가로 확장 모드로 전환'"
+            @click="toggleLandscapeMode"
+          >
+            <v-icon :icon="isLandscapeMode ? 'mdi-crop-portrait' : 'mdi-crop-landscape'" size="20"></v-icon>
+          </v-btn>
+          <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
         </div>
+      </div>
 
         <!-- 모달 내부 전체 컨테이너 -->
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
