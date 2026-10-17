@@ -563,6 +563,7 @@ const isLandscapeMode = ref(false)
 let ytPlayer = null          
 let historyInterval = null   
 let currentPlayingTime = 0   
+let pollingInterval = null   // 10분 주기 폴링 타이머
 
 let isPopStateTriggered = false
 
@@ -902,7 +903,7 @@ const destroyYouTubePlayer = () => {
     try {
       ytPlayer.destroy()
     } catch (e) {
-      // 에러 무시
+        //에러 무시
     }
   }
   ytPlayer = null
@@ -919,7 +920,7 @@ const startHistoryTracker = () => {
           saveCurrentHistoryToDB()
         }
       } catch (e) {
-        // 에러 무시
+        //에러 무시
       }
     }
   }, 1000)
@@ -986,7 +987,7 @@ const rewindTime = () => {
     try {
       currentTime = ytPlayer.getCurrentTime()
     } catch (e) {
-      // 에러 시 기존값 유지
+      //에러 무시
     }
   }
 
@@ -1123,7 +1124,7 @@ const subscribeCreatorFromCard = async (video) => {
   const tx = db.transaction('creators', 'readwrite')
   tx.objectStore('creators').put(newCreator)
 
-  await fetchChannelVideos(newCreator)
+  await fetchChannelVideosByPlaylist(newCreator)
 }
 
 const unsubscribeCreator = async (creator) => {
@@ -1139,34 +1140,16 @@ const unsubscribeCreator = async (creator) => {
   }
 }
 
-const parseVideoItem = (item) => {
-  const title = item.snippet.title.toLowerCase()
-  const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
-  let isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
-
-  return {
-    id: item.id.videoId,
-    youtubeId: item.id.videoId,
-    creatorId: item.snippet.channelId,
-    creatorName: item.snippet.channelTitle,
-    title: item.snippet.title,
-    thumbnail: thumbUrl,
-    isShorts: isShorts,
-    isFavorite: false,
-    views: item.snippet.publishedAt.substring(0, 10),
-    publishedAt: item.snippet.publishedAt,
-    duration: 0,
-    progressPercent: 0,
-    currentTime: 0
-  }
-}
-
-const fetchChannelVideos = async (creator) => {
+// [추천 방식] playlistitems.list를 통한 저비용(1쿼터) 채널 최신 영상 동기화
+const fetchChannelVideosByPlaylist = async (creator) => {
   if (API_KEYS.length === 0) return
+
+  // 채널 ID(UC...)의 앞 두 글자를 UU로 바꾸면 업로드 재생목록 ID가 됨
+  const uploadsPlaylistId = 'UU' + creator.id.substring(2)
 
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&channelId=${creator.id}&order=date&type=video&key=${key}`
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=15&playlistId=${uploadsPlaylistId}&key=${key}`
     )
 
     if (!data.error && data.items) {
@@ -1174,7 +1157,28 @@ const fetchChannelVideos = async (creator) => {
       const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration }]))
 
       const channelVideos = data.items.map(item => {
-        const parsed = parseVideoItem(item)
+        const snippet = item.snippet
+        const videoId = snippet.resourceId.videoId
+        const title = snippet.title.toLowerCase()
+        const thumbUrl = snippet.thumbnails.high ? snippet.thumbnails.high.url : snippet.thumbnails.default.url
+        let isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+        const parsed = {
+          id: videoId,
+          youtubeId: videoId,
+          creatorId: snippet.channelId,
+          creatorName: snippet.channelTitle,
+          title: snippet.title,
+          thumbnail: thumbUrl,
+          isShorts: isShorts,
+          isFavorite: false,
+          views: snippet.publishedAt.substring(0, 10),
+          publishedAt: snippet.publishedAt,
+          duration: 0,
+          progressPercent: 0,
+          currentTime: 0
+        }
+
         if (existingMap.has(parsed.id)) {
           const info = existingMap.get(parsed.id)
           parsed.isFavorite = info.isFavorite
@@ -1194,7 +1198,16 @@ const fetchChannelVideos = async (creator) => {
       await loadDataFromDB()
     }
   } catch (error) {
-    console.error('채널 영상 불러오기 실패:', error)
+    console.error(`채널(${creator.name}) 플레이리스트 동기화 실패:`, error)
+  }
+}
+
+// 모든 구독 중인 크리에이터의 신작을 10분 간격으로 순회하며 감지
+const checkAllSubscribedChannels = async () => {
+  if (creators.value.length === 0) return
+  console.log('⚡ 구독 중인 채널 신작 확인 중 (playlistitems 방식)...')
+  for (const creator of creators.value) {
+    await fetchChannelVideosByPlaylist(creator)
   }
 }
 
@@ -1233,10 +1246,26 @@ const searchYouTubeVideos = async () => {
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
     const apiVideos = data.items.map(item => {
-      const parsed = parseVideoItem(item)
-      if (existingMap.has(parsed.id)) {
-        parsed.isFavorite = existingMap.get(parsed.id)
+      const title = item.snippet.title.toLowerCase()
+      const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
+      let isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+      const parsed = {
+        id: item.id.videoId,
+        youtubeId: item.id.videoId,
+        creatorId: item.snippet.channelId,
+        creatorName: item.snippet.channelTitle,
+        title: item.snippet.title,
+        thumbnail: thumbUrl,
+        isShorts: isShorts,
+        isFavorite: existingMap.get(item.id.videoId) || false,
+        views: item.snippet.publishedAt.substring(0, 10),
+        publishedAt: item.snippet.publishedAt,
+        duration: 0,
+        progressPercent: 0,
+        currentTime: 0
       }
+
       const h = historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
@@ -1249,14 +1278,6 @@ const searchYouTubeVideos = async () => {
     })
 
     await fetchAndUpdateVideoDurations(apiVideos)
-
-    apiVideos.forEach(v => {
-      const h = historyMap.get(v.id)
-      if (h && h.currentTime > 0 && v.duration > 0) {
-        v.progressPercent = Math.min(100, Math.floor((h.currentTime / v.duration) * 100))
-      }
-    })
-
     apiVideos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
     videos.value = apiVideos
 
@@ -1314,17 +1335,38 @@ const selectCreatorFilter = async (creator) => {
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
-  await fetchChannelVideos(creator)
+  await fetchChannelVideosByPlaylist(creator)
+}
+
+// 브라우저 탭 활성화 상태 변경 시 즉시 동기화 처리
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    console.log('🔄 앱이 활성화되었습니다. 최신 영상을 동기화합니다.')
+    checkAllSubscribedChannels()
+  }
 }
 
 onMounted(async () => {
   await getActiveApiKeyIndex()
   await loadDataFromDB()
+  
+  // 최초 앱 구동 시 구독 채널들 동기화 실행
+  await checkAllSubscribedChannels()
+
+  // 10분 주기 폴링 설정 (10분 = 600,000ms)
+  pollingInterval = setInterval(() => {
+    checkAllSubscribedChannels()
+  }, 10 * 60 * 1000)
+
+  // 탭 가시성 이벤트 등록
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
   destroyYouTubePlayer()
   window.removeEventListener('popstate', handlePopState)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  if (pollingInterval) clearInterval(pollingInterval)
 })
 
 const getHeaderTitle = computed(() => {
