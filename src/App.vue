@@ -137,9 +137,6 @@
               <h1 class="text-subtitle-1 text-md-h5 font-weight-black text-white ma-0">
                 {{ getHeaderTitle }}
               </h1>
-              <p v-if="isSearchMode" class="text-grey-lighten-2 text-caption mt-1 mb-0">
-                검색어를 입력하고 실시간 영상을 조회하세요.
-              </p>
             </div>
 
             <!-- 바로 밑 타이틀 영역의 간소화된 4개 아이콘 탭 -->
