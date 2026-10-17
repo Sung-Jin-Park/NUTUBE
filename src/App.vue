@@ -8,13 +8,13 @@
     <v-app-bar flat class="glass-app-bar px-1 px-md-4" height="64">
       <v-app-bar-nav-icon @click="drawer = !drawer" class="text-white" density="compact"></v-app-bar-nav-icon>
       
-      <!-- 유튜브 로고 아이콘 + 현재 탭 아이콘 + 현재 사용 중인 API Key 번호(1부터 시작) 표기 -->
+      <!-- 유튜브 로고 아이콘 + 현재 탭 아이콘 + 현재 사용 중인 API Key 번호 표기 -->
       <div class="d-flex align-center ml-0 mr-2 gap-1 flex-shrink-0">
         <v-icon icon="mdi-play-box-multiple" class="text-accent" size="26"></v-icon>
         <span class="text-accent text-caption font-weight-bold ml-1" title="현재 사용 중인 YouTube API 키 번호">#{{ currentApiKeyNumber }}</span>
       </div>
 
-      <!-- 상단 4대 메인 탭 즉시 이동 콤보박스 (셀렉트) -->
+      <!-- 상단 4대 메인 탭 즉시 이동 콤보박스 -->
       <div class="mr-2 app-bar-select-wrapper" style="width: 100px; min-width: 120px;">
         <v-select
           v-model="activeMainTab"
@@ -50,7 +50,6 @@
         @keydown.enter="handleSearch"
       >
         <template v-slot:append-inner>
-          <!-- 실시간 유튜브 API 강제 검색 버튼 -->
           <v-btn
             icon="mdi-cloud-search"
             size="small"
@@ -71,7 +70,6 @@
       width="280"
     >
       <v-list density="compact" nav class="text-white">
-        <!-- 1. 구독 크리에이터 전체 피드 -->
         <v-list-item 
           prepend-icon="mdi-play-box-multiple-outline" 
           title="구독 크리에이터 전체 피드" 
@@ -81,7 +79,6 @@
           @click="selectDiscoverAll"
         ></v-list-item>
 
-        <!-- 2. 구독 피드 모음 (기본 선택) -->
         <v-list-item 
           prepend-icon="mdi-heart-outline" 
           title="구독 피드 모음" 
@@ -113,7 +110,6 @@
         
         <div class="px-4 text-subtitle-2 text-grey-lighten-1 mb-2">구독 크리에이터</div>
         
-        <!-- 구독 크리에이터가 없을 때 안내 문구 -->
         <div v-if="creators.length === 0" class="px-4 py-3 text-grey-darken-1 text-caption text-center">
           검색 후 채널을 구독하거나<br/>영상을 추가해 보세요.
         </div>
@@ -130,7 +126,6 @@
         >
           <template v-slot:append>
             <div class="d-flex align-center">
-              <!-- 크리에이터 하트 버튼 추가 -->
               <v-btn
                 icon="mdi-heart"
                 size="small"
@@ -139,7 +134,6 @@
                 :title="creator.isFavorite ? '하트 해제' : '구독 피드 모음에 추가 (하트)'"
                 @click.stop="toggleCreatorFavorite(creator)"
               ></v-btn>
-              <!-- 구독 취소 버튼 -->
               <v-btn
                 icon="mdi-account-minus"
                 size="small"
@@ -154,11 +148,10 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 메인 콘텐츠 영역 (스크롤 감지 추가) -->
+    <!-- 메인 콘텐츠 영역 -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       <v-container fluid class="pa-2 pa-md-6">
         
-        <!-- 대시보드 상단 배너 -->
         <v-card class="glass-banner mb-3 mb-md-6 pa-3 pa-md-4 rounded-xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;">
@@ -171,7 +164,6 @@
           </div>
         </v-card>
 
-        <!-- 로딩 상태 표시 -->
         <v-row v-if="isLoading" justify="center" align="center" style="min-height: 250px;">
           <v-col cols="12" class="text-center">
             <v-progress-circular indeterminate color="accent" size="48" class="mb-3"></v-progress-circular>
@@ -179,7 +171,6 @@
           </v-col>
         </v-row>
 
-        <!-- 데이터가 완전히 비어있을 때의 Empty State 화면 -->
         <v-row v-else-if="displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
           <v-col cols="12" class="text-center">
             <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
@@ -190,7 +181,6 @@
           </v-col>
         </v-row>
 
-        <!-- 콘텐츠가 있을 때: 쇼츠 영역과 일반 영상 영역 분리 -->
         <template v-else>
           <!-- 1. 최상단 가로 스크롤 쇼츠 영역 -->
           <div v-if="shortsVideos.length > 0" class="mb-4">
@@ -210,7 +200,9 @@
                     <div class="shorts-badge">Shorts</div>
                   </v-img>
                   <div class="play-overlay">
-                    <v-btn icon="mdi-play" color="accent" size="small" class="elevation-4"></v-btn>
+                    <div class="play-btn-circle">
+                      <v-icon icon="mdi-play" color="white" size="32"></v-icon>
+                    </div>
                   </div>
                 </div>
                 <div class="pa-2 d-flex flex-column justify-space-between flex-grow-1">
@@ -245,7 +237,9 @@
                       <div class="video-duration-badge">HD</div>
                     </v-img>
                     <div class="play-overlay">
-                      <v-btn icon="mdi-play" color="accent" size="default" class="elevation-4"></v-btn>
+                      <div class="play-btn-circle shorts-play-btn">
+                        <v-icon icon="mdi-play" color="white" size="24"></v-icon>
+                      </div>
                     </div>
                   </div>
 
@@ -255,8 +249,8 @@
                         <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
                         <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
                       </div>
-                      <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 75px;">
-                        <span class="text-grey-darken-1 text-caption mb-1">{{ video.views }}</span>
+                      <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
+                        <span class="text-grey-darken-1 text-caption mb-1">{{ formatRelativeTime(video.publishedAt) }}</span>
                         <div class="d-flex align-center">
                           <v-btn 
                             icon="mdi-heart" 
@@ -286,7 +280,6 @@
 
       </v-container>
 
-      <!-- 메인 화면 스크롤 시 최상위로 이동하는 플로팅 버튼 -->
       <v-slide-y-transition>
         <v-btn
           v-if="showMainScrollTop"
@@ -304,27 +297,31 @@
     </v-main>
 
     <!-- 시네마틱 영상 재생 모달 -->
-    <v-dialog v-model="isPlayerOpen" max-width="850px" width="100%" scrim="black" class="safe-player-dialog">
+    <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
         <!-- 타이틀바 -->
         <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
           <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate pr-2">{{ activeVideo?.title }}</span>
-          <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
+          <div class="d-flex align-center">
+            <v-btn 
+              :icon="isLandscapeMode ? 'mdi-cellphone-portrait' : 'mdi-cellphone-landscape'" 
+              variant="text" 
+              size="x-small" 
+              color="accent" 
+              class="mr-2"
+              :title="isLandscapeMode ? '세로 모드로 전환' : '가로 확장 모드로 전환'"
+              @click="toggleLandscapeMode"
+            ></v-btn>
+            <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
+          </div>
         </div>
 
-        <!-- 모달 내부 전체 컨테이너 (세로 스크롤 및 상단 이동 버튼 오버랩 적용) -->
+        <!-- 모달 내부 전체 컨테이너 -->
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
           
           <!-- 1. 영상 플레이어 영역 -->
-          <div class="video-container">
-            <iframe
-              v-if="activeVideo"
-              :src="embedUrl"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen
-              class="youtube-iframe"
-            ></iframe>
+          <div class="video-container" :class="{ 'landscape-expanded': isLandscapeMode }">
+            <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
 
           <!-- 임베드 차단 안내 배너 -->
@@ -344,7 +341,7 @@
             </v-btn>
           </div>
 
-          <!-- 영상 정보 및 댓글 토글 버튼 -->
+          <!-- 영상 정보 및 시간 이동 컨트롤 영역 -->
           <div class="pa-3 pa-md-4 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-2 border-bottom-glass">
             <div>
               <h3 class="text-white text-caption text-md-subtitle-2 font-weight-bold mb-1" v-html="activeVideo?.title"></h3>
@@ -353,6 +350,64 @@
                 ⚡ 이전 시청 기록({{ formatTime(initialWatchedTime) }})에서 이어서 재생됩니다.
               </p>
             </div>
+            
+            <!-- 원하는 시간(분, 초) 이동 및 이전으로 돌아가기(되감기) 컨트롤 영역 -->
+            <div class="d-flex align-center jump-box-container pa-1 px-2 rounded-lg">
+              <span class="text-caption text-grey-lighten-1 mr-1 flex-shrink-0">시간 제어:</span>
+              
+              <div class="d-flex align-center mr-1">
+                <v-text-field
+                  v-model.number="jumpMinutes"
+                  type="number"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  class="custom-jump-input text-center mr-1"
+                  placeholder="0"
+                  min="0"
+                ></v-text-field>
+                <span class="text-caption text-white">분</span>
+              </div>
+              
+              <div class="d-flex align-center mr-2">
+                <v-text-field
+                  v-model.number="jumpSeconds"
+                  type="number"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  class="custom-jump-input text-center mr-1"
+                  placeholder="0"
+                  min="0"
+                  max="59"
+                ></v-text-field>
+                <span class="text-caption text-white">초</span>
+              </div>
+
+              <div class="d-flex align-center gap-1">
+                <v-btn
+                  color="accent"
+                  variant="flat"
+                  size="small"
+                  class="px-2"
+                  title="지정한 시간으로 이동"
+                  @click="jumpToTime"
+                >
+                  이동
+                </v-btn>
+                <v-btn
+                  color="deep-purple-lighten-2"
+                  variant="flat"
+                  size="small"
+                  class="px-2"
+                  title="현재 위치에서 입력한 시간만큼 이전으로 되감기"
+                  @click="rewindTime"
+                >
+                  이전
+                </v-btn>
+              </div>
+            </div>
+
             <div>
               <v-btn
                 color="accent"
@@ -403,7 +458,7 @@
           <div class="related-videos-section pa-3 position-relative">
             <div class="text-subtitle-2 font-weight-bold text-white mb-3 d-flex align-center">
               <v-icon icon="mdi-playlist-play" class="mr-1 text-accent" size="20"></v-icon>
-              관련 영상 (10개 이상)
+              관련 영상 (비슷한 채널 및 추천)
             </div>
 
             <div v-if="relatedVideos.length === 0" class="text-grey-darken-1 text-caption text-center py-6">
@@ -417,7 +472,6 @@
                 class="related-video-item d-flex align-center mb-2 pa-2 rounded-lg cursor-pointer"
                 @click="playVideo(video)"
               >
-                <!-- 관련 영상 썸네일 잘림 방지 (contain 적용) -->
                 <v-img :src="video.thumbnail" width="120" height="70" contain class="rounded-lg mr-3 flex-shrink-0 bg-black"></v-img>
                 <div class="overflow-hidden flex-grow-1">
                   <h4 class="text-white text-caption font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
@@ -440,7 +494,6 @@
             </v-slide-y-transition>
           </div>
 
-          <!-- 모달 전체 세로 스크롤 시 최상위로 이동하는 플로팅 버튼 -->
           <v-slide-y-transition>
             <v-btn
               v-if="showModalScrollTop"
@@ -462,7 +515,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
 const drawer = ref(false)
 const searchQuery = ref('')
@@ -480,12 +533,17 @@ const activeVideo = ref(null)
 const showComments = ref(false)
 const comments = ref([])
 const initialWatchedTime = ref(0)
-let historyInterval = null
+const isLandscapeMode = ref(false)
 
-// 현재 사용 중인 API Key 번호 (1부터 시작하도록 표현) 유지용
+let ytPlayer = null          
+let historyInterval = null   
+let currentPlayingTime = 0   
+
+const jumpMinutes = ref(0)
+const jumpSeconds = ref(0)
+
 const currentApiKeyNumber = ref(1)
 
-// 상단 콤보박스 아이템 목록 정의
 const mainTabItems = [
   { title: '구독 전체 피드', value: 'discoverAll' },
   { title: '구독 피드 모음', value: 'discoverHeart' },
@@ -493,7 +551,6 @@ const mainTabItems = [
   { title: '유튜브 전체 검색', value: 'searchMode' }
 ]
 
-// 현재 활성화된 메인 탭 값을 관리하는 computed / watch 연동 모델
 const activeMainTab = computed({
   get() {
     if (isSearchMode.value) return 'searchMode'
@@ -511,7 +568,6 @@ const activeMainTab = computed({
 
 const handleMainTabSelect = () => {}
 
-// 스크롤 참조 및 상단 이동 버튼 노출 상태
 const mainScrollRef = ref(null)
 const modalScrollRef = ref(null)
 const commentsScrollRef = ref(null)
@@ -539,7 +595,6 @@ const checkRelatedScroll = (e) => {
 
 const scrollToTop = (el) => {
   let targetElement = el
-  // v-main 컴포넌트 객체인 경우 실제 DOM 엘리먼트 추출
   if (el && el.$el) {
     targetElement = el.$el
   }
@@ -548,6 +603,10 @@ const scrollToTop = (el) => {
   } else if (targetElement) {
     targetElement.scrollTop = 0
   }
+}
+
+const toggleLandscapeMode = () => {
+  isLandscapeMode.value = !isLandscapeMode.value
 }
 
 const DB_NAME = 'NeonTubeDB_Clean'
@@ -665,49 +724,116 @@ const playVideo = async (video) => {
   showComments.value = false
   comments.value = []
   initialWatchedTime.value = 0
+  currentPlayingTime = 0
+  jumpMinutes.value = 0
+  jumpSeconds.value = 0
+  isLandscapeMode.value = false
 
   try {
     const db = await openDB()
-    const tx = db.transaction('history', 'readonly')
-    const req = tx.objectStore('history').get(video.id)
-    req.onsuccess = (e) => {
-      if (e.target.result && e.target.result.currentTime) {
-        initialWatchedTime.value = e.target.result.currentTime
+    const watchedTime = await new Promise((resolve) => {
+      const tx = db.transaction('history', 'readonly')
+      const req = tx.objectStore('history').get(video.id)
+      req.onsuccess = (e) => {
+        const result = e.target.result
+        resolve(result && result.currentTime ? Math.floor(result.currentTime) : 0)
       }
-    }
+      req.onerror = () => resolve(0)
+    })
+
+    initialWatchedTime.value = watchedTime
+    currentPlayingTime = watchedTime
   } catch (err) {
     console.error('히스토리 로드 실패:', err)
   }
 
   isPlayerOpen.value = true
   fetchComments(video.youtubeId)
-  startHistoryTracker(video.id)
+
+  await nextTick()
+  initYouTubePlayer(video.youtubeId, initialWatchedTime.value)
 }
 
 const closePlayer = () => {
+  saveCurrentHistoryToDB()
+  destroyYouTubePlayer()
   isPlayerOpen.value = false
-  stopHistoryTracker()
 }
 
-const startHistoryTracker = (videoId) => {
-  stopHistoryTracker()
-  let runningTime = initialWatchedTime.value || 0
-  
-  historyInterval = setInterval(async () => {
-    if (!isPlayerOpen.value) return
-    runningTime += 10
-    try {
-      const db = await openDB()
-      const tx = db.transaction('history', 'readwrite')
-      tx.objectStore('history').put({
-        videoId: videoId,
-        currentTime: runningTime,
-        updatedAt: new Date().toISOString()
-      })
-    } catch (err) {
-      console.error('히스토리 저장 실패:', err)
+const onDialogModelUpdate = (val) => {
+  if (!val) {
+    closePlayer()
+  }
+}
+
+const initYouTubePlayer = (youtubeId, startTime) => {
+  destroyYouTubePlayer()
+
+  const startPos = startTime > 5 ? startTime : 0
+
+  const createPlayerInstance = () => {
+    if (!document.getElementById('youtube-player-div')) return
+
+    ytPlayer = new window.YT.Player('youtube-player-div', {
+      videoId: youtubeId,
+      playerVars: {
+        autoplay: 1,
+        playsinline: 1,
+        start: startPos
+      },
+      events: {
+        onReady: (event) => {
+          if (startPos > 0 && event.target && typeof event.target.seekTo === 'function') {
+            event.target.seekTo(startPos, true)
+          }
+          startHistoryTracker()
+        }
+      }
+    })
+  }
+
+  if (window.YT && window.YT.Player) {
+    createPlayerInstance()
+  } else {
+    if (!window.onYouTubeIframeAPIReady) {
+      const tag = document.createElement('script')
+      tag.src = 'https://www.youtube.com/iframe_api'
+      const firstScriptTag = document.getElementsByTagName('script')[0]
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag)
     }
-  }, 10000)
+    window.onYouTubeIframeAPIReady = () => {
+      createPlayerInstance()
+    }
+  }
+}
+
+const destroyYouTubePlayer = () => {
+  stopHistoryTracker()
+  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+    try {
+      ytPlayer.destroy()
+    } catch (e) {
+      // 에러 무시
+    }
+  }
+  ytPlayer = null
+}
+
+const startHistoryTracker = () => {
+  stopHistoryTracker()
+  historyInterval = setInterval(() => {
+    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+      try {
+        const t = ytPlayer.getCurrentTime()
+        if (t && t > 0) {
+          currentPlayingTime = Math.floor(t)
+          saveCurrentHistoryToDB()
+        }
+      } catch (e) {
+        // 에러 무시
+      }
+    }
+  }, 1000)
 }
 
 const stopHistoryTracker = () => {
@@ -717,18 +843,89 @@ const stopHistoryTracker = () => {
   }
 }
 
+const saveCurrentHistoryToDB = async () => {
+  if (!activeVideo.value || currentPlayingTime <= 0) return
+  try {
+    const db = await openDB()
+    const tx = db.transaction('history', 'readwrite')
+    tx.objectStore('history').put({
+      videoId: activeVideo.value.id,
+      currentTime: Math.floor(currentPlayingTime),
+      updatedAt: new Date().toISOString()
+    })
+  } catch (err) {
+    console.error('히스토리 저장 실패:', err)
+  }
+}
+
+// 특정 시간(절대 시간) 이동 함수
+const jumpToTime = () => {
+  const m = Number(jumpMinutes.value) || 0
+  const s = Number(jumpSeconds.value) || 0
+  const totalSeconds = (m * 60) + s
+
+  if (totalSeconds < 0) return
+
+  currentPlayingTime = totalSeconds
+  saveCurrentHistoryToDB()
+
+  if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+    ytPlayer.seekTo(totalSeconds, true)
+  }
+}
+
+// 현재 재생 위치에서 지정한 시간만큼 이전으로 돌아가기(되감기) 함수
+const rewindTime = () => {
+  const m = Number(jumpMinutes.value) || 0
+  const s = Number(jumpSeconds.value) || 0
+  const totalSeconds = (m * 60) + s
+
+  if (totalSeconds <= 0) return
+
+  let currentTime = currentPlayingTime
+  if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+    try {
+      currentTime = ytPlayer.getCurrentTime()
+    } catch (e) {
+      // 에러 시 기존 currentPlayingTime 사용
+    }
+  }
+
+  const targetSeconds = Math.max(0, currentTime - totalSeconds)
+  currentPlayingTime = targetSeconds
+  saveCurrentHistoryToDB()
+
+  if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+    ytPlayer.seekTo(targetSeconds, true)
+  }
+}
+
 const formatTime = (seconds) => {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `${m}분 ${s}초`
 }
 
-const embedUrl = computed(() => {
-  if (!activeVideo.value) return ''
-  const startParam = initialWatchedTime.value > 5 ? `&start=${initialWatchedTime.value}` : ''
-  const origin = window.location.origin
-  return `https://www.youtube.com/embed/${activeVideo.value.youtubeId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(origin)}&playsinline=1${startParam}`
-})
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return ''
+  const now = new Date()
+  const targetDate = new Date(dateString)
+  const diffMs = now - targetDate
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+
+  if (diffDay > 0) {
+    return dateString.substring(0, 10)
+  } else if (diffHour > 0) {
+    return `${diffHour}시간 전`
+  } else if (diffMin > 0) {
+    return `${diffMin}분 전`
+  } else {
+    return '방금 전'
+  }
+}
 
 const fetchComments = async (youtubeId) => {
   if (API_KEYS.length === 0) return
@@ -955,13 +1152,15 @@ const enableSearchMode = () => {
   if (window.innerWidth < 960) drawer.value = false
 }
 
-const selectCreatorFilter = (creator) => {
+const selectCreatorFilter = async (creator) => {
   selectedCreator.value = creator
   currentTab.value = ''
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
+
+  await fetchChannelVideos(creator)
 }
 
 onMounted(async () => {
@@ -970,7 +1169,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  stopHistoryTracker()
+  destroyYouTubePlayer()
 })
 
 const getHeaderTitle = computed(() => {
@@ -1012,7 +1211,11 @@ const displayedVideos = computed(() => {
 
 const relatedVideos = computed(() => {
   if (!activeVideo.value) return []
-  return videos.value.filter(v => v.id !== activeVideo.value.id).slice(0, 15)
+  const current = activeVideo.value
+  const sameChannelVideos = videos.value.filter(v => v.id !== current.id && v.creatorId === current.creatorId)
+  const otherChannelVideos = videos.value.filter(v => v.id !== current.id && v.creatorId !== current.creatorId)
+  const combined = [...sameChannelVideos, ...otherChannelVideos]
+  return combined.slice(0, 15)
 })
 
 const shortsVideos = computed(() => {
@@ -1091,6 +1294,32 @@ html, body {
   font-size: 13px !important;
 }
 
+.jump-box-container {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 숫자 입력 박스 내부 여백 및 글자 잘림 완벽 보정 CSS */
+.custom-jump-input {
+  width: 38px !important;
+}
+.custom-jump-input .v-field {
+  background: rgba(0, 0, 0, 0.6) !important;
+  border-radius: 6px !important;
+  color: white !important;
+  height: 28px !important;
+  padding: 0 2px !important;
+  --v-input-padding-top: 0px !important;
+}
+.custom-jump-input .v-field__input {
+  padding: 0 !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  font-size: 11px !important;
+  text-align: center !important;
+}
+
 .custom-list-item {
   border-radius: 12px !important;
   margin-bottom: 4px;
@@ -1165,7 +1394,7 @@ html, body {
 .play-overlay {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1226,6 +1455,12 @@ html, body {
   background: #000000;
   overflow: hidden;
   flex-shrink: 0;
+  transition: aspect-ratio 0.3s ease;
+}
+
+.video-container.landscape-expanded {
+  aspect-ratio: 21 / 9;
+  min-height: 280px;
 }
 
 .youtube-iframe {
@@ -1324,5 +1559,27 @@ html, body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.play-btn-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(167, 139, 250, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.play-btn-circle:hover {
+  transform: scale(1.1);
+  background: #7c3aed;
+}
+
+.shorts-play-btn {
+  width: 40px;
+  height: 40px;
 }
 </style>
