@@ -3,8 +3,9 @@ const { defineConfig } = require('@vue/cli-service');
 module.exports = defineConfig({
   transpileDependencies: true,
 
-  // 배포 시 /SJ/ 경로 하위에서 정적 자원들을 올바르게 로드하도록 설정[cite: 14]
-  publicPath: process.env.NODE_ENV === 'production' ? '/U/' : '/',
+  // Vercel(production)에서는 루트('/')를 사용하고, 
+  // 기존 IIS 환경(또는 필요에 따라)에서는 '/SJ/' 경로를 사용하도록 설정
+  publicPath: process.env.VERCEL ? '/' : (process.env.NODE_ENV === 'production' ? '/SJ/' : '/'),
 
   pluginOptions: {
     vuetify: {}
