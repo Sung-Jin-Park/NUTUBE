@@ -8,33 +8,10 @@
     <v-app-bar flat class="glass-app-bar px-1 px-md-4" height="64">
       <v-app-bar-nav-icon @click="drawer = !drawer" class="text-white" density="compact"></v-app-bar-nav-icon>
       
-      <!-- 유튜브 로고 아이콘 + 현재 탭 아이콘 + 현재 사용 중인 API Key 번호 표기 -->
+      <!-- 유튜브 로고 아이콘 + 현재 사용 중인 API Key 번호 표기 -->
       <div class="d-flex align-center ml-0 mr-2 gap-1 flex-shrink-0">
         <v-icon icon="mdi-play-box-multiple" class="text-accent" size="26"></v-icon>
         <span class="text-accent text-caption font-weight-bold ml-1" title="현재 사용 중인 YouTube API 키 번호">#{{ currentApiKeyNumber }}</span>
-      </div>
-
-      <!-- 상단 4대 메인 탭 즉시 이동 콤보박스 -->
-      <div class="mr-2 app-bar-select-wrapper" style="width: 100px; min-width: 120px;">
-        <v-select
-          v-model="activeMainTab"
-          :items="mainTabItems"
-          item-title="title"
-          item-value="value"
-          density="compact"
-          variant="outlined"
-          hide-details
-          single-line
-          class="custom-app-select"
-          @update:model-value="handleMainTabSelect"
-        >
-          <template v-slot:selection="{ item }">
-            <div class="d-flex align-center text-caption text-white text-truncate">
-              <v-icon :icon="item.raw.icon" size="14" class="mr-1 text-accent"></v-icon>
-              <span class="text-truncate">{{ item.raw.title }}</span>
-            </div>
-          </template>
-        </v-select>
       </div>
       
       <!-- 검색창 및 실시간 검색 옵션 버튼 -->
@@ -152,15 +129,58 @@
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       <v-container fluid class="pa-2 pa-md-6">
         
+        <!-- 타이틀 및 4대 아이콘 탭 영역 -->
         <v-card class="glass-banner mb-3 mb-md-6 pa-3 pa-md-4 rounded-xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
-          <div style="z-index: 2; position: relative;">
-            <h1 class="text-subtitle-1 text-md-h4 font-weight-black text-white ma-0">
-              {{ getHeaderTitle }}
-            </h1>
-            <p v-if="isSearchMode" class="text-grey-lighten-2 text-caption mt-1 mb-0">
-              상단 검색창에 키워드를 입력하고 엔터를 누르거나 검색 아이콘을 누르면 유튜브 API를 통해 실시간 영상을 검색합니다.
-            </p>
+          <div style="z-index: 2; position: relative;" class="d-flex flex-column flex-md-row justify-space-between align-md-center gap-3">
+            <div>
+              <h1 class="text-subtitle-1 text-md-h5 font-weight-black text-white ma-0">
+                {{ getHeaderTitle }}
+              </h1>
+              <p v-if="isSearchMode" class="text-grey-lighten-2 text-caption mt-1 mb-0">
+                검색어를 입력하고 실시간 영상을 조회하세요.
+              </p>
+            </div>
+
+            <!-- 바로 밑 타이틀 영역의 간소화된 4개 아이콘 탭 -->
+            <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl">
+              <v-btn
+                icon="mdi-play-box-multiple-outline"
+                size="small"
+                variant="flat"
+                :color="currentTab === 'discoverAll' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
+                class="text-white"
+                title="구독 전체 피드"
+                @click="selectDiscoverAll"
+              ></v-btn>
+              <v-btn
+                icon="mdi-heart-outline"
+                size="small"
+                variant="flat"
+                :color="currentTab === 'discoverHeart' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
+                class="text-white"
+                title="구독 피드 모음"
+                @click="selectDiscoverHeart"
+              ></v-btn>
+              <v-btn
+                icon="mdi-heart-multiple"
+                size="small"
+                variant="flat"
+                :color="isFavoriteVideosMode ? 'deep-purple-darken-2' : 'transparent'"
+                class="text-white"
+                title="즐겨찾기 영상"
+                @click="enableFavoriteVideosMode"
+              ></v-btn>
+              <v-btn
+                icon="mdi-magnify"
+                size="small"
+                variant="flat"
+                :color="isSearchMode ? 'deep-purple-darken-2' : 'transparent'"
+                class="text-white"
+                title="유튜브 전체 검색"
+                @click="enableSearchMode"
+              ></v-btn>
+            </div>
           </div>
         </v-card>
 
@@ -198,6 +218,10 @@
                 <div class="shorts-thumbnail-wrapper position-relative bg-black">
                   <v-img :src="video.thumbnail" height="200" contain class="align-end">
                     <div class="shorts-badge">Shorts</div>
+                    <!-- 유튜브 스타일 시청 진행 바 -->
+                    <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
+                      <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
+                    </div>
                   </v-img>
                   <div class="play-overlay">
                     <div class="play-btn-circle">
@@ -235,6 +259,10 @@
                   <div class="video-thumbnail-wrapper position-relative bg-black">
                     <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
                       <div class="video-duration-badge">HD</div>
+                      <!-- 유튜브 스타일 시청 진행 바 -->
+                      <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
+                        <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
+                      </div>
                     </v-img>
                     <div class="play-overlay">
                       <div class="play-btn-circle shorts-play-btn">
@@ -299,25 +327,25 @@
     <!-- 시네마틱 영상 재생 모달 -->
     <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
-      <!-- 타이틀바 -->
-      <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
-        <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate pr-2">{{ activeVideo?.title }}</span>
-        <div class="d-flex align-center">
-          <!-- 가로/세로 전환 아이콘 버튼 (아이콘 정상 표시 보정) -->
-          <v-btn 
-            icon
-            variant="text" 
-            size="small" 
-            color="accent" 
-            class="mr-2"
-            :title="isLandscapeMode ? '세로 모드로 전환' : '가로 확장 모드로 전환'"
-            @click="toggleLandscapeMode"
-          >
-            <v-icon :icon="isLandscapeMode ? 'mdi-crop-portrait' : 'mdi-crop-landscape'" size="20"></v-icon>
-          </v-btn>
-          <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
+        <!-- 타이틀바 -->
+        <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
+          <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate pr-2">{{ activeVideo?.title }}</span>
+          <div class="d-flex align-center">
+            <!-- 가로/세로 전환 아이콘 버튼 -->
+            <v-btn 
+              icon
+              variant="text" 
+              size="small" 
+              color="accent" 
+              class="mr-2"
+              :title="isLandscapeMode ? '세로 모드로 전환' : '가로 확장 모드로 전환'"
+              @click="toggleLandscapeMode"
+            >
+              <v-icon :icon="isLandscapeMode ? 'mdi-crop-portrait' : 'mdi-crop-landscape'" size="20"></v-icon>
+            </v-btn>
+            <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
+          </div>
         </div>
-      </div>
 
         <!-- 모달 내부 전체 컨테이너 -->
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
@@ -327,27 +355,24 @@
             <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
 
-          <!-- 임베드 차단 안내 배너 -->
-          <div class="px-3 py-2 bg-grey-darken-4 d-flex justify-space-between align-center border-top-glass">
-            <span class="text-caption text-grey-lighten-2">
-              💡 화면이 안 나오고 소리만 들리거나 차단된 경우 아래 버튼을 누르세요.
-            </span>
-            <v-btn
-              color="red"
-              variant="flat"
-              size="x-small"
-              prepend-icon="mdi-youtube"
-              :href="`https://www.youtube.com/watch?v=${activeVideo?.youtubeId}`"
-              target="_blank"
-            >
-              유튜브에서 직접 보기
-            </v-btn>
-          </div>
-
           <!-- 영상 정보 및 시간 이동 컨트롤 영역 -->
           <div class="pa-3 pa-md-4 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-2 border-bottom-glass">
-            <div>
-              <h3 class="text-white text-caption text-md-subtitle-2 font-weight-bold mb-1" v-html="activeVideo?.title"></h3>
+            <div class="flex-grow-1 overflow-hidden pr-2">
+              <div class="d-flex align-center flex-wrap gap-2 mb-1">
+                <h3 class="text-white text-caption text-md-subtitle-2 font-weight-bold ma-0" v-html="activeVideo?.title"></h3>
+                <!-- 유튜브 아이콘이 포함된 직접 보기 버튼 -->
+                <v-btn
+                  color="red"
+                  variant="flat"
+                  size="x-small"
+                  prepend-icon="mdi-youtube"
+                  :href="`https://www.youtube.com/watch?v=${activeVideo?.youtubeId}`"
+                  target="_blank"
+                  class="text-white font-weight-bold"
+                >
+                  유튜브에서 직접 보기
+                </v-btn>
+              </div>
               <p class="text-grey-lighten-1 text-caption mb-0">{{ activeVideo?.creatorName }}</p>
               <p v-if="initialWatchedTime > 5" class="text-accent text-caption mt-1 mb-0">
                 ⚡ 이전 시청 기록({{ formatTime(initialWatchedTime) }})에서 이어서 재생됩니다.
@@ -542,34 +567,19 @@ let ytPlayer = null
 let historyInterval = null   
 let currentPlayingTime = 0   
 
+let isPopStateTriggered = false
+
+const handlePopState = () => {
+  if (isPlayerOpen.value) {
+    isPopStateTriggered = true
+    closePlayer()
+  }
+}
+
 const jumpMinutes = ref(0)
 const jumpSeconds = ref(0)
 
 const currentApiKeyNumber = ref(1)
-
-const mainTabItems = [
-  { title: '구독 전체 피드', value: 'discoverAll' },
-  { title: '구독 피드 모음', value: 'discoverHeart' },
-  { title: '즐겨찾기 영상', value: 'favoriteVideos' },
-  { title: '유튜브 전체 검색', value: 'searchMode' }
-]
-
-const activeMainTab = computed({
-  get() {
-    if (isSearchMode.value) return 'searchMode'
-    if (isFavoriteVideosMode.value) return 'favoriteVideos'
-    if (currentTab.value === 'discoverAll') return 'discoverAll'
-    return 'discoverHeart'
-  },
-  set(val) {
-    if (val === 'discoverAll') selectDiscoverAll()
-    else if (val === 'discoverHeart') selectDiscoverHeart()
-    else if (val === 'favoriteVideos') enableFavoriteVideosMode()
-    else if (val === 'searchMode') enableSearchMode()
-  }
-})
-
-const handleMainTabSelect = () => {}
 
 const mainScrollRef = ref(null)
 const modalScrollRef = ref(null)
@@ -722,6 +732,49 @@ const fetchWithKeyRotation = async (urlBuilder) => {
   throw new Error('모든 YouTube API 키의 일일 할당량이 소진되었습니다.')
 }
 
+const parseISO8601Duration = (durationStr) => {
+  if (!durationStr) return 0
+  const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  if (!match) return 0
+  const hours = parseInt(match[1] || 0, 10)
+  const minutes = parseInt(match[2] || 0, 10)
+  const seconds = parseInt(match[3] || 0, 10)
+  return (hours * 3600) + (minutes * 60) + seconds
+}
+
+const fetchAndUpdateVideoDurations = async (videoList) => {
+  if (!videoList || videoList.length === 0 || API_KEYS.length === 0) return videoList
+
+  const targetVideos = videoList.filter(v => !v.duration || v.duration === 0)
+  if (targetVideos.length === 0) return videoList
+
+  const ids = targetVideos.map(v => v.youtubeId).slice(0, 50).join(',')
+
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${key}`
+    )
+
+    if (data.items && data.items.length > 0) {
+      const durationMap = new Map()
+      data.items.forEach(item => {
+        const durSec = parseISO8601Duration(item.contentDetails.duration)
+        durationMap.set(item.id, durSec)
+      })
+
+      videoList.forEach(v => {
+        if (durationMap.has(v.youtubeId)) {
+          v.duration = durationMap.get(v.youtubeId)
+        }
+      })
+    }
+  } catch (err) {
+    console.error('영상 길이(duration) 조회 실패:', err)
+  }
+
+  return videoList
+}
+
 const playVideo = async (video) => {
   activeVideo.value = video
   showComments.value = false
@@ -731,6 +784,10 @@ const playVideo = async (video) => {
   jumpMinutes.value = 0
   jumpSeconds.value = 0
   isLandscapeMode.value = false
+
+  isPopStateTriggered = false
+  window.history.pushState({ playerOpen: true }, '')
+  window.addEventListener('popstate', handlePopState)
 
   try {
     const db = await openDB()
@@ -761,6 +818,14 @@ const closePlayer = () => {
   saveCurrentHistoryToDB()
   destroyYouTubePlayer()
   isPlayerOpen.value = false
+
+  if (!isPopStateTriggered) {
+    window.history.back()
+  }
+  isPopStateTriggered = false
+  window.removeEventListener('popstate', handlePopState)
+  
+  loadDataFromDB()
 }
 
 const onDialogModelUpdate = (val) => {
@@ -789,6 +854,13 @@ const initYouTubePlayer = (youtubeId, startTime) => {
           if (startPos > 0 && event.target && typeof event.target.seekTo === 'function') {
             event.target.seekTo(startPos, true)
           }
+          if (activeVideo.value && event.target && typeof event.target.getDuration === 'function') {
+            const dur = event.target.getDuration()
+            if (dur > 0) {
+              activeVideo.value.duration = dur
+              updateVideoDurationInDB(activeVideo.value.id, dur)
+            }
+          }
           startHistoryTracker()
         }
       }
@@ -807,6 +879,23 @@ const initYouTubePlayer = (youtubeId, startTime) => {
     window.onYouTubeIframeAPIReady = () => {
       createPlayerInstance()
     }
+  }
+}
+
+const updateVideoDurationInDB = async (videoId, duration) => {
+  try {
+    const db = await openDB()
+    const tx = db.transaction('videos', 'readwrite')
+    const store = tx.objectStore('videos')
+    store.get(videoId).onsuccess = (e) => {
+      const v = e.target.result
+      if (v) {
+        v.duration = duration
+        store.put(v)
+      }
+    }
+  } catch (err) {
+    console.error('DB 비디오 길이 업데이트 실패:', err)
   }
 }
 
@@ -848,20 +937,31 @@ const stopHistoryTracker = () => {
 
 const saveCurrentHistoryToDB = async () => {
   if (!activeVideo.value || currentPlayingTime <= 0) return
+  const dur = (ytPlayer && typeof ytPlayer.getDuration === 'function') ? ytPlayer.getDuration() : (activeVideo.value.duration || 0)
+
   try {
     const db = await openDB()
     const tx = db.transaction('history', 'readwrite')
     tx.objectStore('history').put({
       videoId: activeVideo.value.id,
       currentTime: Math.floor(currentPlayingTime),
+      duration: dur,
       updatedAt: new Date().toISOString()
     })
+    
+    const targetVideo = videos.value.find(v => v.id === activeVideo.value.id)
+    if (targetVideo) {
+      targetVideo.currentTime = Math.floor(currentPlayingTime)
+      targetVideo.duration = dur
+      if (dur > 0) {
+        targetVideo.progressPercent = Math.min(100, Math.floor((currentPlayingTime / dur) * 100))
+      }
+    }
   } catch (err) {
     console.error('히스토리 저장 실패:', err)
   }
 }
 
-// 특정 시간(절대 시간) 이동 함수
 const jumpToTime = () => {
   const m = Number(jumpMinutes.value) || 0
   const s = Number(jumpSeconds.value) || 0
@@ -877,7 +977,6 @@ const jumpToTime = () => {
   }
 }
 
-// 현재 재생 위치에서 지정한 시간만큼 이전으로 돌아가기(되감기) 함수
 const rewindTime = () => {
   const m = Number(jumpMinutes.value) || 0
   const s = Number(jumpSeconds.value) || 0
@@ -890,7 +989,7 @@ const rewindTime = () => {
     try {
       currentTime = ytPlayer.getCurrentTime()
     } catch (e) {
-      // 에러 시 기존 currentPlayingTime 사용
+      // 에러 시 기존값 유지
     }
   }
 
@@ -967,8 +1066,32 @@ const loadDataFromDB = async () => {
   let dbVideos = await new Promise((resolve) => {
     videoTx.objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
   })
+
+  const historyTx = db.transaction('history', 'readonly')
+  let dbHistory = await new Promise((resolve) => {
+    historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+  })
+  const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
   
-  videos.value = (dbVideos || []).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+  const processedVideos = (dbVideos || []).map(v => {
+    const h = historyMap.get(v.id)
+    const videoDuration = h?.duration || v.duration || 0
+    const currentTime = h?.currentTime || 0
+    let percent = 0
+    if (currentTime > 0 && videoDuration > 0) {
+      percent = Math.min(100, Math.floor((currentTime / videoDuration) * 100))
+    }
+    return {
+      ...v,
+      duration: videoDuration,
+      currentTime: currentTime,
+      progressPercent: percent
+    }
+  }).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+
+  videos.value = processedVideos
+
+  await fetchAndUpdateVideoDurations(videos.value)
 }
 
 const toggleVideoFavorite = async (video) => {
@@ -1034,7 +1157,10 @@ const parseVideoItem = (item) => {
     isShorts: isShorts,
     isFavorite: false,
     views: item.snippet.publishedAt.substring(0, 10),
-    publishedAt: item.snippet.publishedAt
+    publishedAt: item.snippet.publishedAt,
+    duration: 0,
+    progressPercent: 0,
+    currentTime: 0
   }
 }
 
@@ -1048,15 +1174,21 @@ const fetchChannelVideos = async (creator) => {
 
     if (!data.error && data.items) {
       const db = await openDB()
-      const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+      const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration }]))
 
       const channelVideos = data.items.map(item => {
         const parsed = parseVideoItem(item)
         if (existingMap.has(parsed.id)) {
-          parsed.isFavorite = existingMap.get(parsed.id)
+          const info = existingMap.get(parsed.id)
+          parsed.isFavorite = info.isFavorite
+          parsed.progressPercent = info.progressPercent
+          parsed.currentTime = info.currentTime
+          parsed.duration = info.duration
         }
         return parsed
       })
+
+      await fetchAndUpdateVideoDurations(channelVideos)
 
       const tx = db.transaction('videos', 'readwrite')
       const store = tx.objectStore('videos')
@@ -1095,6 +1227,12 @@ const searchYouTubeVideos = async () => {
       return
     }
 
+    const db = await openDB()
+    const historyTx = db.transaction('history', 'readonly')
+    let dbHistory = await new Promise((resolve) => {
+      historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    })
+    const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
     const apiVideos = data.items.map(item => {
@@ -1102,13 +1240,29 @@ const searchYouTubeVideos = async () => {
       if (existingMap.has(parsed.id)) {
         parsed.isFavorite = existingMap.get(parsed.id)
       }
+      const h = historyMap.get(parsed.id)
+      if (h) {
+        parsed.currentTime = h.currentTime || 0
+        parsed.duration = h.duration || 0
+        if (parsed.currentTime > 0 && parsed.duration > 0) {
+          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
+        }
+      }
       return parsed
+    })
+
+    await fetchAndUpdateVideoDurations(apiVideos)
+
+    apiVideos.forEach(v => {
+      const h = historyMap.get(v.id)
+      if (h && h.currentTime > 0 && v.duration > 0) {
+        v.progressPercent = Math.min(100, Math.floor((h.currentTime / v.duration) * 100))
+      }
     })
 
     apiVideos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
     videos.value = apiVideos
 
-    const db = await openDB()
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
     apiVideos.forEach(v => store.put(v))
@@ -1173,15 +1327,16 @@ onMounted(async () => {
 
 onUnmounted(() => {
   destroyYouTubePlayer()
+  window.removeEventListener('popstate', handlePopState)
 })
 
 const getHeaderTitle = computed(() => {
-  if (selectedCreator.value) return selectedCreator.value.name + ' 채널'
-  if (isFavoriteVideosMode.value) return '즐겨찾기 영상 모음'
-  if (isSearchMode.value) return '유튜브 전체 검색 모드'
-  if (currentTab.value === 'discoverAll') return '구독 크리에이터 전체 피드'
-  if (currentTab.value === 'discoverHeart') return '구독 피드 모음 (하트 채널)'
-  return '구독 피드 모음 (하트 채널)'
+  if (selectedCreator.value) return selectedCreator.value.name
+  if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
+  if (isSearchMode.value) return '유튜브 검색'
+  if (currentTab.value === 'discoverAll') return '전체 구독 피드'
+  if (currentTab.value === 'discoverHeart') return '구독 피드 모음'
+  return '구독 피드 모음'
 })
 
 const displayedVideos = computed(() => {
@@ -1273,18 +1428,9 @@ html, body {
   color: #a78bfa !important;
 }
 
-.custom-app-select .v-field {
-  border-radius: 20px !important;
-  background: rgba(0, 0, 0, 0.3) !important;
-  color: white !important;
-  font-size: 12px !important;
-  min-height: 36px !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-.custom-app-select .v-field__field {
-  height: 36px !important;
-  align-items: center;
+.icon-tab-group {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .search-bar {
@@ -1302,7 +1448,6 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 숫자 입력 박스 내부 여백 및 글자 잘림 완벽 보정 CSS */
 .custom-jump-input {
   width: 38px !important;
 }
@@ -1394,6 +1539,21 @@ html, body {
   font-weight: bold;
 }
 
+.video-progress-bar-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.3);
+  z-index: 3;
+}
+.video-progress-bar-fill {
+  height: 100%;
+  background-color: #ff0000;
+  transition: width 0.3s ease;
+}
+
 .play-overlay {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -1411,13 +1571,14 @@ html, body {
 
 .video-duration-badge {
   position: absolute;
-  bottom: 6px;
+  bottom: 8px;
   right: 6px;
   background: rgba(0, 0, 0, 0.8);
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 10px;
   font-weight: bold;
+  z-index: 2;
 }
 
 .safe-player-dialog {
@@ -1529,14 +1690,6 @@ html, body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important;
 }
 
-@media (max-width: 959px) {
-  .mobile-top-dialog {
-    margin-top: 0 !important;
-    align-self: flex-start !important;
-    max-height: 100vh !important;
-    border-radius: 0 !important;
-  }
-}
 .mobile-tight-header {
   min-height: 36px !important;
 }
