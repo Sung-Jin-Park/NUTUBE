@@ -19,7 +19,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 피드 내 검색...'))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isCustomTailoredMode ? '맞춤 동영상 내 검색...' : (isRecentUploadsMode ? '최근 업로드 영상 내 검색...' : (isTrendingMode ? '인기 급상승 영상 내 검색...' : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 피드 내 검색...')))))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -90,8 +90,93 @@
         </template>
       </v-text-field>
 
-      <!-- 로딩 중일 때 상단 앱바 하단에 표시되는 프로그레스 바 -->
+      <!-- 스크롤해도 항상 고정되는 상단 앱바 하단 영역 (아이콘 탭 그룹 배치) -->
       <template v-slot:extension>
+        <div class="d-flex align-center px-4 py-1 w-100 overflow-x-auto glass-extension-bar">
+          <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl flex-nowrap w-100 justify-start justify-md-center">
+            <v-btn
+              icon="mdi-play-box-multiple-outline"
+              size="small"
+              variant="flat"
+              :color="currentTab === 'discoverAll' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="구독 전체 피드"
+              @click="selectDiscoverAll"
+            ></v-btn>
+            <v-btn
+              icon="mdi-heart-outline"
+              size="small"
+              variant="flat"
+              :color="currentTab === 'discoverHeart' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="구독 피드 모음"
+              @click="selectDiscoverHeart"
+            ></v-btn>
+            <v-btn
+              icon="mdi-heart-multiple"
+              size="small"
+              variant="flat"
+              :color="isFavoriteVideosMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="즐겨찾기 영상"
+              @click="enableFavoriteVideosMode"
+            ></v-btn>
+            <v-btn
+              icon="mdi-playlist-music"
+              size="small"
+              variant="flat"
+              :color="isPlaylistMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="재생 목록"
+              @click="enablePlaylistMode"
+            ></v-btn>
+            <v-btn
+              icon="mdi-history"
+              size="small"
+              variant="flat"
+              :color="isHistoryMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="시청 기록"
+              @click="enableHistoryMode"
+            ></v-btn>
+            <v-btn
+              icon="mdi-magnify"
+              size="small"
+              variant="flat"
+              :color="isSearchMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="유튜브 전체 검색"
+              @click="enableSearchMode"
+            ></v-btn>
+            <v-btn
+              icon="mdi-clock-outline"
+              size="small"
+              variant="flat"
+              :color="isRecentUploadsMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="최근 업로드된 동영상"
+              @click="enableRecentUploadsMode"
+            ></v-btn>
+            <v-btn
+              icon="mdi-star-face"
+              size="small"
+              variant="flat"
+              :color="isCustomTailoredMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="새로운 맞춤 동영상"
+              @click="enableCustomTailoredMode"
+            ></v-btn>
+            <v-btn
+              icon="mdi-fire"
+              size="small"
+              variant="flat"
+              :color="isTrendingMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="인기 급상승 영상"
+              @click="enableTrendingMode"
+            ></v-btn>
+          </div>
+        </div>
         <v-progress-linear
           v-if="isLoading"
           indeterminate
@@ -162,6 +247,33 @@
           :class="{ 'neon-active': isSearchMode }"
           @click="enableSearchMode"
         ></v-list-item>
+
+        <v-list-item 
+          prepend-icon="mdi-clock-outline" 
+          title="최근 업로드된 동영상" 
+          value="recentUploadsMode" 
+          class="mb-2 custom-list-item"
+          :class="{ 'neon-active': isRecentUploadsMode }"
+          @click="enableRecentUploadsMode"
+        ></v-list-item>
+
+        <v-list-item 
+          prepend-icon="mdi-star-face" 
+          title="새로운 맞춤 동영상" 
+          value="customTailoredMode" 
+          class="mb-2 custom-list-item"
+          :class="{ 'neon-active': isCustomTailoredMode }"
+          @click="enableCustomTailoredMode"
+        ></v-list-item>
+
+        <v-list-item 
+          prepend-icon="mdi-fire" 
+          title="인기 급상승 영상" 
+          value="trendingMode" 
+          class="mb-2 custom-list-item"
+          :class="{ 'neon-active': isTrendingMode }"
+          @click="enableTrendingMode"
+        ></v-list-item>
         
         <v-divider class="border-opacity-25 my-4"></v-divider>
         
@@ -210,10 +322,10 @@
       
       <v-container fluid class="pa-2 pa-md-6">
         
-        <!-- 타이틀 및 아이콘 탭 영역 -->
+        <!-- 현재 선택된 타이틀 영역 -->
         <v-card class="glass-banner mb-3 mb-md-6 pa-3 pa-md-4 rounded-xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
-          <div style="z-index: 2; position: relative;" class="d-flex flex-column flex-md-row justify-space-between align-md-center gap-3">
+          <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3">
             <div class="d-flex align-center gap-3">
               <!-- 전체 선택 체크박스 (재생 목록 메인 폴더 보기 아닐 때만) -->
               <v-checkbox
@@ -231,67 +343,10 @@
                 {{ getHeaderTitle }} <span v-if="selectedVideoIds.length > 0" class="text-accent text-subtitle-2">({{ selectedVideoIds.length }}개 선택됨)</span>
               </h1>
             </div>
-
-            <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl flex-wrap">
-              <v-btn
-                icon="mdi-play-box-multiple-outline"
-                size="small"
-                variant="flat"
-                :color="currentTab === 'discoverAll' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
-                class="text-white"
-                title="구독 전체 피드"
-                @click="selectDiscoverAll"
-              ></v-btn>
-              <v-btn
-                icon="mdi-heart-outline"
-                size="small"
-                variant="flat"
-                :color="currentTab === 'discoverHeart' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
-                class="text-white"
-                title="구독 피드 모음"
-                @click="selectDiscoverHeart"
-              ></v-btn>
-              <v-btn
-                icon="mdi-heart-multiple"
-                size="small"
-                variant="flat"
-                :color="isFavoriteVideosMode ? 'deep-purple-darken-2' : 'transparent'"
-                class="text-white"
-                title="즐겨찾기 영상"
-                @click="enableFavoriteVideosMode"
-              ></v-btn>
-              <v-btn
-                icon="mdi-playlist-music"
-                size="small"
-                variant="flat"
-                :color="isPlaylistMode ? 'deep-purple-darken-2' : 'transparent'"
-                class="text-white"
-                title="재생 목록"
-                @click="enablePlaylistMode"
-              ></v-btn>
-              <v-btn
-                icon="mdi-history"
-                size="small"
-                variant="flat"
-                :color="isHistoryMode ? 'deep-purple-darken-2' : 'transparent'"
-                class="text-white"
-                title="시청 기록"
-                @click="enableHistoryMode"
-              ></v-btn>
-              <v-btn
-                icon="mdi-magnify"
-                size="small"
-                variant="flat"
-                :color="isSearchMode ? 'deep-purple-darken-2' : 'transparent'"
-                class="text-white"
-                title="유튜브 전체 검색"
-                @click="enableSearchMode"
-              ></v-btn>
-            </div>
           </div>
         </v-card>
 
-        <!-- 재생 목록 폴더 목록 뷰 (재생 목록 탭이면서 특정 폴더를 선택하지 않았을 때) -->
+        <!-- 재생 목록 폴더 목록 뷰 -->
         <div v-if="isPlaylistMode && !activePlaylistId">
           <div class="d-flex justify-space-between align-center mb-4">
             <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">내 재생 목록 폴더</h2>
@@ -325,7 +380,6 @@
                 <div>
                   <div class="d-flex justify-space-between align-start mb-2">
                     <v-icon icon="mdi-folder-music" color="accent" size="36"></v-icon>
-                    <!-- 폴더 관리 버튼 그룹 (위치 변경, 수정, 삭제) -->
                     <div class="d-flex align-center gap-1" @click.stop>
                       <v-btn
                         icon="mdi-arrow-up"
@@ -409,7 +463,7 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isPlaylistMode ? '이 재생 목록에 담긴 영상이 없습니다. 영상 카드의 폴더 버튼을 눌러 담아보세요.' : '구독 중인 채널의 새로운 영상이 없습니다.')) }}
+                {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isPlaylistMode ? '이 재생 목록에 담긴 영상이 없습니다.' : (isTrendingMode ? '인기 급상승 영상을 불러오지 못했습니다.' : (isRecentUploadsMode ? '최근 업로드된 영상이 없습니다.' : (isCustomTailoredMode ? '맞춤 동영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))))) }}
               </p>
             </v-col>
           </v-row>
@@ -428,7 +482,6 @@
                   class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
                   @click="playVideo(video)"
                 >
-                  <!-- 쇼츠 카드 체크박스 -->
                   <div class="video-checkbox-wrapper">
                     <v-checkbox
                       v-model="selectedVideoIds"
@@ -491,7 +544,6 @@
               <v-row dense>
                 <v-col v-for="video in (isHistoryMode ? displayedVideos : normalVideos)" :key="video.id" cols="12" sm="6" md="4" lg="3">
                   <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
-                    <!-- 일반 영상 카드 체크박스 -->
                     <div class="video-checkbox-wrapper">
                       <v-checkbox
                         v-model="selectedVideoIds"
@@ -580,7 +632,7 @@
       </v-slide-y-transition>
     </v-main>
 
-    <!-- 조회 중일 때 로딩 오버레이 -->
+    <!-- 로딩 오버레이 -->
     <div v-if="isLoading" class="loading-overlay-container">
       <div class="loading-card glass-modal pa-4 rounded-xl d-flex flex-column align-center shadow-lg">
         <v-progress-circular indeterminate color="accent" size="48" width="4" class="mb-3"></v-progress-circular>
@@ -608,12 +660,11 @@
       </v-card>
     </v-dialog>
 
-    <!-- [개선] 영상 -> 재생 목록에 저장 다이얼로그 (신규 폴더 생성 창 포함 + 테마 맞춤 버튼) -->
+    <!-- 영상 -> 재생 목록에 저장 다이얼로그 -->
     <v-dialog v-model="isSaveToPlaylistDialogVisible" max-width="420px">
       <v-card class="glass-modal rounded-xl pa-4 text-white">
         <h3 class="text-subtitle-1 font-weight-bold mb-3">재생 목록에 저장</h3>
         
-        <!-- 기존 폴더 리스트 또는 없을 때 안내 -->
         <div v-if="playlists.length === 0" class="text-grey-darken-1 text-caption mb-3">
           생성된 재생 목록 폴더가 없습니다. 아래에서 새 폴더를 만들어 보세요.
         </div>
@@ -634,7 +685,6 @@
 
         <v-divider class="border-opacity-25 my-3"></v-divider>
 
-        <!-- 신규 폴더 즉시 생성 인라인 영역 -->
         <div class="mb-3">
           <span class="text-caption text-accent font-weight-bold d-block mb-1">➕ 새 폴더 바로 만들기</span>
           <div class="d-flex align-center gap-2">
@@ -669,7 +719,6 @@
     <!-- 시네마틱 영상 재생 모달 -->
     <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
-        <!-- 타이틀바 -->
         <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
           <div class="d-flex align-center overflow-hidden pr-2">
             <span v-if="playlistQueue.length > 1" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
@@ -681,7 +730,6 @@
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playlistIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
 
-            <!-- 커스텀 취침 예약 버튼 및 메뉴 -->
             <v-menu location="bottom end" :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -691,15 +739,8 @@
                   size="small"
                   :color="sleepTimerSecondsLeft > 0 ? 'accent' : 'white'"
                   class="mr-1"
-                  :title="sleepTimerSecondsLeft > 0 ? `취침 예약 남은 시간: ${formatSleepTime(sleepTimerSecondsLeft)}` : '취침 예약 설정'"
                 >
-                  <v-badge
-                    v-if="sleepTimerSecondsLeft > 0"
-                    dot
-                    color="accent"
-                    offset-x="-2"
-                    offset-y="-2"
-                  >
+                  <v-badge v-if="sleepTimerSecondsLeft > 0" dot color="accent" offset-x="-2" offset-y="-2">
                     <v-icon icon="mdi-sleep" size="20"></v-icon>
                   </v-badge>
                   <v-icon v-else icon="mdi-sleep" size="20"></v-icon>
@@ -713,7 +754,6 @@
                 </v-list-item>
                 <v-divider class="border-opacity-25 my-1"></v-divider>
                 
-                <!-- 커스텀 분 입력 영역 -->
                 <v-list-item class="px-3 py-1">
                   <div class="d-flex align-center gap-1 w-100">
                     <v-text-field
@@ -728,31 +768,15 @@
                       @keydown.enter="setCustomSleepTimer"
                     ></v-text-field>
                     <span class="text-caption text-white mr-1">분</span>
-                    <v-btn
-                      size="small"
-                      color="accent"
-                      variant="outlined"
-                      class="px-2"
-                      @click="setCustomSleepTimer"
-                    >
-                      적용
-                    </v-btn>
+                    <v-btn size="small" color="accent" variant="outlined" class="px-2" @click="setCustomSleepTimer">적용</v-btn>
                   </div>
                 </v-list-item>
 
                 <v-divider class="border-opacity-25 my-1"></v-divider>
-                <v-list-item value="10" @click="setSleepTimer(10)">
-                  <v-list-item-title class="text-body-2">10분 후</v-list-item-title>
-                </v-list-item>
-                <v-list-item value="30" @click="setSleepTimer(30)">
-                  <v-list-item-title class="text-body-2">30분 후</v-list-item-title>
-                </v-list-item>
-                <v-list-item value="60" @click="setSleepTimer(60)">
-                  <v-list-item-title class="text-body-2">1시간 후</v-list-item-title>
-                </v-list-item>
-                <v-list-item value="120" @click="setSleepTimer(120)">
-                  <v-list-item-title class="text-body-2">2시간 후</v-list-item-title>
-                </v-list-item>
+                <v-list-item value="10" @click="setSleepTimer(10)"><v-list-item-title class="text-body-2">10분 후</v-list-item-title></v-list-item>
+                <v-list-item value="30" @click="setSleepTimer(30)"><v-list-item-title class="text-body-2">30분 후</v-list-item-title></v-list-item>
+                <v-list-item value="60" @click="setSleepTimer(60)"><v-list-item-title class="text-body-2">1시간 후</v-list-item-title></v-list-item>
+                <v-list-item value="120" @click="setSleepTimer(120)"><v-list-item-title class="text-body-2">2시간 후</v-list-item-title></v-list-item>
                 <v-divider v-if="sleepTimerSecondsLeft > 0" class="border-opacity-25 my-1"></v-divider>
                 <v-list-item v-if="sleepTimerSecondsLeft > 0" value="off" @click="cancelSleepTimer" class="text-red-lighten-2">
                   <v-list-item-title class="text-body-2 font-weight-bold">타이머 해제</v-list-item-title>
@@ -760,30 +784,18 @@
               </v-list>
             </v-menu>
 
-            <v-btn 
-              icon
-              variant="text" 
-              size="small" 
-              color="accent" 
-              class="mr-2"
-              :title="isLandscapeMode ? '세로 모드로 전환' : '가로 확장 모드로 전환'"
-              @click="toggleLandscapeMode"
-            >
+            <v-btn icon variant="text" size="small" color="accent" class="mr-2" @click="toggleLandscapeMode">
               <v-icon :icon="isLandscapeMode ? 'mdi-crop-portrait' : 'mdi-crop-landscape'" size="20"></v-icon>
             </v-btn>
             <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
           </div>
         </div>
 
-        <!-- 모달 내부 전체 컨테이너 -->
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
-          
-          <!-- 1. 영상 플레이어 영역 -->
           <div class="video-container" :class="{ 'landscape-expanded': isLandscapeMode }">
             <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
 
-          <!-- 영상 정보 및 시간 이동 컨트롤 영역 -->
           <div class="pa-3 pa-md-4 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-2 border-bottom-glass">
             <div class="flex-grow-1 overflow-hidden pr-2">
               <div class="d-flex align-center flex-wrap gap-2 mb-1">
@@ -808,165 +820,78 @@
             
             <div class="d-flex align-center jump-box-container pa-1 px-2 rounded-lg">
               <span class="text-caption text-grey-lighten-1 mr-1 flex-shrink-0">시간 제어:</span>
-              
               <div class="d-flex align-center mr-1">
-                <v-text-field
-                  v-model.number="jumpMinutes"
-                  type="number"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  class="custom-jump-input text-center mr-1"
-                  placeholder="0"
-                  min="0"
-                ></v-text-field>
+                <v-text-field v-model.number="jumpMinutes" type="number" density="compact" variant="outlined" hide-details class="custom-jump-input text-center mr-1" placeholder="0" min="0"></v-text-field>
                 <span class="text-caption text-white">분</span>
               </div>
-              
               <div class="d-flex align-center mr-2">
-                <v-text-field
-                  v-model.number="jumpSeconds"
-                  type="number"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  class="custom-jump-input text-center mr-1"
-                  placeholder="0"
-                  min="0"
-                  max="59"
-                ></v-text-field>
+                <v-text-field v-model.number="jumpSeconds" type="number" density="compact" variant="outlined" hide-details class="custom-jump-input text-center mr-1" placeholder="0" min="0" max="59"></v-text-field>
                 <span class="text-caption text-white">초</span>
               </div>
-
-              <!-- 이전(-) / 이후(+) 누적 이동 버튼 그룹 -->
               <div class="d-flex align-center gap-1">
-                <v-btn
-                  color="accent"
-                  variant="flat"
-                  size="small"
-                  class="px-2"
-                  title="지정한 시간으로 이동"
-                  @click="jumpToTime"
-                >
-                  이동
-                </v-btn>
-                <v-btn
-                  color="blue-grey-darken-2"
-                  variant="flat"
-                  size="small"
-                  class="px-2 font-weight-bold"
-                  title="입력한 분/초만큼 현재 위치에서 뒤로(누적 이전) 이동"
-                  @click="cumulativeJump(-1)"
-                >
-                  - 이전
-                </v-btn>
-                <v-btn
-                  color="amber-darken-2"
-                  variant="flat"
-                  size="small"
-                  class="px-2 font-weight-bold"
-                  title="입력한 분/초만큼 현재 위치에서 앞으로(누적 이후) 이동"
-                  @click="cumulativeJump(1)"
-                >
-                  + 이후
-                </v-btn>
+                <v-btn color="accent" variant="flat" size="small" class="px-2" @click="jumpToTime">이동</v-btn>
+                <v-btn color="blue-grey-darken-2" variant="flat" size="small" class="px-2 font-weight-bold" @click="cumulativeJump(-1)">- 이전</v-btn>
+                <v-btn color="amber-darken-2" variant="flat" size="small" class="px-2 font-weight-bold" @click="cumulativeJump(1)">+ 이후</v-btn>
               </div>
             </div>
 
             <div>
-              <v-btn
-                color="accent"
-                variant="outlined"
-                size="small"
-                :prepend-icon="showComments ? 'mdi-comment-off-outline' : 'mdi-comment-multiple-outline'"
-                @click="toggleCommentsView"
-              >
+              <v-btn color="accent" variant="outlined" size="small" :prepend-icon="showComments ? 'mdi-comment-off-outline' : 'mdi-comment-multiple-outline'" @click="toggleCommentsView">
                 {{ showComments ? '댓글 숨기기' : '댓글 보기' }}
               </v-btn>
             </div>
           </div>
 
-          <!-- 2. 댓글 영역 -->
           <div v-if="showComments" class="comments-section pa-3 border-bottom-glass position-relative">
             <div class="d-flex align-center gap-4 mb-3 pb-1 border-bottom-glass">
               <span class="text-subtitle-1 font-weight-bold text-white">
                 댓글 {{ totalCommentCount > 0 ? totalCommentCount.toLocaleString() + '개' : '' }}
               </span>
-              
               <v-menu location="bottom left">
                 <template v-slot:activator="{ props }">
-                  <v-btn
-                    v-bind="props"
-                    variant="text"
-                    size="small"
-                    class="text-none text-white font-weight-bold px-2"
-                    prepend-icon="mdi-sort-variant"
-                  >
-                    정렬 기준
-                  </v-btn>
+                  <v-btn v-bind="props" variant="text" size="small" class="text-none text-white font-weight-bold px-2" prepend-icon="mdi-sort-variant">정렬 기준</v-btn>
                 </template>
                 <v-list density="compact" class="glass-modal rounded-lg py-1">
-                  <v-list-item
-                    value="relevance"
-                    :class="{ 'text-accent': commentsOrder === 'relevance' }"
-                    @click="changeCommentsOrder('relevance')"
-                  >
-                    <v-list-item-title class="font-weight-bold text-body-2">인기순</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption text-grey-lighten-1">추천 댓글 표시</v-list-item-subtitle>
+                  <v-list-item value="relevance" :class="{ 'text-accent': commentsOrder === 'relevance' }" @click="changeCommentsOrder('relevance')">
+                    <v-list-item-title class="font-weight-bold text-body-2">인기 댓글순</v-list-item-title>
                   </v-list-item>
-                  <v-list-item
-                    value="time"
-                    :class="{ 'text-accent': commentsOrder === 'time' }"
-                    @click="changeCommentsOrder('time')"
-                  >
+                  <v-list-item value="time" :class="{ 'text-accent': commentsOrder === 'time' }" @click="changeCommentsOrder('time')">
                     <v-list-item-title class="font-weight-bold text-body-2">최신순</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption text-grey-lighten-1">최근 댓글부터 표시</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
               </v-menu>
             </div>
             
             <div ref="commentsScrollRef" class="comments-scroll-area" @scroll="checkCommentsScroll">
-              <div v-if="comments.length === 0 && !isLoadingComments" class="text-grey-darken-1 text-caption text-center py-4">
-                표시할 댓글이 없습니다.
-              </div>
+              <div v-if="comments.length === 0 && !isLoadingComments" class="text-grey-darken-1 text-caption text-center py-4">표시할 댓글이 없습니다.</div>
               
-              <div v-for="(comment, index) in comments" :key="index" class="comment-item mb-3 pb-2 border-bottom-glass">
+              <div v-for="(comment, index) in comments" :key="index" class="comment-item mb-3 pb-2 border-bottom-glass" :class="{ 'ml-8 pl-3 border-left-glass': comment.isReply }">
                 <div class="d-flex align-start">
-                  <v-avatar size="32" class="mr-3 mt-1 flex-shrink-0">
+                  <v-avatar :size="comment.isReply ? 24 : 32" class="mr-3 mt-1 flex-shrink-0">
                     <v-img :src="comment.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
                   </v-avatar>
-
                   <div class="flex-grow-1 overflow-hidden">
                     <div class="d-flex align-center flex-wrap gap-1 mb-1">
-                      <span 
-                        class="text-caption font-weight-bold mr-1"
-                        :class="comment.isOwner ? 'creator-author-badge' : 'text-white'"
-                      >
-                        {{ comment.author }}
-                      </span>
-
-                      <v-chip
-                        v-if="comment.isOwner"
-                        size="x-small"
-                        color="accent"
-                        variant="flat"
-                        class="px-1 py-0 height-auto font-weight-bold text-caption"
-                        style="height: 18px;"
-                      >
-                        채널 작성자
-                      </v-chip>
-
+                      <span class="text-caption font-weight-bold mr-1" :class="comment.isOwner ? 'creator-author-badge' : 'text-white'">{{ comment.author }}</span>
+                      <v-chip v-if="comment.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
                       <span class="text-grey-darken-1 text-caption ml-1">{{ comment.publishedAt }}</span>
                     </div>
-
                     <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="comment.text"></p>
-
                     <div class="d-flex align-center gap-2 text-caption text-grey-darken-1">
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
                         <span>{{ comment.likeCount > 0 ? comment.likeCount : '' }}</span>
                       </div>
+                      <v-btn
+                        v-if="comment.replyCount > 0 && !comment.repliesLoaded && !comment.isReply"
+                        variant="text"
+                        size="x-small"
+                        color="accent"
+                        class="text-none font-weight-bold px-1"
+                        @click="fetchRepliesForComment(comment)"
+                      >
+                        답글 {{ comment.replyCount }}개 더보기
+                      </v-btn>
                     </div>
                   </div>
                 </div>
@@ -977,40 +902,16 @@
                 <span class="text-grey-lighten-1 text-caption ml-2">댓글 더 불러오는 중...</span>
               </div>
             </div>
-
-            <v-slide-y-transition>
-              <v-btn
-                v-if="showCommentsScrollTop"
-                size="x-small"
-                color="deep-purple-darken-2"
-                variant="flat"
-                class="scroll-top-fab text-white"
-                title="댓글 상단으로 이동"
-                @click="scrollToTop(commentsScrollRef)"
-              >
-                <v-icon icon="mdi-chevron-up" color="white" size="18"></v-icon>
-              </v-btn>
-            </v-slide-y-transition>
           </div>
 
-          <!-- 3. 관련 영상 리스트 영역 -->
           <div class="related-videos-section pa-3 position-relative">
             <div class="text-subtitle-2 font-weight-bold text-white mb-3 d-flex align-center">
               <v-icon icon="mdi-playlist-play" class="mr-1 text-accent" size="20"></v-icon>
               관련 영상 (비슷한 채널 및 추천)
             </div>
-
-            <div v-if="relatedVideos.length === 0" class="text-grey-darken-1 text-caption text-center py-6">
-              관련 영상이 없습니다.
-            </div>
-
+            <div v-if="relatedVideos.length === 0" class="text-grey-darken-1 text-caption text-center py-6">관련 영상이 없습니다.</div>
             <div ref="relatedScrollRef" class="related-scroll-area-long" @scroll="checkRelatedScroll">
-              <div 
-                v-for="video in relatedVideos" 
-                :key="video.id" 
-                class="related-video-item d-flex align-center mb-2 pa-2 rounded-lg cursor-pointer"
-                @click="playVideo(video)"
-              >
+              <div v-for="video in relatedVideos" :key="video.id" class="related-video-item d-flex align-center mb-2 pa-2 rounded-lg cursor-pointer" @click="playVideo(video)">
                 <v-img :src="video.thumbnail" width="120" height="70" contain class="rounded-lg mr-3 flex-shrink-0 bg-black"></v-img>
                 <div class="overflow-hidden flex-grow-1">
                   <h4 class="text-white text-caption font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
@@ -1018,34 +919,7 @@
                 </div>
               </div>
             </div>
-            <v-slide-y-transition>
-              <v-btn
-                v-if="showRelatedScrollTop"
-                size="x-small"
-                color="deep-purple-darken-2"
-                variant="flat"
-                class="scroll-top-fab text-white"
-                title="관련 영상 상단으로 이동"
-                @click="scrollToTop(relatedScrollRef)"
-              >
-                <v-icon icon="mdi-chevron-up" color="white" size="18"></v-icon>
-              </v-btn>
-            </v-slide-y-transition>
           </div>
-
-          <v-slide-y-transition>
-            <v-btn
-              v-if="showModalScrollTop"
-              size="small"
-              color="deep-purple-darken-2"
-              variant="flat"
-              class="modal-scroll-top-fab text-white"
-              title="최상위로 이동"
-              @click="scrollToTop(modalScrollRef)"
-            >
-              <v-icon icon="mdi-chevron-up" color="white" size="24"></v-icon>
-            </v-btn>
-          </v-slide-y-transition>
         </div>
       </v-card>
     </v-dialog>
@@ -1060,6 +934,9 @@ const searchQuery = ref('')
 const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
+const isTrendingMode = ref(false)
+const isRecentUploadsMode = ref(false)     // 최근 업로드된 동영상 모드
+const isCustomTailoredMode = ref(false)   // 새로운 맞춤 동영상 모드
 const isFavoriteVideosMode = ref(false)
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
@@ -1067,9 +944,9 @@ const isLoading = ref(false)
 
 const creators = ref([])
 const videos = ref([])
+const trendingVideos = ref([])
 const historyList = ref([])
 
-// 재생 목록 폴더 및 관계 관리 State
 const playlists = ref([])
 const playlistItems = ref([])
 const activePlaylistId = ref(null)
@@ -1080,15 +957,14 @@ const editingPlaylist = ref(null)
 
 const isSaveToPlaylistDialogVisible = ref(false)
 const targetPlaylistIds = ref([])
-const quickNewPlaylistName = ref('') // [신설] 저장 다이얼로그 내 빠른 폴더 생성 입력 값
+const quickNewPlaylistName = ref('')
 
-// 영상 체크박스 선택 관리
 const selectedVideoIds = ref([])
 const playlistQueue = ref([])
 const playlistIndex = ref(0)
 
-// 채널별 페이징 토큰 관리 맵 (channelId -> nextPageToken)
 const channelNextPageTokens = ref(new Map())
+const trendingNextPageToken = ref(null)
 
 const isPlayerOpen = ref(false)
 const activeVideo = ref(null)
@@ -1103,7 +979,6 @@ const commentsOrder = ref('relevance')
 const initialWatchedTime = ref(0)
 const isLandscapeMode = ref(false)
 
-// 취침 예약 타이머 상태 관리
 const sleepTimerSecondsLeft = ref(0)
 const customSleepMinutes = ref(null)
 let sleepTimerInterval = null
@@ -1113,7 +988,6 @@ let historyInterval = null
 let currentPlayingTime = 0   
 
 let isPopStateTriggered = false
-
 const searchNextPageToken = ref(null)
 
 const handlePopState = () => {
@@ -1125,7 +999,6 @@ const handlePopState = () => {
 
 const jumpMinutes = ref(0)
 const jumpSeconds = ref(0)
-
 const currentApiKeyNumber = ref(1)
 
 const mainScrollRef = ref(null)
@@ -1134,8 +1007,6 @@ const commentsScrollRef = ref(null)
 const relatedScrollRef = ref(null)
 const showMainScrollTop = ref(false)
 const showModalScrollTop = ref(false)
-const showCommentsScrollTop = ref(false)
-const showRelatedScrollTop = ref(false)
 
 const checkMainScroll = (e) => {
   const target = e.target
@@ -1143,7 +1014,9 @@ const checkMainScroll = (e) => {
 
   const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
   if (bottomReached && !isLoading.value) {
-    if (isSearchMode.value && searchNextPageToken.value) {
+    if (isTrendingMode.value && trendingNextPageToken.value) {
+      loadMoreTrendingVideos()
+    } else if (isSearchMode.value && searchNextPageToken.value) {
       loadMoreSearchVideos()
     } else if (selectedCreator.value) {
       loadMoreChannelVideos(selectedCreator.value)
@@ -1157,8 +1030,6 @@ const checkModalScroll = (e) => {
 
 const checkCommentsScroll = (e) => {
   const target = e.target
-  showCommentsScrollTop.value = target.scrollTop > 20
-
   if (!isLoadingComments.value && commentsNextPageToken.value) {
     const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 40
     if (bottomReached) {
@@ -1167,15 +1038,11 @@ const checkCommentsScroll = (e) => {
   }
 }
 
-const checkRelatedScroll = (e) => {
-  showRelatedScrollTop.value = e.target.scrollTop > 20
-}
+const checkRelatedScroll = () => {}
 
 const scrollToTop = (el) => {
   let targetElement = el
-  if (el && el.$el) {
-    targetElement = el.$el
-  }
+  if (el && el.$el) targetElement = el.$el
   if (targetElement && typeof targetElement.scrollTo === 'function') {
     targetElement.scrollTo({ top: 0, behavior: 'smooth' })
   } else if (targetElement) {
@@ -1187,22 +1054,16 @@ const toggleLandscapeMode = () => {
   isLandscapeMode.value = !isLandscapeMode.value
 }
 
-// 취침 예약 타이머 설정 함수 (분 단위 입력)
 const setSleepTimer = (minutes) => {
   clearSleepTimer()
   sleepTimerSecondsLeft.value = minutes * 60
-
   sleepTimerInterval = setInterval(() => {
     if (sleepTimerSecondsLeft.value > 0) {
       sleepTimerSecondsLeft.value--
     } else {
       clearSleepTimer()
       if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
-        try {
-          ytPlayer.pauseVideo()
-        } catch (e) {
-          console.debug('취침 예약 일시정지 에러:', e)
-        }
+        try { ytPlayer.pauseVideo() } catch (e) { console.debug(e) }
       }
       closePlayer()
     }
@@ -1219,9 +1080,7 @@ const setCustomSleepTimer = () => {
   customSleepMinutes.value = null
 }
 
-const cancelSleepTimer = () => {
-  clearSleepTimer()
-}
+const cancelSleepTimer = () => { clearSleepTimer() }
 
 const clearSleepTimer = () => {
   if (sleepTimerInterval) {
@@ -1234,10 +1093,7 @@ const clearSleepTimer = () => {
 const formatSleepTime = (seconds) => {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
-  if (m > 0) {
-    return `${m}분 ${s}초`
-  }
-  return `${s}초`
+  return m > 0 ? `${m}분 ${s}초` : `${s}초`
 }
 
 const DB_NAME = 'NeonTubeDB_Clean'
@@ -1272,10 +1128,7 @@ const API_KEYS = [
   process.env.VUE_APP_YOUTUBE_API_KEY_9
 ].filter(Boolean)
 
-const getTodayString = () => {
-  const d = new Date()
-  return d.toISOString().split('T')[0]
-}
+const getTodayString = () => new Date().toISOString().split('T')[0]
 
 const getActiveApiKeyIndex = async () => {
   if (API_KEYS.length === 0) return 0
@@ -1302,20 +1155,14 @@ const saveNextApiKeyIndex = async (nextIndex) => {
 
   return new Promise((resolve) => {
     const tx = db.transaction('meta', 'readwrite')
-    tx.objectStore('meta').put({
-      id: 'api_key_state',
-      date: today,
-      currentIndex: nextIndex
-    })
+    tx.objectStore('meta').put({ id: 'api_key_state', date: today, currentIndex: nextIndex })
     tx.oncomplete = () => resolve(true)
     tx.onerror = () => resolve(false)
   })
 }
 
 const fetchWithKeyRotation = async (urlBuilder) => {
-  if (API_KEYS.length === 0) {
-    throw new Error('No API Keys available')
-  }
+  if (API_KEYS.length === 0) throw new Error('No API Keys available')
 
   let currentIndex = await getActiveApiKeyIndex()
   let attempts = 0
@@ -1329,8 +1176,7 @@ const fetchWithKeyRotation = async (urlBuilder) => {
     }
 
     currentApiKeyNumber.value = currentIndex + 1
-    const url = urlBuilder(apiKey)
-    const response = await fetch(url)
+    const response = await fetch(urlBuilder(apiKey))
     const data = await response.json()
 
     if (data.error) {
@@ -1345,10 +1191,8 @@ const fetchWithKeyRotation = async (urlBuilder) => {
         continue
       }
     }
-
     return data
   }
-
   throw new Error('모든 YouTube API 키의 일일 할당량이 소진되었습니다.')
 }
 
@@ -1356,46 +1200,30 @@ const parseISO8601Duration = (durationStr) => {
   if (!durationStr) return 0
   const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
   if (!match) return 0
-  const hours = parseInt(match[1] || 0, 10)
-  const minutes = parseInt(match[2] || 0, 10)
-  const seconds = parseInt(match[3] || 0, 10)
-  return (hours * 3600) + (minutes * 60) + seconds
+  return (parseInt(match[1] || 0, 10) * 3600) + (parseInt(match[2] || 0, 10) * 60) + parseInt(match[3] || 0, 10)
 }
 
 const fetchAndUpdateVideoDurations = async (videoList) => {
   if (!videoList || videoList.length === 0 || API_KEYS.length === 0) return videoList
-
   const targetVideos = videoList.filter(v => !v.duration || v.duration === 0)
   if (targetVideos.length === 0) return videoList
 
   const ids = targetVideos.map(v => v.youtubeId).slice(0, 50).join(',')
-
   try {
     const data = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${key}`
     )
-
-    if (data.items && data.items.length > 0) {
+    if (data.items) {
       const durationMap = new Map()
-      data.items.forEach(item => {
-        const durSec = parseISO8601Duration(item.contentDetails.duration)
-        durationMap.set(item.id, durSec)
-      })
-
+      data.items.forEach(item => durationMap.set(item.id, parseISO8601Duration(item.contentDetails.duration)))
       videoList.forEach(v => {
-        if (durationMap.has(v.youtubeId)) {
-          v.duration = durationMap.get(v.youtubeId)
-        }
+        if (durationMap.has(v.youtubeId)) v.duration = durationMap.get(v.youtubeId)
       })
     }
-  } catch (err) {
-    console.error('영상 길이(duration) 조회 실패:', err)
-  }
-
+  } catch (err) { console.error(err) }
   return videoList
 }
 
-// 재생 목록 폴더 생성 및 관리 로직
 const openCreatePlaylistDialog = () => {
   editingPlaylist.value = null
   playlistFormName.value = ''
@@ -1410,10 +1238,7 @@ const openEditPlaylistDialog = (playlist) => {
 
 const savePlaylistFolder = async () => {
   const name = playlistFormName.value.trim()
-  if (!name) {
-    alert('폴더 이름을 입력해 주세요.')
-    return
-  }
+  if (!name) { alert('폴더 이름을 입력해 주세요.'); return }
 
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
@@ -1423,12 +1248,7 @@ const savePlaylistFolder = async () => {
     editingPlaylist.value.name = name
     store.put(editingPlaylist.value)
   } else {
-    const newPlaylist = {
-      id: 'pl_' + Date.now(),
-      name: name,
-      order: playlists.value.length
-    }
-    store.put(newPlaylist)
+    store.put({ id: 'pl_' + Date.now(), name: name, order: playlists.value.length })
   }
 
   tx.oncomplete = async () => {
@@ -1437,32 +1257,19 @@ const savePlaylistFolder = async () => {
   }
 }
 
-// [신설] 저장 다이얼로그 내부에서 즉시 폴더 생성 후 체크 선택 처리
 const quickCreateAndSelectPlaylist = async () => {
   const name = quickNewPlaylistName.value.trim()
-  if (!name) {
-    alert('새 폴더 이름을 입력해 주세요.')
-    return
-  }
+  if (!name) { alert('새 폴더 이름을 입력해 주세요.'); return }
 
   const newId = 'pl_' + Date.now()
-  const newPlaylist = {
-    id: newId,
-    name: name,
-    order: playlists.value.length
-  }
-
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
-  tx.objectStore('playlists').put(newPlaylist)
+  tx.objectStore('playlists').put({ id: newId, name: name, order: playlists.value.length })
 
   tx.oncomplete = async () => {
     quickNewPlaylistName.value = ''
     await loadDataFromDB()
-    // 생성된 새 폴더를 자동으로 체크 선택 목록에 추가
-    if (!targetPlaylistIds.value.includes(newId)) {
-      targetPlaylistIds.value.push(newId)
-    }
+    if (!targetPlaylistIds.value.includes(newId)) targetPlaylistIds.value.push(newId)
   }
 }
 
@@ -1470,29 +1277,23 @@ const deletePlaylist = async (playlist) => {
   if (!confirm(`'${playlist.name}' 재생 목록을 삭제하시겠습니까?`)) return
   const db = await openDB()
   const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
-  
   tx.objectStore('playlists').delete(playlist.id)
   
   const itemStore = tx.objectStore('playlistItems')
   itemStore.openCursor().onsuccess = (e) => {
     const cursor = e.target.result
     if (cursor) {
-      if (cursor.value.playlistId === playlist.id) {
-        cursor.delete()
-      }
+      if (cursor.value.playlistId === playlist.id) cursor.delete()
       cursor.continue()
     }
   }
 
   tx.oncomplete = async () => {
-    if (activePlaylistId.value === playlist.id) {
-      activePlaylistId.value = null
-    }
+    if (activePlaylistId.value === playlist.id) activePlaylistId.value = null
     await loadDataFromDB()
   }
 }
 
-// 재생 목록 위아래 위치 변경
 const movePlaylistOrder = async (index, direction) => {
   const targetIndex = index + direction
   if (targetIndex < 0 || targetIndex >= playlists.value.length) return
@@ -1500,10 +1301,7 @@ const movePlaylistOrder = async (index, direction) => {
   const temp = playlists.value[index]
   playlists.value[index] = playlists.value[targetIndex]
   playlists.value[targetIndex] = temp
-
-  playlists.value.forEach((pl, idx) => {
-    pl.order = idx
-  })
+  playlists.value.forEach((pl, idx) => pl.order = idx)
 
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
@@ -1511,17 +1309,11 @@ const movePlaylistOrder = async (index, direction) => {
   playlists.value.forEach(pl => store.put(pl))
 }
 
-const getPlaylistVideoCount = (playlistId) => {
-  return playlistItems.value.filter(item => item.playlistId === playlistId).length
-}
+const getPlaylistVideoCount = (playlistId) => playlistItems.value.filter(item => item.playlistId === playlistId).length
 
-// 영상 -> 재생 목록에 저장 관리 버튼 연동
 const openSaveToPlaylistDialog = (video) => {
-  if (video) {
-    selectedVideoIds.value = [video.id]
-  }
+  if (video) selectedVideoIds.value = [video.id]
   if (selectedVideoIds.value.length === 0) return
-
   targetPlaylistIds.value = []
   quickNewPlaylistName.value = ''
   isSaveToPlaylistDialogVisible.value = true
@@ -1537,12 +1329,9 @@ const confirmSaveToPlaylists = async () => {
   const tx = db.transaction('playlistItems', 'readwrite')
   const store = tx.objectStore('playlistItems')
 
-  const existingItems = playlistItems.value
-
   selectedVideoIds.value.forEach(videoId => {
     targetPlaylistIds.value.forEach(playlistId => {
-      const alreadyExists = existingItems.some(item => item.playlistId === playlistId && item.videoId === videoId)
-      if (!alreadyExists) {
+      if (!playlistItems.value.some(item => item.playlistId === playlistId && item.videoId === videoId)) {
         store.add({ playlistId, videoId })
       }
     })
@@ -1556,13 +1345,11 @@ const confirmSaveToPlaylists = async () => {
   }
 }
 
-const selectPlaylistFolder = (playlist) => {
-  activePlaylistId.value = playlist.id
-}
+const selectPlaylistFolder = (playlist) => { activePlaylistId.value = playlist.id }
 
 const playPlaylistFolder = async (playlist) => {
   const itemVideoIds = playlistItems.value.filter(i => i.playlistId === playlist.id).map(i => i.videoId)
-  const targetVideos = videos.value.filter(v => itemVideoIds.includes(v.id))
+  const targetVideos = displayedVideos.value.filter(v => itemVideoIds.includes(v.id))
   if (targetVideos.length === 0) return
 
   playlistQueue.value = targetVideos
@@ -1587,9 +1374,7 @@ const playSelectedVideos = async () => {
   await startPlayingActiveVideo(selectedList[0])
 }
 
-const clearSelectedVideos = () => {
-  selectedVideoIds.value = []
-}
+const clearSelectedVideos = () => { selectedVideoIds.value = [] }
 
 const startPlayingActiveVideo = async (video) => {
   activeVideo.value = video
@@ -1619,16 +1404,12 @@ const startPlayingActiveVideo = async (video) => {
       }
       req.onerror = () => resolve(0)
     })
-
     initialWatchedTime.value = watchedTime
     currentPlayingTime = watchedTime
-  } catch (err) {
-    console.error('히스토리 로드 실패:', err)
-  }
+  } catch (err) { console.error(err) }
 
   isPlayerOpen.value = true
   fetchComments(video.youtubeId)
-
   await nextTick()
   initYouTubePlayer(video.youtubeId, initialWatchedTime.value)
 }
@@ -1659,55 +1440,31 @@ const closePlayer = () => {
   destroyYouTubePlayer()
   isPlayerOpen.value = false
 
-  if (!isPopStateTriggered) {
-    window.history.back()
-  }
+  if (!isPopStateTriggered) window.history.back()
   isPopStateTriggered = false
   window.removeEventListener('popstate', handlePopState)
-  
   loadDataFromDB()
 }
 
-const onDialogModelUpdate = (val) => {
-  if (!val) {
-    closePlayer()
-  }
-}
+const onDialogModelUpdate = (val) => { if (!val) closePlayer() }
 
 const initYouTubePlayer = (youtubeId, startTime) => {
   destroyYouTubePlayer()
-
   const startPos = startTime > 5 ? startTime : 0
 
   const createPlayerInstance = () => {
     if (!document.getElementById('youtube-player-div')) return
-
     ytPlayer = new window.YT.Player('youtube-player-div', {
       videoId: youtubeId,
-      playerVars: {
-        autoplay: 1,
-        playsinline: 1,
-        start: startPos
-      },
+      playerVars: { autoplay: 1, playsinline: 1, start: startPos },
       events: {
         onReady: (event) => {
-          if (startPos > 0 && event.target && typeof event.target.seekTo === 'function') {
-            event.target.seekTo(startPos, true)
-          }
-          if (activeVideo.value && event.target && typeof event.target.getDuration === 'function') {
-            const dur = event.target.getDuration()
-            if (dur > 0) {
-              activeVideo.value.duration = dur
-              updateVideoDurationInDB(activeVideo.value.id, dur)
-            }
-          }
+          if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
           startHistoryTracker()
         },
         onStateChange: (event) => {
-          if (event.data === 0 && playlistQueue.value.length > 1) {
-            if (playlistIndex.value < playlistQueue.value.length - 1) {
-              playNextInQueue()
-            }
+          if (event.data === 0 && playlistIndex.value < playlistQueue.value.length - 1) {
+            playNextInQueue()
           }
         }
       }
@@ -1720,40 +1477,16 @@ const initYouTubePlayer = (youtubeId, startTime) => {
     if (!window.onYouTubeIframeAPIReady) {
       const tag = document.createElement('script')
       tag.src = 'https://www.youtube.com/iframe_api'
-      const firstScriptTag = document.getElementsByTagName('script')[0]
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag)
+      document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0])
     }
-    window.onYouTubeIframeAPIReady = () => {
-      createPlayerInstance()
-    }
-  }
-}
-
-const updateVideoDurationInDB = async (videoId, duration) => {
-  try {
-    const db = await openDB()
-    const tx = db.transaction('videos', 'readwrite')
-    const store = tx.objectStore('videos')
-    store.get(videoId).onsuccess = (e) => {
-      const v = e.target.result
-      if (v) {
-        v.duration = duration
-        store.put(v)
-      }
-    }
-  } catch (err) {
-    console.error('DB 비디오 길이 업데이트 실패:', err)
+    window.onYouTubeIframeAPIReady = () => createPlayerInstance()
   }
 }
 
 const destroyYouTubePlayer = () => {
   stopHistoryTracker()
   if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-    try {
-      ytPlayer.destroy()
-    } catch (e) {
-      console.debug('플레이어 파괴 중 에러 무시:', e)
-    }
+    try { ytPlayer.destroy() } catch (e) { console.debug(e) }
   }
   ytPlayer = null
 }
@@ -1768,9 +1501,7 @@ const startHistoryTracker = () => {
           currentPlayingTime = Math.floor(t)
           saveCurrentHistoryToDB()
         }
-      } catch (e) {
-        console.debug('현재 시간 가져오기 에러 무시:', e)
-      }
+      } catch (e) { console.debug(e) }
     }
   }, 1000)
 }
@@ -1801,96 +1532,55 @@ const saveCurrentHistoryToDB = async () => {
       targetVideo.currentTime = Math.floor(currentPlayingTime)
       targetVideo.duration = dur
       targetVideo.historyUpdatedAt = new Date().toISOString()
-      if (dur > 0) {
-        targetVideo.progressPercent = Math.min(100, Math.floor((currentPlayingTime / dur) * 100))
-      }
+      if (dur > 0) targetVideo.progressPercent = Math.min(100, Math.floor((currentPlayingTime / dur) * 100))
     }
-    loadDataFromDB()
-  } catch (err) {
-    console.error('히스토리 저장 실패:', err)
-  }
+  } catch (err) { console.error(err) }
 }
 
 const jumpToTime = () => {
-  const m = Number(jumpMinutes.value) || 0
-  const s = Number(jumpSeconds.value) || 0
-  const totalSeconds = (m * 60) + s
-
+  const totalSeconds = (Number(jumpMinutes.value) || 0) * 60 + (Number(jumpSeconds.value) || 0)
   if (totalSeconds < 0) return
-
   currentPlayingTime = totalSeconds
   saveCurrentHistoryToDB()
-
-  if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
-    ytPlayer.seekTo(totalSeconds, true)
-  }
+  if (ytPlayer && typeof ytPlayer.seekTo === 'function') ytPlayer.seekTo(totalSeconds, true)
 }
 
 const cumulativeJump = (direction) => {
-  const m = Number(jumpMinutes.value) || 0
-  const s = Number(jumpSeconds.value) || 0
-  const stepSeconds = (m * 60) + s
-
+  const stepSeconds = (Number(jumpMinutes.value) || 0) * 60 + (Number(jumpSeconds.value) || 0)
   if (stepSeconds <= 0) return
 
   let currentTime = currentPlayingTime
   if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-    try {
-      currentTime = ytPlayer.getCurrentTime()
-    } catch (e) {
-      console.debug('누적 이동 시간 가져오기 에러 무시:', e)
-    }
+    try { currentTime = ytPlayer.getCurrentTime() } catch (e) { console.debug(e) }
   }
 
   const targetSeconds = Math.max(0, currentTime + (stepSeconds * direction))
   currentPlayingTime = targetSeconds
   saveCurrentHistoryToDB()
-
-  if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
-    ytPlayer.seekTo(targetSeconds, true)
-  }
+  if (ytPlayer && typeof ytPlayer.seekTo === 'function') ytPlayer.seekTo(targetSeconds, true)
 }
 
-const formatTime = (seconds) => {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}분 ${s}초`
-}
+const formatTime = (seconds) => `${Math.floor(seconds / 60)}분 ${seconds % 60}초`
 
 const formatRelativeTime = (dateString) => {
   if (!dateString) return ''
-  const now = new Date()
-  const targetDate = new Date(dateString)
-  const diffMs = now - targetDate
-  const diffSec = Math.floor(diffMs / 1000)
+  const diffSec = Math.floor((new Date() - new Date(dateString)) / 1000)
   const diffMin = Math.floor(diffSec / 60)
   const diffHour = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHour / 24)
 
-  if (diffDay > 0) {
-    return dateString.substring(0, 10)
-  } else if (diffHour > 0) {
-    return `${diffHour}시간 전`
-  } else if (diffMin > 0) {
-    return `${diffMin}분 전`
-  } else {
-    return '방금 전'
-  }
+  if (diffDay > 0) return dateString.substring(0, 10)
+  if (diffHour > 0) return `${diffHour}시간 전`
+  if (diffMin > 0) return `${diffMin}분 전`
+  return '방금 전'
 }
 
 const fetchVideoCommentCount = async (youtubeId) => {
   if (API_KEYS.length === 0) return
   try {
-    const data = await fetchWithKeyRotation((key) =>
-      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${youtubeId}&key=${key}`
-    )
-    if (data.items && data.items.length > 0) {
-      const stats = data.items[0].statistics
-      totalCommentCount.value = parseInt(stats.commentCount || 0, 10)
-    }
-  } catch (err) {
-    console.error('댓글 개수를 불러오지 못했습니다:', err)
-  }
+    const data = await fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${youtubeId}&key=${key}`)
+    if (data.items) totalCommentCount.value = parseInt(data.items[0].statistics.commentCount || 0, 10)
+  } catch (err) { console.error(err) }
 }
 
 const changeCommentsOrder = (order) => {
@@ -1898,45 +1588,102 @@ const changeCommentsOrder = (order) => {
   commentsOrder.value = order
   comments.value = []
   commentsNextPageToken.value = null
-  if (activeVideo.value) {
-    fetchComments(activeVideo.value.youtubeId)
-  }
+  if (activeVideo.value) fetchComments(activeVideo.value.youtubeId)
 }
 
 const fetchComments = async (youtubeId) => {
   if (API_KEYS.length === 0) return
   isLoadingComments.value = true
-
   fetchVideoCommentCount(youtubeId)
 
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=10&order=${commentsOrder.value}&videoId=${youtubeId}&key=${key}`
+      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&maxResults=15&order=${commentsOrder.value}&videoId=${youtubeId}&key=${key}`
     )
     if (data.items) {
       const currentCreatorId = activeVideo.value?.creatorId
+      const parsedComments = []
 
-      comments.value = data.items.map(item => {
-        const snippet = item.snippet.topLevelComment.snippet
-        const authorChannelId = snippet.authorChannelId?.value
+      data.items.forEach(item => {
+        const topSnippet = item.snippet.topLevelComment.snippet
+        const topAuthorChannelId = topSnippet.authorChannelId?.value
+        const replyCount = item.snippet.totalReplyCount || 0
 
-        return {
-          author: snippet.authorDisplayName,
-          authorProfileImageUrl: snippet.authorProfileImageUrl,
-          authorChannelId: authorChannelId,
-          text: snippet.textDisplay,
-          publishedAt: snippet.publishedAt.substring(0, 10),
-          likeCount: snippet.likeCount || 0,
-          isOwner: Boolean(currentCreatorId && authorChannelId === currentCreatorId)
+        parsedComments.push({
+          id: item.id,
+          author: topSnippet.authorDisplayName,
+          authorProfileImageUrl: topSnippet.authorProfileImageUrl,
+          authorChannelId: topAuthorChannelId,
+          text: topSnippet.textDisplay,
+          publishedAt: topSnippet.publishedAt.substring(0, 10),
+          likeCount: topSnippet.likeCount || 0,
+          isOwner: Boolean(currentCreatorId && topAuthorChannelId === currentCreatorId),
+          isReply: false,
+          replyCount,
+          repliesLoaded: replyCount <= 5
+        })
+
+        if (item.replies && item.replies.comments) {
+          item.replies.comments.forEach(replyItem => {
+            const rSnippet = replyItem.snippet
+            const rAuthorChannelId = rSnippet.authorChannelId?.value
+            parsedComments.push({
+              id: replyItem.id,
+              author: rSnippet.authorDisplayName,
+              authorProfileImageUrl: rSnippet.authorProfileImageUrl,
+              authorChannelId: rAuthorChannelId,
+              text: rSnippet.textDisplay,
+              publishedAt: rSnippet.publishedAt.substring(0, 10),
+              likeCount: rSnippet.likeCount || 0,
+              isOwner: Boolean(currentCreatorId && rAuthorChannelId === currentCreatorId),
+              isReply: true,
+              parentId: item.id
+            })
+          })
         }
       })
+
+      comments.value = parsedComments
       commentsNextPageToken.value = data.nextPageToken || null
     }
-  } catch (err) {
-    console.error('댓글을 불러오지 못했습니다:', err)
-  } finally {
-    isLoadingComments.value = false
-  }
+  } catch (err) { console.error(err) } finally { isLoadingComments.value = false }
+}
+
+const fetchRepliesForComment = async (parentComment) => {
+  if (API_KEYS.length === 0) return
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/comments?part=snippet&parentId=${parentComment.id}&maxResults=50&key=${key}`
+    )
+    if (data.items) {
+      const currentCreatorId = activeVideo.value?.creatorId
+      const parentIndex = comments.value.findIndex(c => c.id === parentComment.id)
+      if (parentIndex === -1) return
+
+      const newReplies = data.items.map(replyItem => {
+        const rSnippet = replyItem.snippet
+        const rAuthorChannelId = rSnippet.authorChannelId?.value
+        return {
+          id: replyItem.id,
+          author: rSnippet.authorDisplayName,
+          authorProfileImageUrl: rSnippet.authorProfileImageUrl,
+          authorChannelId: rAuthorChannelId,
+          text: rSnippet.textDisplay,
+          publishedAt: rSnippet.publishedAt.substring(0, 10),
+          likeCount: rSnippet.likeCount || 0,
+          isOwner: Boolean(currentCreatorId && rAuthorChannelId === currentCreatorId),
+          isReply: true,
+          parentId: parentComment.id
+        }
+      })
+
+      const existingIds = new Set(comments.value.map(c => c.id))
+      const uniqueReplies = newReplies.filter(r => !existingIds.has(r.id))
+
+      comments.value.splice(parentIndex + 1, 0, ...uniqueReplies)
+      parentComment.repliesLoaded = true
+    }
+  } catch (err) { console.error(err) }
 }
 
 const fetchMoreComments = async (youtubeId) => {
@@ -1944,163 +1691,255 @@ const fetchMoreComments = async (youtubeId) => {
   isLoadingComments.value = true
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=10&order=${commentsOrder.value}&pageToken=${commentsNextPageToken.value}&videoId=${youtubeId}&key=${key}`
+      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&maxResults=15&order=${commentsOrder.value}&pageToken=${commentsNextPageToken.value}&videoId=${youtubeId}&key=${key}`
     )
     if (data.items) {
       const currentCreatorId = activeVideo.value?.creatorId
+      const moreParsedComments = []
 
-      const moreComments = data.items.map(item => {
-        const snippet = item.snippet.topLevelComment.snippet
-        const authorChannelId = snippet.authorChannelId?.value
+      data.items.forEach(item => {
+        const topSnippet = item.snippet.topLevelComment.snippet
+        const topAuthorChannelId = topSnippet.authorChannelId?.value
+        const replyCount = item.snippet.totalReplyCount || 0
 
-        return {
-          author: snippet.authorDisplayName,
-          authorProfileImageUrl: snippet.authorProfileImageUrl,
-          authorChannelId: authorChannelId,
-          text: snippet.textDisplay,
-          publishedAt: snippet.publishedAt.substring(0, 10),
-          likeCount: snippet.likeCount || 0,
-          isOwner: Boolean(currentCreatorId && authorChannelId === currentCreatorId)
+        moreParsedComments.push({
+          id: item.id,
+          author: topSnippet.authorDisplayName,
+          authorProfileImageUrl: topSnippet.authorProfileImageUrl,
+          authorChannelId: topAuthorChannelId,
+          text: topSnippet.textDisplay,
+          publishedAt: topSnippet.publishedAt.substring(0, 10),
+          likeCount: topSnippet.likeCount || 0,
+          isOwner: Boolean(currentCreatorId && topAuthorChannelId === currentCreatorId),
+          isReply: false,
+          replyCount,
+          repliesLoaded: replyCount <= 5
+        })
+
+        if (item.replies && item.replies.comments) {
+          item.replies.comments.forEach(replyItem => {
+            const rSnippet = replyItem.snippet
+            const rAuthorChannelId = rSnippet.authorChannelId?.value
+            moreParsedComments.push({
+              id: replyItem.id,
+              author: rSnippet.authorDisplayName,
+              authorProfileImageUrl: rSnippet.authorProfileImageUrl,
+              authorChannelId: rAuthorChannelId,
+              text: rSnippet.textDisplay,
+              publishedAt: rSnippet.publishedAt.substring(0, 10),
+              likeCount: rSnippet.likeCount || 0,
+              isOwner: Boolean(currentCreatorId && rAuthorChannelId === currentCreatorId),
+              isReply: true,
+              parentId: item.id
+            })
+          })
         }
       })
-      comments.value.push(...moreComments)
+
+      comments.value.push(...moreParsedComments)
       commentsNextPageToken.value = data.nextPageToken || null
     }
-  } catch (err) {
-    console.error('추가 댓글을 불러오지 못했습니다:', err)
-  } finally {
-    isLoadingComments.value = false
-  }
+  } catch (err) { console.error(err) } finally { isLoadingComments.value = false }
 }
 
 const loadDataFromDB = async () => {
   const db = await openDB()
   
-  const creatorTx = db.transaction('creators', 'readonly')
-  let dbCreators = await new Promise((resolve) => {
-    creatorTx.objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
-  })
-  creators.value = (dbCreators || []).map(c => ({
-    ...c,
-    isFavorite: c.isFavorite ?? false
-  }))
+  creators.value = (await new Promise((resolve) => {
+    db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
+  }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
-  const videoTx = db.transaction('videos', 'readonly')
-  let dbVideos = await new Promise((resolve) => {
-    videoTx.objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
+  const dbVideos = await new Promise((resolve) => {
+    db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
   })
 
-  const historyTx = db.transaction('history', 'readonly')
-  let dbHistory = await new Promise((resolve) => {
-    historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+  const dbHistory = await new Promise((resolve) => {
+    db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
   })
   
   historyList.value = dbHistory || []
-  const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
+  const historyMap = new Map(historyList.value.map(h => [h.videoId, h]))
   
-  const processedVideos = (dbVideos || []).map(v => {
+  videos.value = (dbVideos || []).map(v => {
     const h = historyMap.get(v.id)
     const videoDuration = h?.duration || v.duration || 0
     const currentTime = h?.currentTime || 0
-    let percent = 0
-    if (currentTime > 0 && videoDuration > 0) {
-      percent = Math.min(100, Math.floor((currentTime / videoDuration) * 100))
-    }
-    return {
-      ...v,
-      duration: videoDuration,
-      currentTime: currentTime,
-      progressPercent: percent,
-      historyUpdatedAt: h?.updatedAt || null
-    }
+    let percent = (currentTime > 0 && videoDuration > 0) ? Math.min(100, Math.floor((currentTime / videoDuration) * 100)) : 0
+    return { ...v, duration: videoDuration, currentTime, progressPercent: percent, historyUpdatedAt: h?.updatedAt || null }
   }).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
-  videos.value = processedVideos
+  playlists.value = (await new Promise((resolve) => {
+    db.transaction('playlists', 'readonly').objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
+  }) || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-  // 재생 목록 폴더 및 아이템 로드
-  const plTx = db.transaction('playlists', 'readonly')
-  let dbPls = await new Promise((resolve) => {
-    plTx.objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
-  })
-  playlists.value = (dbPls || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-
-  const pliTx = db.transaction('playlistItems', 'readonly')
-  let dbPlis = await new Promise((resolve) => {
-    pliTx.objectStore('playlistItems').getAll().onsuccess = (e) => resolve(e.target.result)
-  })
-  playlistItems.value = dbPlis || []
-
-  await fetchAndUpdateVideoDurations(videos.value)
+  playlistItems.value = await new Promise((resolve) => {
+    db.transaction('playlistItems', 'readonly').objectStore('playlistItems').getAll().onsuccess = (e) => resolve(e.target.result)
+  }) || []
 }
 
 const toggleVideoFavorite = async (video) => {
   video.isFavorite = !video.isFavorite
   const db = await openDB()
-  const tx = db.transaction('videos', 'readwrite')
-  tx.objectStore('videos').put(JSON.parse(JSON.stringify(video)))
+  db.transaction('videos', 'readwrite').objectStore('videos').put(JSON.parse(JSON.stringify(video)))
 }
 
 const toggleCreatorFavorite = async (creator) => {
   creator.isFavorite = !creator.isFavorite
   const db = await openDB()
-  const tx = db.transaction('creators', 'readwrite')
-  tx.objectStore('creators').put(JSON.parse(JSON.stringify(creator)))
+  db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(creator)))
 }
 
 const subscribeCreatorFromCard = async (video) => {
-  const creatorId = video.creatorId
-  const exists = creators.value.some(c => c.id === creatorId)
-  if (exists) return
-
-  const newCreator = {
-    id: creatorId,
-    name: video.creatorName,
-    subCount: '구독중',
-    avatar: video.thumbnail || 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
-    isFavorite: false
-  }
-
+  if (creators.value.some(c => c.id === video.creatorId)) return
+  const newCreator = { id: video.creatorId, name: video.creatorName, subCount: '구독중', avatar: video.thumbnail || 'https://cdn.vuetifyjs.com/images/lists/1.jpg', isFavorite: false }
   creators.value.push(newCreator)
   const db = await openDB()
-  const tx = db.transaction('creators', 'readwrite')
-  tx.objectStore('creators').put(newCreator)
-
+  db.transaction('creators', 'readwrite').objectStore('creators').put(newCreator)
   await fetchChannelVideos(newCreator)
 }
 
 const unsubscribeCreator = async (creator) => {
   if (!confirm(`'${creator.name}' 채널 구독을 취소하시겠습니까?`)) return
-
   creators.value = creators.value.filter(c => c.id !== creator.id)
   const db = await openDB()
-  const tx = db.transaction('creators', 'readwrite')
-  tx.objectStore('creators').delete(creator.id)
+  db.transaction('creators', 'readwrite').objectStore('creators').delete(creator.id)
+  if (selectedCreator.value?.id === creator.id) selectDiscoverHeart()
+}
 
-  if (selectedCreator.value && selectedCreator.value.id === creator.id) {
-    selectDiscoverHeart()
+const fetchTrendingVideos = async () => {
+  if (API_KEYS.length === 0) return
+  isLoading.value = true
+  trendingNextPageToken.value = null
+
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=25&key=${key}`
+    )
+
+    if (data.error || !data.items) return
+
+    trendingNextPageToken.value = data.nextPageToken || null
+
+    const db = await openDB()
+    const dbHistory = await new Promise((resolve) => {
+      db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    })
+    const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
+    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+    const parsedTrending = data.items.map(item => {
+      const snippet = item.snippet
+      const videoId = item.id
+      const title = snippet.title.toLowerCase()
+      const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+      const parsed = {
+        id: videoId,
+        youtubeId: videoId,
+        creatorId: snippet.channelId,
+        creatorName: snippet.channelTitle,
+        title: snippet.title,
+        thumbnail: thumbUrl,
+        isShorts,
+        isFavorite: existingMap.get(videoId) || false,
+        views: snippet.publishedAt.substring(0, 10),
+        publishedAt: snippet.publishedAt,
+        duration: parseISO8601Duration(item.contentDetails?.duration),
+        progressPercent: 0,
+        currentTime: 0,
+        historyUpdatedAt: null
+      }
+
+      const h = historyMap.get(parsed.id)
+      if (h) {
+        parsed.currentTime = h.currentTime || 0
+        parsed.duration = h.duration || parsed.duration
+        parsed.historyUpdatedAt = h.updatedAt || null
+        if (parsed.currentTime > 0 && parsed.duration > 0) {
+          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
+        }
+      }
+      return parsed
+    })
+
+    trendingVideos.value = parsedTrending
+
+    const tx = db.transaction('videos', 'readwrite')
+    const store = tx.objectStore('videos')
+    parsedTrending.forEach(v => store.put(v))
+  } catch (error) {
+    console.error('인기 급상승 영상 불러오기 실패:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
-const parseVideoItem = (item) => {
-  const title = item.snippet.title.toLowerCase()
-  const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
-  let isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+const loadMoreTrendingVideos = async () => {
+  if (API_KEYS.length === 0 || !trendingNextPageToken.value) return
+  isLoading.value = true
 
-  return {
-    id: item.id.videoId,
-    youtubeId: item.id.videoId,
-    creatorId: item.snippet.channelId,
-    creatorName: item.snippet.channelTitle,
-    title: item.snippet.title,
-    thumbnail: thumbUrl,
-    isShorts: isShorts,
-    isFavorite: false,
-    views: item.snippet.publishedAt.substring(0, 10),
-    publishedAt: item.snippet.publishedAt,
-    duration: 0,
-    progressPercent: 0,
-    currentTime: 0,
-    historyUpdatedAt: null
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=25&pageToken=${trendingNextPageToken.value}&key=${key}`
+    )
+
+    if (data.error || !data.items) return
+
+    trendingNextPageToken.value = data.nextPageToken || null
+
+    const db = await openDB()
+    const dbHistory = await new Promise((resolve) => {
+      db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    })
+    const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
+    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+    const moreTrending = data.items.map(item => {
+      const snippet = item.snippet
+      const videoId = item.id
+      const title = snippet.title.toLowerCase()
+      const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+      const parsed = {
+        id: videoId,
+        youtubeId: videoId,
+        creatorId: snippet.channelId,
+        creatorName: snippet.channelTitle,
+        title: snippet.title,
+        thumbnail: thumbUrl,
+        isShorts,
+        isFavorite: existingMap.get(videoId) || false,
+        views: snippet.publishedAt.substring(0, 10),
+        publishedAt: snippet.publishedAt,
+        duration: parseISO8601Duration(item.contentDetails?.duration),
+        progressPercent: 0,
+        currentTime: 0,
+        historyUpdatedAt: null
+      }
+
+      const h = historyMap.get(parsed.id)
+      if (h) {
+        parsed.currentTime = h.currentTime || 0
+        parsed.duration = h.duration || parsed.duration
+        parsed.historyUpdatedAt = h.updatedAt || null
+        if (parsed.currentTime > 0 && parsed.duration > 0) {
+          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
+        }
+      }
+      return parsed
+    })
+
+    trendingVideos.value.push(...moreTrending)
+
+    const tx = db.transaction('videos', 'readwrite')
+    const store = tx.objectStore('videos')
+    moreTrending.forEach(v => store.put(v))
+  } catch (error) {
+    console.error('인기 급상승 추가 영상 로드 실패:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -2109,8 +1948,16 @@ const fetchChannelVideos = async (creator) => {
 
   try {
     channelNextPageTokens.value.delete(creator.id)
+
+    const channelData = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${creator.id}&key=${key}`
+    )
+
+    if (channelData.error || !channelData.items || channelData.items.length === 0) return
+    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&channelId=${creator.id}&order=date&type=video&key=${key}`
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&key=${key}`
     )
 
     if (!data.error && data.items) {
@@ -2122,14 +1969,31 @@ const fetchChannelVideos = async (creator) => {
       const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt }]))
 
       const channelVideos = data.items.map(item => {
-        const parsed = parseVideoItem(item)
+        const snippet = item.snippet
+        const videoId = snippet.resourceId?.videoId || snippet.resourceId
+        const title = snippet.title.toLowerCase()
+        const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+        const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+        const parsed = {
+          id: videoId,
+          youtubeId: videoId,
+          creatorId: snippet.channelId,
+          creatorName: snippet.channelTitle,
+          title: snippet.title,
+          thumbnail: thumbUrl,
+          isShorts: isShorts,
+          isFavorite: false,
+          views: snippet.publishedAt.substring(0, 10),
+          publishedAt: snippet.publishedAt,
+          duration: 0,
+          progressPercent: 0,
+          currentTime: 0,
+          historyUpdatedAt: null
+        }
+
         if (existingMap.has(parsed.id)) {
-          const info = existingMap.get(parsed.id)
-          parsed.isFavorite = info.isFavorite
-          parsed.progressPercent = info.progressPercent
-          parsed.currentTime = info.currentTime
-          parsed.duration = info.duration
-          parsed.historyUpdatedAt = info.historyUpdatedAt
+          Object.assign(parsed, existingMap.get(parsed.id))
         }
         return parsed
       })
@@ -2139,11 +2003,9 @@ const fetchChannelVideos = async (creator) => {
       const tx = db.transaction('videos', 'readwrite')
       const store = tx.objectStore('videos')
       channelVideos.forEach(v => store.put(v))
-
-      await loadDataFromDB()
     }
   } catch (error) {
-    console.error('채널 영상 불러오기 실패:', error)
+    console.error('채널 업로드 영상 불러오기 실패:', error)
   }
 }
 
@@ -2151,66 +2013,74 @@ const loadMoreChannelVideos = async (creator) => {
   if (API_KEYS.length === 0 || !creator) return
   const pageToken = channelNextPageTokens.value.get(creator.id)
   if (!pageToken) return
-
   isLoading.value = true
 
   try {
-    const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&channelId=${creator.id}&order=date&type=video&pageToken=${pageToken}&key=${key}`
+    const channelData = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${creator.id}&key=${key}`
     )
+    if (channelData.error || !channelData.items || channelData.items.length === 0) return
+    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
 
-    if (data.error || !data.items) {
-      isLoading.value = false
-      return
-    }
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&pageToken=${pageToken}&key=${key}`
+    )
+    if (data.error || !data.items) return
 
-    if (data.nextPageToken) {
-      channelNextPageTokens.value.set(creator.id, data.nextPageToken)
-    } else {
-      channelNextPageTokens.value.delete(creator.id)
-    }
+    if (data.nextPageToken) channelNextPageTokens.value.set(creator.id, data.nextPageToken)
+    else channelNextPageTokens.value.delete(creator.id)
 
     const db = await openDB()
-    const historyTx = db.transaction('history', 'readonly')
-    let dbHistory = await new Promise((resolve) => {
-      historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    const dbHistory = await new Promise((resolve) => {
+      db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
     })
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
     const moreVideos = data.items.map(item => {
-      const parsed = parseVideoItem(item)
-      if (existingMap.has(parsed.id)) {
-        parsed.isFavorite = existingMap.get(parsed.id)
+      const snippet = item.snippet
+      const videoId = snippet.resourceId?.videoId || snippet.resourceId
+      const title = snippet.title.toLowerCase()
+      const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+      const parsed = {
+        id: videoId,
+        youtubeId: videoId,
+        creatorId: snippet.channelId,
+        creatorName: snippet.channelTitle,
+        title: snippet.title,
+        thumbnail: thumbUrl,
+        isShorts,
+        isFavorite: existingMap.get(videoId) || false,
+        views: snippet.publishedAt.substring(0, 10),
+        publishedAt: snippet.publishedAt,
+        duration: 0,
+        progressPercent: 0,
+        currentTime: 0,
+        historyUpdatedAt: null
       }
+
       const h = historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
         parsed.duration = h.duration || 0
         parsed.historyUpdatedAt = h.updatedAt || null
-        if (parsed.currentTime > 0 && parsed.duration > 0) {
-          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
-        }
+        if (parsed.currentTime > 0 && parsed.duration > 0) parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
       }
       return parsed
     })
 
     await fetchAndUpdateVideoDurations(moreVideos)
     videos.value.push(...moreVideos)
-
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
     moreVideos.forEach(v => store.put(v))
-
-  } catch (error) {
-    console.error('추가 채널 영상 요청 실패:', error)
-  } finally {
-    isLoading.value = false
-  }
+  } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
 const handleSearch = () => {
-  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value || isPlaylistMode.value) return
+  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value || isPlaylistMode.value || isTrendingMode.value || isRecentUploadsMode.value || isCustomTailoredMode.value) return
   if (isSearchMode.value) searchYouTubeVideos()
 }
 
@@ -2229,9 +2099,10 @@ const fetchAllSubscribedCreatorsVideos = async () => {
   }
   isLoading.value = true
   try {
-    for (const creator of creators.value) {
-      await fetchChannelVideos(creator)
-    }
+    const promises = creators.value.map(creator => fetchChannelVideos(creator))
+    await Promise.all(promises)
+
+    await loadDataFromDB()
     selectDiscoverAll()
   } catch (err) {
     console.error('구독자 전체 영상 로드 실패:', err)
@@ -2242,7 +2113,6 @@ const fetchAllSubscribedCreatorsVideos = async () => {
 
 const searchYouTubeVideos = async () => {
   if (!searchQuery.value.trim() || API_KEYS.length === 0) return
-  
   const query = searchQuery.value.trim()
   isLoading.value = true
   searchNextPageToken.value = null
@@ -2251,124 +2121,106 @@ const searchYouTubeVideos = async () => {
     const data = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(query)}&type=video&key=${key}`
     )
-    
-    if (data.error) {
-      isLoading.value = false
-      return
-    }
+    if (data.error) return
 
     searchNextPageToken.value = data.nextPageToken || null
-
     const db = await openDB()
-    const historyTx = db.transaction('history', 'readonly')
-    let dbHistory = await new Promise((resolve) => {
-      historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    const dbHistory = await new Promise((resolve) => {
+      db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
     })
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
-    const apiVideos = data.items.map(item => {
-      const parsed = parseVideoItem(item)
-      if (existingMap.has(parsed.id)) {
-        parsed.isFavorite = existingMap.get(parsed.id)
+    const parseSearchItem = (item) => {
+      const title = item.snippet.title.toLowerCase()
+      const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
+      return {
+        id: item.id.videoId,
+        youtubeId: item.id.videoId,
+        creatorId: item.snippet.channelId,
+        creatorName: item.snippet.channelTitle,
+        title: item.snippet.title,
+        thumbnail: thumbUrl,
+        isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+        isFavorite: existingMap.get(item.id.videoId) || false,
+        views: item.snippet.publishedAt.substring(0, 10),
+        publishedAt: item.snippet.publishedAt,
+        duration: 0,
+        progressPercent: 0,
+        currentTime: 0,
+        historyUpdatedAt: null
       }
+    }
+
+    const apiVideos = data.items.filter(item => item.id?.videoId).map(item => {
+      const parsed = parseSearchItem(item)
       const h = historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
         parsed.duration = h.duration || 0
         parsed.historyUpdatedAt = h.updatedAt || null
-        if (parsed.currentTime > 0 && parsed.duration > 0) {
-          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
-        }
+        if (parsed.currentTime > 0 && parsed.duration > 0) parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
       }
       return parsed
     })
 
     await fetchAndUpdateVideoDurations(apiVideos)
-
-    apiVideos.forEach(v => {
-      const h = historyMap.get(v.id)
-      if (h && h.currentTime > 0 && v.duration > 0) {
-        v.progressPercent = Math.min(100, Math.floor((h.currentTime / v.duration) * 100))
-      }
-    })
-
     apiVideos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
     videos.value = apiVideos
 
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
     apiVideos.forEach(v => store.put(v))
-
-  } catch (error) {
-    console.error('YouTube API 요청 실패:', error)
-  } finally {
-    isLoading.value = false
-  }
+  } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
 const loadMoreSearchVideos = async () => {
   if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0) return
-  
-  const query = searchQuery.value.trim()
   isLoading.value = true
-
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(query)}&type=video&pageToken=${searchNextPageToken.value}&key=${key}`
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(searchQuery.value.trim())}&type=video&pageToken=${searchNextPageToken.value}&key=${key}`
     )
-    
-    if (data.error || !data.items) {
-      isLoading.value = false
-      return
-    }
+    if (data.error || !data.items) return
 
     searchNextPageToken.value = data.nextPageToken || null
-
     const db = await openDB()
-    const historyTx = db.transaction('history', 'readonly')
-    let dbHistory = await new Promise((resolve) => {
-      historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
-    })
-    const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
-    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
-
-    const moreVideos = data.items.map(item => {
-      const parsed = parseVideoItem(item)
-      if (existingMap.has(parsed.id)) {
-        parsed.isFavorite = existingMap.get(parsed.id)
+    const moreVideos = data.items.filter(item => item.id?.videoId).map(item => {
+      const title = item.snippet.title.toLowerCase()
+      const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
+      return {
+        id: item.id.videoId,
+        youtubeId: item.id.videoId,
+        creatorId: item.snippet.channelId,
+        creatorName: item.snippet.channelTitle,
+        title: item.snippet.title,
+        thumbnail: thumbUrl,
+        isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+        isFavorite: false,
+        views: item.snippet.publishedAt.substring(0, 10),
+        publishedAt: item.snippet.publishedAt,
+        duration: 0,
+        progressPercent: 0,
+        currentTime: 0,
+        historyUpdatedAt: null
       }
-      const h = historyMap.get(parsed.id)
-      if (h) {
-        parsed.currentTime = h.currentTime || 0
-        parsed.duration = h.duration || 0
-        parsed.historyUpdatedAt = h.updatedAt || null
-        if (parsed.currentTime > 0 && parsed.duration > 0) {
-          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
-        }
-      }
-      return parsed
     })
-
     await fetchAndUpdateVideoDurations(moreVideos)
-
     videos.value.push(...moreVideos)
 
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
     moreVideos.forEach(v => store.put(v))
-
-  } catch (error) {
-    console.error('추가 YouTube API 요청 실패:', error)
-  } finally {
-    isLoading.value = false
-  }
+  } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
 const selectDiscoverAll = () => {
   selectedCreator.value = null
   currentTab.value = 'discoverAll'
   isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2381,6 +2233,55 @@ const selectDiscoverHeart = () => {
   selectedCreator.value = null
   currentTab.value = 'discoverHeart'
   isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
+  isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
+  isPlaylistMode.value = false
+  searchQuery.value = ''
+  if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
+}
+
+const enableTrendingMode = async () => {
+  selectedCreator.value = null
+  currentTab.value = ''
+  isSearchMode.value = false
+  isTrendingMode.value = true
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
+  isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
+  isPlaylistMode.value = false
+  searchQuery.value = ''
+  if (window.innerWidth < 960) drawer.value = false
+  await fetchTrendingVideos()
+  scrollToTop(mainScrollRef.value)
+}
+
+const enableRecentUploadsMode = () => {
+  selectedCreator.value = null
+  currentTab.value = ''
+  isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = true
+  isCustomTailoredMode.value = false
+  isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
+  isPlaylistMode.value = false
+  searchQuery.value = ''
+  if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
+}
+
+const enableCustomTailoredMode = () => {
+  selectedCreator.value = null
+  currentTab.value = ''
+  isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = true
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2393,6 +2294,9 @@ const enableFavoriteVideosMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = true
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2405,6 +2309,9 @@ const enableHistoryMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = true
   isPlaylistMode.value = false
@@ -2417,6 +2324,9 @@ const enablePlaylistMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = true
@@ -2430,6 +2340,9 @@ const enableSearchMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = true
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2441,12 +2354,14 @@ const selectCreatorFilter = async (creator) => {
   selectedCreator.value = creator
   currentTab.value = ''
   isSearchMode.value = false
+  isTrendingMode.value = false
+  isRecentUploadsMode.value = false
+  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-
   await fetchChannelVideos(creator)
   scrollToTop(mainScrollRef.value)
 }
@@ -2464,6 +2379,8 @@ onUnmounted(() => {
 
 const getHeaderTitle = computed(() => {
   if (selectedCreator.value) return selectedCreator.value.name
+  if (isRecentUploadsMode.value) return '최근 업로드된 동영상'
+  if (isCustomTailoredMode.value) return '새로운 맞춤 동영상'
   if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
   if (isHistoryMode.value) return '시청 기록'
   if (isPlaylistMode.value) {
@@ -2474,30 +2391,36 @@ const getHeaderTitle = computed(() => {
     return '재생 목록'
   }
   if (isSearchMode.value) return '유튜브 검색'
+  if (isTrendingMode.value) return '인기 급상승 영상'
   if (currentTab.value === 'discoverAll') return '전체 구독 피드'
-  if (currentTab.value === 'discoverHeart') return '구독 피드 모음'
   return '구독 피드 모음'
 })
 
 const displayedVideos = computed(() => {
   let result = videos.value
 
-  if (selectedCreator.value) {
+  if (isTrendingMode.value) {
+    result = trendingVideos.value
+  } else if (isRecentUploadsMode.value) {
+    const subscribedIds = creators.value.map(c => c.id)
+    result = result.filter(v => subscribedIds.includes(v.creatorId))
+    result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+  } else if (isCustomTailoredMode.value) {
+    const favoriteCreatorIds = creators.value.filter(c => c.isFavorite).map(c => c.id)
+    result = result.filter(v => favoriteCreatorIds.includes(v.creatorId) || v.isFavorite)
+    if (result.length === 0) {
+      result = videos.value.slice(0, 20)
+    }
+  } else if (selectedCreator.value) {
     result = result.filter(v => v.creatorId === selectedCreator.value.id)
   } else if (isFavoriteVideosMode.value) {
     result = result.filter(v => v.isFavorite)
   } else if (isHistoryMode.value) {
     const historyMap = new Map(historyList.value.map(h => [h.videoId, h.updatedAt]))
     result = result.filter(v => historyMap.has(v.id))
-    result.sort((a, b) => {
-      const timeA = historyMap.get(a.id) || ''
-      const timeB = historyMap.get(b.id) || ''
-      return new Date(timeB) - new Date(timeA)
-    })
+    result.sort((a, b) => new Date(historyMap.get(b.id) || '') - new Date(historyMap.get(a.id) || ''))
   } else if (isPlaylistMode.value && activePlaylistId.value) {
-    const targetVideoIds = playlistItems.value
-      .filter(item => item.playlistId === activePlaylistId.value)
-      .map(item => item.videoId)
+    const targetVideoIds = playlistItems.value.filter(item => item.playlistId === activePlaylistId.value).map(item => item.videoId)
     result = result.filter(v => targetVideoIds.includes(v.id))
   } else if (isSearchMode.value) {
     return result
@@ -2511,12 +2434,8 @@ const displayedVideos = computed(() => {
 
   if (searchQuery.value.trim() && !isSearchMode.value) {
     const query = searchQuery.value.trim().toLowerCase()
-    result = result.filter(v => 
-      v.title.toLowerCase().includes(query) || 
-      v.creatorName.toLowerCase().includes(query)
-    )
+    result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
   }
-
   return result
 })
 
@@ -2526,11 +2445,7 @@ const isAllSelected = computed({
     return displayedVideos.value.every(v => selectedVideoIds.value.includes(v.id))
   },
   set(val) {
-    if (val) {
-      selectedVideoIds.value = displayedVideos.value.map(v => v.id)
-    } else {
-      selectedVideoIds.value = []
-    }
+    selectedVideoIds.value = val ? displayedVideos.value.map(v => v.id) : []
   }
 })
 
@@ -2547,17 +2462,11 @@ const relatedVideos = computed(() => {
   const current = activeVideo.value
   const sameChannelVideos = videos.value.filter(v => v.id !== current.id && v.creatorId === current.creatorId)
   const otherChannelVideos = videos.value.filter(v => v.id !== current.id && v.creatorId !== current.creatorId)
-  const combined = [...sameChannelVideos, ...otherChannelVideos]
-  return combined.slice(0, 15)
+  return [...sameChannelVideos, ...otherChannelVideos].slice(0, 15)
 })
 
-const shortsVideos = computed(() => {
-  return displayedVideos.value.filter(v => v.isShorts)
-})
-
-const normalVideos = computed(() => {
-  return displayedVideos.value.filter(v => !v.isShorts)
-})
+const shortsVideos = computed(() => displayedVideos.value.filter(v => v.isShorts))
+const normalVideos = computed(() => displayedVideos.value.filter(v => !v.isShorts))
 </script>
 
 <style>
@@ -2599,370 +2508,81 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-.text-accent {
-  color: #a78bfa !important;
-}
+.text-accent { color: #a78bfa !important; }
+.icon-tab-group { background: rgba(0, 0, 0, 0.4) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.search-bar { max-width: 100%; }
+.search-bar .v-field { border-radius: 30px !important; background: rgba(0, 0, 0, 0.3) !important; color: white !important; font-size: 13px !important; }
 
-.icon-tab-group {
-  background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
+.video-checkbox-wrapper { position: absolute; top: 6px; right: 6px; z-index: 4; }
+.bg-dark-glass { background: rgba(0, 0, 0, 0.6) !important; backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.2); }
+.jump-box-container { background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
 
-.search-bar {
-  max-width: 100%;
-}
-.search-bar .v-field {
-  border-radius: 30px !important;
-  background: rgba(0, 0, 0, 0.3) !important;
-  color: white !important;
-  font-size: 13px !important;
-}
+.custom-jump-input { width: 38px !important; }
+.custom-jump-input .v-field { background: rgba(0, 0, 0, 0.6) !important; border-radius: 6px !important; color: white !important; height: 28px !important; padding: 0 2px !important; }
+.custom-jump-input .v-field__input { padding: 0 !important; min-height: 28px !important; height: 28px !important; line-height: 28px !important; font-size: 11px !important; text-align: center !important; }
 
-.video-checkbox-wrapper {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 4;
-}
+.custom-list-item { border-radius: 12px !important; margin-bottom: 4px; transition: all 0.3s ease; }
+.custom-list-item:hover { background: rgba(255, 255, 255, 0.07) !important; }
+.neon-active { background: linear-gradient(135deg, rgba(121, 40, 202, 0.4), rgba(0, 112, 243, 0.4)) !important; border: 1px solid rgba(167, 139, 250, 0.3) !important; }
 
-.bg-dark-glass {
-  background: rgba(0, 0, 0, 0.6) !important;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
+.glass-card { transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
+.glass-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(121, 40, 202, 0.3) !important; border-color: rgba(167, 139, 250, 0.4) !important; }
 
-.jump-box-container {
-  background: rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
+.video-thumb-img { height: 110px !important; }
+@media (min-width: 600px) { .video-thumb-img { height: 150px !important; } }
 
-.custom-jump-input {
-  width: 38px !important;
-}
-.custom-jump-input .v-field {
-  background: rgba(0, 0, 0, 0.6) !important;
-  border-radius: 6px !important;
-  color: white !important;
-  height: 28px !important;
-  padding: 0 2px !important;
-  --v-input-padding-top: 0px !important;
-}
-.custom-jump-input .v-field__input {
-  padding: 0 !important;
-  min-height: 28px !important;
-  height: 28px !important;
-  line-height: 28px !important;
-  font-size: 11px !important;
-  text-align: center !important;
-}
+.shorts-horizontal-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; }
+.shorts-horizontal-scroll::-webkit-scrollbar { height: 5px; }
+.shorts-horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
 
-.custom-list-item {
-  border-radius: 12px !important;
-  margin-bottom: 4px;
-  transition: all 0.3s ease;
-}
-.custom-list-item:hover {
-  background: rgba(255, 255, 255, 0.07) !important;
-}
-.neon-active {
-  background: linear-gradient(135deg, rgba(121, 40, 202, 0.4), rgba(0, 112, 243, 0.4)) !important;
-  border: 1px solid rgba(167, 139, 250, 0.3) !important;
-}
+.shorts-card { width: 130px; min-width: 130px; }
+@media (min-width: 600px) { .shorts-card { width: 160px; min-width: 160px; } }
 
-.glass-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-}
-.glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(121, 40, 202, 0.3) !important;
-  border-color: rgba(167, 139, 250, 0.4) !important;
-}
+.shorts-badge { position: absolute; top: 6px; left: 6px; background: rgba(255, 0, 0, 0.8); color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+.video-progress-bar-container { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background-color: rgba(255, 255, 255, 0.3); z-index: 3; }
+.video-progress-bar-fill { height: 100%; background-color: #ff0000; transition: width 0.3s ease; }
 
-.video-thumb-img {
-  height: 110px !important;
-}
-@media (min-width: 600px) {
-  .video-thumb-img {
-    height: 150px !important;
-  }
-}
+.play-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+.video-thumbnail-wrapper:hover .play-overlay, .shorts-thumbnail-wrapper:hover .play-overlay { opacity: 1; }
 
-.shorts-horizontal-scroll {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-.shorts-horizontal-scroll::-webkit-scrollbar {
-  height: 5px;
-}
-.shorts-horizontal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
+.video-duration-badge { position: absolute; bottom: 8px; right: 6px; background: rgba(0, 0, 0, 0.8); padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; z-index: 2; }
+.safe-player-dialog { margin: 4px !important; max-height: 98vh !important; }
+@media (max-width: 600px) { .safe-player-dialog { margin: 0 !important; max-height: 100vh !important; } }
 
-.shorts-card {
-  width: 130px;
-  min-width: 130px;
-}
-@media (min-width: 600px) {
-  .shorts-card {
-    width: 160px;
-    min-width: 160px;
-  }
-}
+.main-content { overflow-y: auto !important; max-height: calc(100vh - 64px); }
+.loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
+.loading-card { border: 1px solid rgba(167, 139, 250, 0.3) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important; min-width: 220px; text-align: center; }
 
-.shorts-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  background: rgba(255, 0, 0, 0.8);
-  color: white;
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-size: 9px;
-  font-weight: bold;
-}
+.modal-vertical-container { max-height: calc(88vh - 40px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; }
+.modal-vertical-container::-webkit-scrollbar { width: 6px; }
+.modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
 
-.video-progress-bar-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background-color: rgba(255, 255, 255, 0.3);
-  z-index: 3;
-}
-.video-progress-bar-fill {
-  height: 100%;
-  background-color: #ff0000;
-  transition: width 0.3s ease;
-}
+.video-container { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 160px; background: #000000; overflow: hidden; flex-shrink: 0; transition: aspect-ratio 0.3s ease; }
+.video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 280px; }
+.youtube-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; display: block; }
 
-.play-overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.video-thumbnail-wrapper:hover .play-overlay,
-.shorts-thumbnail-wrapper:hover .play-overlay {
-  opacity: 1;
-}
+.comments-scroll-area, .related-scroll-area-long { max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; padding-right: 24px; }
+.related-scroll-area-long { max-height: 350px; }
 
-.video-duration-badge {
-  position: absolute;
-  bottom: 8px;
-  right: 6px;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: bold;
-  z-index: 2;
-}
+.comments-scroll-area::-webkit-scrollbar, .related-scroll-area-long::-webkit-scrollbar { width: 4px; }
+.comments-scroll-area::-webkit-scrollbar-thumb, .related-scroll-area-long::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
 
-.safe-player-dialog {
-  margin: 4px !important;
-  max-height: 98vh !important;
-}
-@media (max-width: 600px) {
-  .safe-player-dialog {
-    margin: 0 !important;
-    max-height: 100vh !important;
-  }
-}
+.scroll-top-fab, .modal-scroll-top-fab, .main-scroll-top-fab { position: absolute; bottom: 12px; right: 12px; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; }
+.modal-scroll-top-fab, .main-scroll-top-fab { position: sticky; float: right; margin-right: 20px; margin-bottom: 20px; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important; }
 
-.main-content {
-  overflow-y: auto !important;
-  max-height: calc(100vh - 64px);
-}
+.mobile-tight-header { min-height: 36px !important; }
+.border-top-glass { border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.15); }
+.border-bottom-glass { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.border-left-glass { border-left: 2px solid rgba(167, 139, 250, 0.3); }
 
-.loading-overlay-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 2000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+.related-video-item, .comment-item { transition: background 0.2s ease; }
+.related-video-item:hover { background: rgba(255, 255, 255, 0.07); }
 
-.loading-card {
-  border: 1px solid rgba(167, 139, 250, 0.3) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
-  min-width: 220px;
-  text-align: center;
-}
+.text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.play-btn-circle { width: 52px; height: 52px; border-radius: 50%; background: rgba(167, 139, 250, 1); display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); transition: transform 0.2s ease, background-color 0.2s ease; }
+.play-btn-circle:hover { transform: scale(1.1); background: #7c3aed; }
+.shorts-play-btn { width: 40px; height: 40px; }
 
-.modal-vertical-container {
-  max-height: calc(88vh - 40px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-.modal-vertical-container::-webkit-scrollbar {
-  width: 6px;
-}
-.modal-vertical-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.video-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 160px;
-  background: #000000;
-  overflow: hidden;
-  flex-shrink: 0;
-  transition: aspect-ratio 0.3s ease;
-}
-
-.video-container.landscape-expanded {
-  aspect-ratio: 21 / 9;
-  min-height: 280px;
-}
-
-.youtube-iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-}
-
-.comments-scroll-area {
-  max-height: 260px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-  padding-right: 24px;
-}
-.related-scroll-area-long {
-  max-height: 350px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-  padding-right: 24px;
-}
-
-.comments-scroll-area::-webkit-scrollbar,
-.related-scroll-area-long::-webkit-scrollbar {
-  width: 4px;
-}
-.comments-scroll-area::-webkit-scrollbar-thumb,
-.related-scroll-area-long::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.scroll-top-fab {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  z-index: 5;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
-}
-
-.modal-scroll-top-fab {
-  position: sticky;
-  bottom: 20px;
-  float: right;
-  margin-right: 20px;
-  margin-bottom: 20px;
-  z-index: 10;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important;
-}
-
-.main-scroll-top-fab {
-  position: sticky;
-  bottom: 20px;
-  float: right;
-  margin-right: 20px;
-  margin-bottom: 20px;
-  z-index: 10;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important;
-}
-
-.mobile-tight-header {
-  min-height: 36px !important;
-}
-
-.border-top-glass {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.border-bottom-glass {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.related-video-item, .comment-item {
-  transition: background 0.2s ease;
-}
-.related-video-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.text-truncate-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.play-btn-circle {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(167, 139, 250, 1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.play-btn-circle:hover {
-  transform: scale(1.1);
-  background: #7c3aed;
-}
-
-.shorts-play-btn {
-  width: 40px;
-  height: 40px;
-}
-
-.comment-text-content a {
-  color: #a78bfa !important;
-  text-decoration: underline !important;
-  font-weight: 500;
-}
-.comment-text-content a:hover {
-  color: #c4b5fd !important;
-}
-
-.creator-author-badge {
-  background: rgba(167, 139, 250, 0.25);
-  color: #c4b5fd !important;
-  padding: 1px 6px;
-  border-radius: 10px;
-  border: 1px solid rgba(167, 139, 250, 0.4);
-}
+.comment-text-content a { color: #a78bfa !important; text-decoration: underline !important; font-weight: 500; }
+.creator-author-badge { background: rgba(167, 139, 250, 0.25); color: #c4b5fd !important; padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(167, 139, 250, 0.4); }
 </style>
