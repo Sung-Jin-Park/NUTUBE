@@ -188,15 +188,6 @@
     <!-- 메인 콘텐츠 영역 -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       
-      <!-- 조회 중일 때 화면을 살짝 어둡게 하고 띄워주는 로딩 오버레이 -->
-      <div v-if="isLoading" class="loading-overlay-container">
-        <div class="loading-card glass-modal pa-4 rounded-xl d-flex flex-column align-center shadow-lg">
-          <v-progress-circular indeterminate color="accent" size="48" width="4" class="mb-3"></v-progress-circular>
-          <h3 class="text-subtitle-1 text-white font-weight-bold mb-1">조회 중입니다...</h3>
-          <p class="text-caption text-grey-lighten-1 mb-0">잠시만 기다려 주세요.</p>
-        </div>
-      </div>
-
       <v-container fluid class="pa-2 pa-md-6">
         
         <!-- 타이틀 및 아이콘 탭 영역 -->
@@ -440,6 +431,15 @@
       </v-slide-y-transition>
     </v-main>
 
+    <!-- 조회 중일 때 화면을 살짝 어둡게 하고 띄워주는 로딩 오버레이 (fixed 적용) -->
+    <div v-if="isLoading" class="loading-overlay-container">
+      <div class="loading-card glass-modal pa-4 rounded-xl d-flex flex-column align-center shadow-lg">
+        <v-progress-circular indeterminate color="accent" size="48" width="4" class="mb-3"></v-progress-circular>
+        <h3 class="text-subtitle-1 text-white font-weight-bold mb-1">조회 중입니다...</h3>
+        <p class="text-caption text-grey-lighten-1 mb-0">잠시만 기다려 주세요.</p>
+      </div>
+    </div>
+
     <!-- 시네마틱 영상 재생 모달 -->
     <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
@@ -454,6 +454,85 @@
           <div class="d-flex align-center flex-shrink-0">
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playlistIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
+
+            <!-- 커스텀 취침 예약 버튼 및 메뉴 -->
+            <v-menu location="bottom end" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon
+                  variant="text"
+                  size="small"
+                  :color="sleepTimerSecondsLeft > 0 ? 'accent' : 'white'"
+                  class="mr-1"
+                  :title="sleepTimerSecondsLeft > 0 ? `취침 예약 남은 시간: ${formatSleepTime(sleepTimerSecondsLeft)}` : '취침 예약 설정'"
+                >
+                  <v-badge
+                    v-if="sleepTimerSecondsLeft > 0"
+                    dot
+                    color="accent"
+                    offset-x="-2"
+                    offset-y="-2"
+                  >
+                    <v-icon icon="mdi-sleep" size="20"></v-icon>
+                  </v-badge>
+                  <v-icon v-else icon="mdi-sleep" size="20"></v-icon>
+                </v-btn>
+              </template>
+              <v-list density="compact" class="glass-modal rounded-lg py-2 text-white" width="210">
+                <v-list-item class="px-3 py-1">
+                  <v-list-item-title class="font-weight-bold text-caption text-accent">
+                    {{ sleepTimerSecondsLeft > 0 ? `⏰ 남은 시간: ${formatSleepTime(sleepTimerSecondsLeft)}` : '취침 예약 설정' }}
+                  </v-list-item-title>
+                </v-list-item>
+                <v-divider class="border-opacity-25 my-1"></v-divider>
+                
+                <!-- 커스텀 분 입력 영역 -->
+                <v-list-item class="px-3 py-1">
+                  <div class="d-flex align-center gap-1 w-100">
+                    <v-text-field
+                      v-model.number="customSleepMinutes"
+                      type="number"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      class="custom-jump-input flex-grow-1"
+                      placeholder="분 입력"
+                      min="1"
+                      @keydown.enter="setCustomSleepTimer"
+                    ></v-text-field>
+                    <span class="text-caption text-white mr-1">분</span>
+                    <v-btn
+                      size="small"
+                      color="accent"
+                      variant="outlined"
+                      class="px-2"
+                      @click="setCustomSleepTimer"
+                    >
+                      적용
+                    </v-btn>
+                  </div>
+                </v-list-item>
+
+                <v-divider class="border-opacity-25 my-1"></v-divider>
+                <v-list-item value="10" @click="setSleepTimer(10)">
+                  <v-list-item-title class="text-body-2">10분 후</v-list-item-title>
+                </v-list-item>
+                <v-list-item value="30" @click="setSleepTimer(30)">
+                  <v-list-item-title class="text-body-2">30분 후</v-list-item-title>
+                </v-list-item>
+                <v-list-item value="60" @click="setSleepTimer(60)">
+                  <v-list-item-title class="text-body-2">1시간 후</v-list-item-title>
+                </v-list-item>
+                <v-list-item value="120" @click="setSleepTimer(120)">
+                  <v-list-item-title class="text-body-2">2시간 후</v-list-item-title>
+                </v-list-item>
+                <v-divider v-if="sleepTimerSecondsLeft > 0" class="border-opacity-25 my-1"></v-divider>
+                <v-list-item v-if="sleepTimerSecondsLeft > 0" value="off" @click="cancelSleepTimer" class="text-red-lighten-2">
+                  <v-list-item-title class="text-body-2 font-weight-bold">타이머 해제</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
 
             <v-btn 
               icon
@@ -478,7 +557,7 @@
             <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
 
-          <!-- 영상 정보 및 시간 이동 컨트롤 영역 (이전(-), 이후(+) 누적 이동 버튼으로 변경) -->
+          <!-- 영상 정보 및 시간 이동 컨트롤 영역 -->
           <div class="pa-3 pa-md-4 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-2 border-bottom-glass">
             <div class="flex-grow-1 overflow-hidden pr-2">
               <div class="d-flex align-center flex-wrap gap-2 mb-1">
@@ -784,6 +863,11 @@ const commentsOrder = ref('relevance')
 const initialWatchedTime = ref(0)
 const isLandscapeMode = ref(false)
 
+// 취침 예약 타이머 상태 관리
+const sleepTimerSecondsLeft = ref(0)
+const customSleepMinutes = ref(null)
+let sleepTimerInterval = null
+
 let ytPlayer = null          
 let historyInterval = null   
 let currentPlayingTime = 0   
@@ -861,6 +945,60 @@ const scrollToTop = (el) => {
 
 const toggleLandscapeMode = () => {
   isLandscapeMode.value = !isLandscapeMode.value
+}
+
+// 취침 예약 타이머 설정 함수 (분 단위 입력)
+const setSleepTimer = (minutes) => {
+  clearSleepTimer()
+  sleepTimerSecondsLeft.value = minutes * 60
+
+  sleepTimerInterval = setInterval(() => {
+    if (sleepTimerSecondsLeft.value > 0) {
+      sleepTimerSecondsLeft.value--
+    } else {
+      clearSleepTimer()
+      if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+        try {
+          ytPlayer.pauseVideo()
+        } catch (e) {
+          console.debug('취침 예약 일시정지 에러:', e)
+        }
+      }
+      closePlayer()
+    }
+  }, 1000)
+}
+
+// 직접 입력한 커스텀 분으로 취침 예약 설정
+const setCustomSleepTimer = () => {
+  const mins = Number(customSleepMinutes.value)
+  if (!mins || mins <= 0) {
+    alert('올바른 분(Minute)을 입력해 주세요.')
+    return
+  }
+  setSleepTimer(mins)
+  customSleepMinutes.value = null
+}
+
+const cancelSleepTimer = () => {
+  clearSleepTimer()
+}
+
+const clearSleepTimer = () => {
+  if (sleepTimerInterval) {
+    clearInterval(sleepTimerInterval)
+    sleepTimerInterval = null
+  }
+  sleepTimerSecondsLeft.value = 0
+}
+
+const formatSleepTime = (seconds) => {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  if (m > 0) {
+    return `${m}분 ${s}초`
+  }
+  return `${s}초`
 }
 
 const DB_NAME = 'NeonTubeDB_Clean'
@@ -1272,7 +1410,6 @@ const jumpToTime = () => {
   }
 }
 
-// 입력한 분/초만큼 현재 위치에서 누적 이전(-) 또는 이후(+) 이동하는 함수
 const cumulativeJump = (direction) => {
   const m = Number(jumpMinutes.value) || 0
   const s = Number(jumpSeconds.value) || 0
@@ -1873,6 +2010,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   destroyYouTubePlayer()
+  clearSleepTimer()
   window.removeEventListener('popstate', handlePopState)
 })
 
@@ -2187,9 +2325,9 @@ html, body {
   max-height: calc(100vh - 64px);
 }
 
-/* 조회 중일 때 화면을 살짝 어둡게 해주는 오버레이 스타일 */
+/* 조회 중일 때 화면을 살짝 어둡게 해주는 오버레이 스타일 (fixed 처리) */
 .loading-overlay-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -2197,7 +2335,7 @@ html, body {
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  z-index: 100;
+  z-index: 2000;
   display: flex;
   justify-content: center;
   align-items: center;
