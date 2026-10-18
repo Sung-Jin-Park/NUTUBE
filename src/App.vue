@@ -19,7 +19,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (API 사용)...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : '구독 피드 내 검색...'))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : '구독 피드 내 검색...'))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -32,7 +32,7 @@
             size="small"
             variant="text"
             color="accent"
-            title="유튜브 API로 실시간 검색 실행 (API 쿼리 소모)"
+            title="유튜브 API로 실시간 검색 실행 (빈 값이면 모든 구독자 채널의 최신 영상 리스트 로드)"
             @click.stop="triggerLiveSearch"
           ></v-btn>
         </template>
@@ -125,11 +125,11 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 메인 콘텐츠 영역 -->
+    <!-- 메인 콘텐츠 영역 (유튜브 검색 모드 시 무한 스크롤 적용) -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       <v-container fluid class="pa-2 pa-md-6">
         
-        <!-- 타이틀 및 4대 아이콘 탭 영역 -->
+        <!-- 타이틀 및 아이콘 탭 영역 -->
         <v-card class="glass-banner mb-3 mb-md-6 pa-3 pa-md-4 rounded-xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex flex-column flex-md-row justify-space-between align-md-center gap-3">
@@ -139,7 +139,6 @@
               </h1>
             </div>
 
-            <!-- 바로 밑 타이틀 영역의 간소화된 4개 아이콘 탭 -->
             <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl">
               <v-btn
                 icon="mdi-play-box-multiple-outline"
@@ -181,7 +180,7 @@
           </div>
         </v-card>
 
-        <v-row v-if="isLoading" justify="center" align="center" style="min-height: 250px;">
+        <v-row v-if="isLoading && displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
           <v-col cols="12" class="text-center">
             <v-progress-circular indeterminate color="accent" size="48" class="mb-3"></v-progress-circular>
             <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">영상을 불러오는 중입니다...</h3>
@@ -193,7 +192,7 @@
             <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
             <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
             <p class="text-caption text-grey-darken-1 mt-1">
-              {{ isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isSearchMode ? '상단 검색바에 키워드를 입력하고 엔터를 눌러 실시간 유튜브 영상을 검색해 보세요.' : (currentTab === 'discoverHeart' ? '하트(즐겨찾기)된 크리에이터가 없거나 새로운 영상이 없습니다. 채널에 하트를 지정해 보세요.' : '구독 중인 채널의 새로운 영상이 없습니다.')) }}
+              {{ isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isSearchMode ? '상단 검색바에 키워드를 입력하거나 빈 상태로 검색 버튼을 눌러 모든 구독자 영상을 확인하세요.' : (currentTab === 'discoverHeart' ? '하트(즐겨찾기)된 크리에이터가 없거나 새로운 영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.')) }}
             </p>
           </v-col>
         </v-row>
@@ -215,7 +214,6 @@
                 <div class="shorts-thumbnail-wrapper position-relative bg-black">
                   <v-img :src="video.thumbnail" height="200" contain class="align-end">
                     <div class="shorts-badge">Shorts</div>
-                    <!-- 유튜브 스타일 시청 진행 바 -->
                     <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                       <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                     </div>
@@ -256,7 +254,6 @@
                   <div class="video-thumbnail-wrapper position-relative bg-black">
                     <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
                       <div class="video-duration-badge">HD</div>
-                      <!-- 유튜브 스타일 시청 진행 바 -->
                       <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                         <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                       </div>
@@ -301,6 +298,12 @@
               </v-col>
             </v-row>
           </div>
+
+          <!-- 검색 모드 추가 로딩 인디케이터 -->
+          <div v-if="isSearchMode && isLoading" class="text-center py-4">
+            <v-progress-circular indeterminate color="accent" size="32"></v-progress-circular>
+            <span class="text-grey-lighten-1 text-caption ml-2">다음 영상을 불러오는 중...</span>
+          </div>
         </template>
 
       </v-container>
@@ -328,7 +331,6 @@
         <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
           <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate pr-2">{{ activeVideo?.title }}</span>
           <div class="d-flex align-center">
-            <!-- 가로/세로 전환 아이콘 버튼 -->
             <v-btn 
               icon
               variant="text" 
@@ -357,7 +359,6 @@
             <div class="flex-grow-1 overflow-hidden pr-2">
               <div class="d-flex align-center flex-wrap gap-2 mb-1">
                 <h3 class="text-white text-caption text-md-subtitle-2 font-weight-bold ma-0" v-html="activeVideo?.title"></h3>
-                <!-- 유튜브 아이콘이 포함된 직접 보기 버튼 -->
                 <v-btn
                   color="red"
                   variant="flat"
@@ -376,7 +377,6 @@
               </p>
             </div>
             
-            <!-- 원하는 시간(분, 초) 이동 및 이전으로 돌아가기(되감기) 컨트롤 영역 -->
             <div class="d-flex align-center jump-box-container pa-1 px-2 rounded-lg">
               <span class="text-caption text-grey-lighten-1 mr-1 flex-shrink-0">시간 제어:</span>
               
@@ -439,31 +439,113 @@
                 variant="outlined"
                 size="small"
                 :prepend-icon="showComments ? 'mdi-comment-off-outline' : 'mdi-comment-multiple-outline'"
-                @click="showComments = !showComments"
+                @click="toggleCommentsView"
               >
                 {{ showComments ? '댓글 숨기기' : '댓글 보기' }}
               </v-btn>
             </div>
           </div>
 
-          <!-- 2. 댓글 영역 -->
+          <!-- 2. 댓글 영역 (개수, 정렬기준, 유튜버 댓글 배지 지원) -->
           <div v-if="showComments" class="comments-section pa-3 border-bottom-glass position-relative">
-            <div class="text-subtitle-2 font-weight-bold text-white mb-2 d-flex align-center">
-              <v-icon icon="mdi-comment-text-outline" class="mr-1 text-accent" size="18"></v-icon>
-              실시간 및 주요 댓글
+            <!-- 헤더: 전체 개수 및 유튜브 스타일 정렬 기준 버튼 -->
+            <div class="d-flex align-center gap-4 mb-3 pb-1 border-bottom-glass">
+              <span class="text-subtitle-1 font-weight-bold text-white">
+                댓글 {{ totalCommentCount > 0 ? totalCommentCount.toLocaleString() + '개' : '' }}
+              </span>
+              
+              <!-- 정렬 기준 메뉴 버튼 -->
+              <v-menu location="bottom left">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    variant="text"
+                    size="small"
+                    class="text-none text-white font-weight-bold px-2"
+                    prepend-icon="mdi-sort-variant"
+                  >
+                    정렬 기준
+                  </v-btn>
+                </template>
+                <v-list density="compact" class="glass-modal rounded-lg py-1">
+                  <v-list-item
+                    value="relevance"
+                    :class="{ 'text-accent': commentsOrder === 'relevance' }"
+                    @click="changeCommentsOrder('relevance')"
+                  >
+                    <v-list-item-title class="font-weight-bold text-body-2">인기순</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption text-grey-lighten-1">추천 댓글 표시</v-list-item-subtitle>
+                  </v-list-item>
+                  <v-list-item
+                    value="time"
+                    :class="{ 'text-accent': commentsOrder === 'time' }"
+                    @click="changeCommentsOrder('time')"
+                  >
+                    <v-list-item-title class="font-weight-bold text-body-2">최신순</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption text-grey-lighten-1">최근 댓글부터 표시</v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </div>
+            
             <div ref="commentsScrollRef" class="comments-scroll-area" @scroll="checkCommentsScroll">
-              <div v-if="comments.length === 0" class="text-grey-darken-1 text-caption text-center py-4">
+              <div v-if="comments.length === 0 && !isLoadingComments" class="text-grey-darken-1 text-caption text-center py-4">
                 표시할 댓글이 없습니다.
               </div>
-              <div v-for="(comment, index) in comments" :key="index" class="comment-item mb-2 pb-2 border-bottom-glass">
-                <div class="d-flex align-center mb-1">
-                  <span class="text-white font-weight-bold text-caption mr-2">{{ comment.author }}</span>
-                  <span class="text-grey-darken-1 text-caption">{{ comment.publishedAt }}</span>
+              
+              <div v-for="(comment, index) in comments" :key="index" class="comment-item mb-3 pb-2 border-bottom-glass">
+                <div class="d-flex align-start">
+                  <!-- 작성자 프로필 이미지 -->
+                  <v-avatar size="32" class="mr-3 mt-1 flex-shrink-0">
+                    <v-img :src="comment.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
+                  </v-avatar>
+
+                  <div class="flex-grow-1 overflow-hidden">
+                    <div class="d-flex align-center flex-wrap gap-1 mb-1">
+                      <!-- 작성자 이름 (유튜버 본인일 경우 하이라이트 배지 스타일 적용) -->
+                      <span 
+                        class="text-caption font-weight-bold mr-1"
+                        :class="comment.isOwner ? 'creator-author-badge' : 'text-white'"
+                      >
+                        {{ comment.author }}
+                      </span>
+
+                      <!-- 유튜버(채널 작성자) 전용 배지 -->
+                      <v-chip
+                        v-if="comment.isOwner"
+                        size="x-small"
+                        color="accent"
+                        variant="flat"
+                        class="px-1 py-0 height-auto font-weight-bold text-caption"
+                        style="height: 18px;"
+                      >
+                        채널 작성자
+                      </v-chip>
+
+                      <span class="text-grey-darken-1 text-caption ml-1">{{ comment.publishedAt }}</span>
+                    </div>
+
+                    <!-- 댓글 본문 (링크 태그 가독성 향상) -->
+                    <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="comment.text"></p>
+
+                    <!-- 좋아요 및 반응 수 -->
+                    <div class="d-flex align-center gap-2 text-caption text-grey-darken-1">
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
+                        <span>{{ comment.likeCount > 0 ? comment.likeCount : '' }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p class="text-grey-lighten-2 text-caption mb-0" v-html="comment.text"></p>
+              </div>
+
+              <!-- 댓글 추가 로딩 표시 -->
+              <div v-if="isLoadingComments" class="text-center py-2">
+                <v-progress-circular indeterminate color="accent" size="20" width="2"></v-progress-circular>
+                <span class="text-grey-lighten-1 text-caption ml-2">댓글 더 불러오는 중...</span>
               </div>
             </div>
+
             <v-slide-y-transition>
               <v-btn
                 v-if="showCommentsScrollTop"
@@ -557,15 +639,23 @@ const isPlayerOpen = ref(false)
 const activeVideo = ref(null)
 const showComments = ref(false)
 const comments = ref([])
+const commentsNextPageToken = ref(null)
+const isLoadingComments = ref(false)
+
+// 댓글 추가 상태 변수 (전체 댓글 수, 정렬 방식)
+const totalCommentCount = ref(0)
+const commentsOrder = ref('relevance') // 'relevance'(인기순) 또는 'time'(최신순)
+
 const initialWatchedTime = ref(0)
 const isLandscapeMode = ref(false)
 
 let ytPlayer = null          
 let historyInterval = null   
 let currentPlayingTime = 0   
-let pollingInterval = null   // 10분 주기 폴링 타이머
 
 let isPopStateTriggered = false
+
+const searchNextPageToken = ref(null)
 
 const handlePopState = () => {
   if (isPlayerOpen.value) {
@@ -589,7 +679,15 @@ const showCommentsScrollTop = ref(false)
 const showRelatedScrollTop = ref(false)
 
 const checkMainScroll = (e) => {
-  showMainScrollTop.value = e.target.scrollTop > 100
+  const target = e.target
+  showMainScrollTop.value = target.scrollTop > 100
+
+  if (isSearchMode.value && !isLoading.value && searchNextPageToken.value) {
+    const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
+    if (bottomReached) {
+      loadMoreSearchVideos()
+    }
+  }
 }
 
 const checkModalScroll = (e) => {
@@ -597,7 +695,15 @@ const checkModalScroll = (e) => {
 }
 
 const checkCommentsScroll = (e) => {
-  showCommentsScrollTop.value = e.target.scrollTop > 20
+  const target = e.target
+  showCommentsScrollTop.value = target.scrollTop > 20
+
+  if (!isLoadingComments.value && commentsNextPageToken.value) {
+    const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 40
+    if (bottomReached) {
+      fetchMoreComments(activeVideo.value?.youtubeId)
+    }
+  }
 }
 
 const checkRelatedScroll = (e) => {
@@ -777,6 +883,9 @@ const playVideo = async (video) => {
   activeVideo.value = video
   showComments.value = false
   comments.value = []
+  commentsNextPageToken.value = null
+  totalCommentCount.value = 0
+  commentsOrder.value = 'relevance'
   initialWatchedTime.value = 0
   currentPlayingTime = 0
   jumpMinutes.value = 0
@@ -810,6 +919,13 @@ const playVideo = async (video) => {
 
   await nextTick()
   initYouTubePlayer(video.youtubeId, initialWatchedTime.value)
+}
+
+const toggleCommentsView = () => {
+  showComments.value = !showComments.value
+  if (showComments.value && comments.value.length === 0 && activeVideo.value) {
+    fetchComments(activeVideo.value.youtubeId)
+  }
 }
 
 const closePlayer = () => {
@@ -903,7 +1019,7 @@ const destroyYouTubePlayer = () => {
     try {
       ytPlayer.destroy()
     } catch (e) {
-        //에러 무시
+      console.debug('플레이어 파괴 중 에러 무시:', e)
     }
   }
   ytPlayer = null
@@ -920,7 +1036,7 @@ const startHistoryTracker = () => {
           saveCurrentHistoryToDB()
         }
       } catch (e) {
-        //에러 무시
+        console.debug('현재 시간 가져오기 에러 무시:', e)
       }
     }
   }, 1000)
@@ -987,7 +1103,7 @@ const rewindTime = () => {
     try {
       currentTime = ytPlayer.getCurrentTime()
     } catch (e) {
-      //에러 무시
+      console.debug('되감기 시간 가져오기 에러 무시:', e)
     }
   }
 
@@ -1027,24 +1143,104 @@ const formatRelativeTime = (dateString) => {
   }
 }
 
-const fetchComments = async (youtubeId) => {
+// 영상의 전체 댓글 개수를 유튜브 API에서 가져오는 함수
+const fetchVideoCommentCount = async (youtubeId) => {
   if (API_KEYS.length === 0) return
   try {
+    const data = await fetchWithKeyRotation((key) =>
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${youtubeId}&key=${key}`
+    )
+    if (data.items && data.items.length > 0) {
+      const stats = data.items[0].statistics
+      totalCommentCount.value = parseInt(stats.commentCount || 0, 10)
+    }
+  } catch (err) {
+    console.error('댓글 개수를 불러오지 못했습니다:', err)
+  }
+}
+
+// 정렬 옵션 변경 시 처리 함수
+const changeCommentsOrder = (order) => {
+  if (commentsOrder.value === order) return
+  commentsOrder.value = order
+  comments.value = []
+  commentsNextPageToken.value = null
+  if (activeVideo.value) {
+    fetchComments(activeVideo.value.youtubeId)
+  }
+}
+
+// 최초 댓글 가져오기 (전체 갯수, 정렬기준, 유튜버 작성자 확인 기능 포함)
+const fetchComments = async (youtubeId) => {
+  if (API_KEYS.length === 0) return
+  isLoadingComments.value = true
+
+  // 영상 총 댓글 수 조회
+  fetchVideoCommentCount(youtubeId)
+
+  try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=15&videoId=${youtubeId}&key=${key}`
+      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=10&order=${commentsOrder.value}&videoId=${youtubeId}&key=${key}`
     )
     if (data.items) {
+      const currentCreatorId = activeVideo.value?.creatorId
+
       comments.value = data.items.map(item => {
         const snippet = item.snippet.topLevelComment.snippet
+        const authorChannelId = snippet.authorChannelId?.value
+
         return {
           author: snippet.authorDisplayName,
+          authorProfileImageUrl: snippet.authorProfileImageUrl,
+          authorChannelId: authorChannelId,
           text: snippet.textDisplay,
-          publishedAt: snippet.publishedAt.substring(0, 10)
+          publishedAt: snippet.publishedAt.substring(0, 10),
+          likeCount: snippet.likeCount || 0,
+          // 댓글 작성자가 영상 창작자(유튜버)와 동일한지 체크
+          isOwner: Boolean(currentCreatorId && authorChannelId === currentCreatorId)
         }
       })
+      commentsNextPageToken.value = data.nextPageToken || null
     }
   } catch (err) {
     console.error('댓글을 불러오지 못했습니다:', err)
+  } finally {
+    isLoadingComments.value = false
+  }
+}
+
+// 스크롤 시 추가 댓글 로드 (pageToken 활용)
+const fetchMoreComments = async (youtubeId) => {
+  if (API_KEYS.length === 0 || !commentsNextPageToken.value) return
+  isLoadingComments.value = true
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=10&order=${commentsOrder.value}&pageToken=${commentsNextPageToken.value}&videoId=${youtubeId}&key=${key}`
+    )
+    if (data.items) {
+      const currentCreatorId = activeVideo.value?.creatorId
+
+      const moreComments = data.items.map(item => {
+        const snippet = item.snippet.topLevelComment.snippet
+        const authorChannelId = snippet.authorChannelId?.value
+
+        return {
+          author: snippet.authorDisplayName,
+          authorProfileImageUrl: snippet.authorProfileImageUrl,
+          authorChannelId: authorChannelId,
+          text: snippet.textDisplay,
+          publishedAt: snippet.publishedAt.substring(0, 10),
+          likeCount: snippet.likeCount || 0,
+          isOwner: Boolean(currentCreatorId && authorChannelId === currentCreatorId)
+        }
+      })
+      comments.value.push(...moreComments)
+      commentsNextPageToken.value = data.nextPageToken || null
+    }
+  } catch (err) {
+    console.error('추가 댓글을 불러오지 못했습니다:', err)
+  } finally {
+    isLoadingComments.value = false
   }
 }
 
@@ -1124,7 +1320,7 @@ const subscribeCreatorFromCard = async (video) => {
   const tx = db.transaction('creators', 'readwrite')
   tx.objectStore('creators').put(newCreator)
 
-  await fetchChannelVideosByPlaylist(newCreator)
+  await fetchChannelVideos(newCreator)
 }
 
 const unsubscribeCreator = async (creator) => {
@@ -1140,16 +1336,34 @@ const unsubscribeCreator = async (creator) => {
   }
 }
 
-// [추천 방식] playlistitems.list를 통한 저비용(1쿼터) 채널 최신 영상 동기화
-const fetchChannelVideosByPlaylist = async (creator) => {
-  if (API_KEYS.length === 0) return
+const parseVideoItem = (item) => {
+  const title = item.snippet.title.toLowerCase()
+  const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
+  let isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
 
-  // 채널 ID(UC...)의 앞 두 글자를 UU로 바꾸면 업로드 재생목록 ID가 됨
-  const uploadsPlaylistId = 'UU' + creator.id.substring(2)
+  return {
+    id: item.id.videoId,
+    youtubeId: item.id.videoId,
+    creatorId: item.snippet.channelId,
+    creatorName: item.snippet.channelTitle,
+    title: item.snippet.title,
+    thumbnail: thumbUrl,
+    isShorts: isShorts,
+    isFavorite: false,
+    views: item.snippet.publishedAt.substring(0, 10),
+    publishedAt: item.snippet.publishedAt,
+    duration: 0,
+    progressPercent: 0,
+    currentTime: 0
+  }
+}
+
+const fetchChannelVideos = async (creator) => {
+  if (API_KEYS.length === 0) return
 
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=15&playlistId=${uploadsPlaylistId}&key=${key}`
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&channelId=${creator.id}&order=date&type=video&key=${key}`
     )
 
     if (!data.error && data.items) {
@@ -1157,28 +1371,7 @@ const fetchChannelVideosByPlaylist = async (creator) => {
       const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration }]))
 
       const channelVideos = data.items.map(item => {
-        const snippet = item.snippet
-        const videoId = snippet.resourceId.videoId
-        const title = snippet.title.toLowerCase()
-        const thumbUrl = snippet.thumbnails.high ? snippet.thumbnails.high.url : snippet.thumbnails.default.url
-        let isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
-
-        const parsed = {
-          id: videoId,
-          youtubeId: videoId,
-          creatorId: snippet.channelId,
-          creatorName: snippet.channelTitle,
-          title: snippet.title,
-          thumbnail: thumbUrl,
-          isShorts: isShorts,
-          isFavorite: false,
-          views: snippet.publishedAt.substring(0, 10),
-          publishedAt: snippet.publishedAt,
-          duration: 0,
-          progressPercent: 0,
-          currentTime: 0
-        }
-
+        const parsed = parseVideoItem(item)
         if (existingMap.has(parsed.id)) {
           const info = existingMap.get(parsed.id)
           parsed.isFavorite = info.isFavorite
@@ -1198,16 +1391,7 @@ const fetchChannelVideosByPlaylist = async (creator) => {
       await loadDataFromDB()
     }
   } catch (error) {
-    console.error(`채널(${creator.name}) 플레이리스트 동기화 실패:`, error)
-  }
-}
-
-// 모든 구독 중인 크리에이터의 신작을 10분 간격으로 순회하며 감지
-const checkAllSubscribedChannels = async () => {
-  if (creators.value.length === 0) return
-  console.log('⚡ 구독 중인 채널 신작 확인 중 (playlistitems 방식)...')
-  for (const creator of creators.value) {
-    await fetchChannelVideosByPlaylist(creator)
+    console.error('채널 영상 불러오기 실패:', error)
   }
 }
 
@@ -1217,8 +1401,29 @@ const handleSearch = () => {
 }
 
 const triggerLiveSearch = async () => {
-  if (!searchQuery.value.trim()) return
-  await searchYouTubeVideos()
+  if (!searchQuery.value.trim()) {
+    await fetchAllSubscribedCreatorsVideos()
+  } else {
+    await searchYouTubeVideos()
+  }
+}
+
+const fetchAllSubscribedCreatorsVideos = async () => {
+  if (creators.value.length === 0) {
+    alert('등록된 구독 크리에이터가 없습니다. 채널을 먼저 추가해 주세요.')
+    return
+  }
+  isLoading.value = true
+  try {
+    for (const creator of creators.value) {
+      await fetchChannelVideos(creator)
+    }
+    selectDiscoverAll()
+  } catch (err) {
+    console.error('구독자 전체 영상 로드 실패:', err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const searchYouTubeVideos = async () => {
@@ -1226,16 +1431,19 @@ const searchYouTubeVideos = async () => {
   
   const query = searchQuery.value.trim()
   isLoading.value = true
+  searchNextPageToken.value = null
   
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=30&q=${encodeURIComponent(query)}&type=video&key=${key}`
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(query)}&type=video&key=${key}`
     )
     
     if (data.error) {
       isLoading.value = false
       return
     }
+
+    searchNextPageToken.value = data.nextPageToken || null
 
     const db = await openDB()
     const historyTx = db.transaction('history', 'readonly')
@@ -1246,26 +1454,10 @@ const searchYouTubeVideos = async () => {
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
     const apiVideos = data.items.map(item => {
-      const title = item.snippet.title.toLowerCase()
-      const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
-      let isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
-
-      const parsed = {
-        id: item.id.videoId,
-        youtubeId: item.id.videoId,
-        creatorId: item.snippet.channelId,
-        creatorName: item.snippet.channelTitle,
-        title: item.snippet.title,
-        thumbnail: thumbUrl,
-        isShorts: isShorts,
-        isFavorite: existingMap.get(item.id.videoId) || false,
-        views: item.snippet.publishedAt.substring(0, 10),
-        publishedAt: item.snippet.publishedAt,
-        duration: 0,
-        progressPercent: 0,
-        currentTime: 0
+      const parsed = parseVideoItem(item)
+      if (existingMap.has(parsed.id)) {
+        parsed.isFavorite = existingMap.get(parsed.id)
       }
-
       const h = historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
@@ -1278,6 +1470,14 @@ const searchYouTubeVideos = async () => {
     })
 
     await fetchAndUpdateVideoDurations(apiVideos)
+
+    apiVideos.forEach(v => {
+      const h = historyMap.get(v.id)
+      if (h && h.currentTime > 0 && v.duration > 0) {
+        v.progressPercent = Math.min(100, Math.floor((h.currentTime / v.duration) * 100))
+      }
+    })
+
     apiVideos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
     videos.value = apiVideos
 
@@ -1287,6 +1487,63 @@ const searchYouTubeVideos = async () => {
 
   } catch (error) {
     console.error('YouTube API 요청 실패:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const loadMoreSearchVideos = async () => {
+  if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0) return
+  
+  const query = searchQuery.value.trim()
+  isLoading.value = true
+
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(query)}&type=video&pageToken=${searchNextPageToken.value}&key=${key}`
+    )
+    
+    if (data.error || !data.items) {
+      isLoading.value = false
+      return
+    }
+
+    searchNextPageToken.value = data.nextPageToken || null
+
+    const db = await openDB()
+    const historyTx = db.transaction('history', 'readonly')
+    let dbHistory = await new Promise((resolve) => {
+      historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    })
+    const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
+    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+    const moreVideos = data.items.map(item => {
+      const parsed = parseVideoItem(item)
+      if (existingMap.has(parsed.id)) {
+        parsed.isFavorite = existingMap.get(parsed.id)
+      }
+      const h = historyMap.get(parsed.id)
+      if (h) {
+        parsed.currentTime = h.currentTime || 0
+        parsed.duration = h.duration || 0
+        if (parsed.currentTime > 0 && parsed.duration > 0) {
+          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
+        }
+      }
+      return parsed
+    })
+
+    await fetchAndUpdateVideoDurations(moreVideos)
+
+    videos.value.push(...moreVideos)
+
+    const tx = db.transaction('videos', 'readwrite')
+    const store = tx.objectStore('videos')
+    moreVideos.forEach(v => store.put(v))
+
+  } catch (error) {
+    console.error('추가 YouTube API 요청 실패:', error)
   } finally {
     isLoading.value = false
   }
@@ -1335,38 +1592,17 @@ const selectCreatorFilter = async (creator) => {
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
-  await fetchChannelVideosByPlaylist(creator)
-}
-
-// 브라우저 탭 활성화 상태 변경 시 즉시 동기화 처리
-const handleVisibilityChange = () => {
-  if (document.visibilityState === 'visible') {
-    console.log('🔄 앱이 활성화되었습니다. 최신 영상을 동기화합니다.')
-    checkAllSubscribedChannels()
-  }
+  await fetchChannelVideos(creator)
 }
 
 onMounted(async () => {
   await getActiveApiKeyIndex()
   await loadDataFromDB()
-  
-  // 최초 앱 구동 시 구독 채널들 동기화 실행
-  await checkAllSubscribedChannels()
-
-  // 10분 주기 폴링 설정 (10분 = 600,000ms)
-  pollingInterval = setInterval(() => {
-    checkAllSubscribedChannels()
-  }, 10 * 60 * 1000)
-
-  // 탭 가시성 이벤트 등록
-  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
   destroyYouTubePlayer()
   window.removeEventListener('popstate', handlePopState)
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
-  if (pollingInterval) clearInterval(pollingInterval)
 })
 
 const getHeaderTitle = computed(() => {
@@ -1677,7 +1913,7 @@ html, body {
 }
 
 .comments-scroll-area {
-  max-height: 220px;
+  max-height: 260px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -1776,5 +2012,22 @@ html, body {
 .shorts-play-btn {
   width: 40px;
   height: 40px;
+}
+
+.comment-text-content a {
+  color: #a78bfa !important;
+  text-decoration: underline !important;
+  font-weight: 500;
+}
+.comment-text-content a:hover {
+  color: #c4b5fd !important;
+}
+
+.creator-author-badge {
+  background: rgba(167, 139, 250, 0.25);
+  color: #c4b5fd !important;
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(167, 139, 250, 0.4);
 }
 </style>
