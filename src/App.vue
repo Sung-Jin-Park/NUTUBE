@@ -19,7 +19,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isCustomTailoredMode ? '맞춤 동영상 내 검색...' : (isRecentUploadsMode ? '최근 업로드 영상 내 검색...' : (isTrendingMode ? '인기 급상승 영상 내 검색...' : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 피드 내 검색...')))))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isTrendingMode ? '인기 급상승 영상 내 검색...' : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 피드 내 검색...')))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -149,24 +149,6 @@
               @click="enableSearchMode"
             ></v-btn>
             <v-btn
-              icon="mdi-clock-outline"
-              size="small"
-              variant="flat"
-              :color="isRecentUploadsMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
-              title="최근 업로드된 동영상"
-              @click="enableRecentUploadsMode"
-            ></v-btn>
-            <v-btn
-              icon="mdi-star-face"
-              size="small"
-              variant="flat"
-              :color="isCustomTailoredMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
-              title="새로운 맞춤 동영상"
-              @click="enableCustomTailoredMode"
-            ></v-btn>
-            <v-btn
               icon="mdi-fire"
               size="small"
               variant="flat"
@@ -249,24 +231,6 @@
         ></v-list-item>
 
         <v-list-item 
-          prepend-icon="mdi-clock-outline" 
-          title="최근 업로드된 동영상" 
-          value="recentUploadsMode" 
-          class="mb-2 custom-list-item"
-          :class="{ 'neon-active': isRecentUploadsMode }"
-          @click="enableRecentUploadsMode"
-        ></v-list-item>
-
-        <v-list-item 
-          prepend-icon="mdi-star-face" 
-          title="새로운 맞춤 동영상" 
-          value="customTailoredMode" 
-          class="mb-2 custom-list-item"
-          :class="{ 'neon-active': isCustomTailoredMode }"
-          @click="enableCustomTailoredMode"
-        ></v-list-item>
-
-        <v-list-item 
           prepend-icon="mdi-fire" 
           title="인기 급상승 영상" 
           value="trendingMode" 
@@ -319,7 +283,6 @@
 
     <!-- 메인 콘텐츠 영역 -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
-      
       <v-container fluid class="pa-2 pa-md-6">
         
         <!-- 현재 선택된 타이틀 영역 -->
@@ -463,7 +426,7 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isPlaylistMode ? '이 재생 목록에 담긴 영상이 없습니다.' : (isTrendingMode ? '인기 급상승 영상을 불러오지 못했습니다.' : (isRecentUploadsMode ? '최근 업로드된 영상이 없습니다.' : (isCustomTailoredMode ? '맞춤 동영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))))) }}
+                {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isPlaylistMode ? '이 재생 목록에 담긴 영상이 없습니다.' : (isTrendingMode ? '인기 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
               </p>
             </v-col>
           </v-row>
@@ -497,6 +460,7 @@
                   <div class="shorts-thumbnail-wrapper position-relative bg-black">
                     <v-img :src="video.thumbnail" height="200" contain class="align-end">
                       <div class="shorts-badge">Shorts</div>
+                      <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
                       <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                         <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                       </div>
@@ -558,7 +522,7 @@
 
                     <div class="video-thumbnail-wrapper position-relative bg-black">
                       <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
-                        <div class="video-duration-badge">HD</div>
+                        <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
                         <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                           <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                         </div>
@@ -843,58 +807,134 @@
           </div>
 
           <div v-if="showComments" class="comments-section pa-3 border-bottom-glass position-relative">
-            <div class="d-flex align-center gap-4 mb-3 pb-1 border-bottom-glass">
+            <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3 pb-1 border-bottom-glass">
               <span class="text-subtitle-1 font-weight-bold text-white">
                 댓글 {{ totalCommentCount > 0 ? totalCommentCount.toLocaleString() + '개' : '' }}
               </span>
-              <v-menu location="bottom left">
-                <template v-slot:activator="{ props }">
-                  <v-btn v-bind="props" variant="text" size="small" class="text-none text-white font-weight-bold px-2" prepend-icon="mdi-sort-variant">정렬 기준</v-btn>
-                </template>
-                <v-list density="compact" class="glass-modal rounded-lg py-1">
-                  <v-list-item value="relevance" :class="{ 'text-accent': commentsOrder === 'relevance' }" @click="changeCommentsOrder('relevance')">
-                    <v-list-item-title class="font-weight-bold text-body-2">인기 댓글순</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item value="time" :class="{ 'text-accent': commentsOrder === 'time' }" @click="changeCommentsOrder('time')">
-                    <v-list-item-title class="font-weight-bold text-body-2">최신순</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
+              
+              <div class="d-flex align-center gap-3">
+                <!-- 대댓글 표시 여부 체크박스 -->
+                <v-checkbox
+                  v-model="showReplies"
+                  color="accent"
+                  label="대댓글 표시"
+                  density="compact"
+                  hide-details
+                  class="text-caption ma-0 pa-0 text-white"
+                ></v-checkbox>
+
+                <v-menu location="bottom left">
+                  <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" variant="text" size="small" class="text-none text-white font-weight-bold px-2" prepend-icon="mdi-sort-variant">정렬 기준</v-btn>
+                  </template>
+                  <v-list density="compact" class="glass-modal rounded-lg py-1">
+                    <v-list-item value="relevance" :class="{ 'text-accent': commentsOrder === 'relevance' }" @click="changeCommentsOrder('relevance')">
+                      <v-list-item-title class="font-weight-bold text-body-2 text-white">인기 댓글순</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item value="time" :class="{ 'text-accent': commentsOrder === 'time' }" @click="changeCommentsOrder('time')">
+                      <v-list-item-title class="font-weight-bold text-body-2 text-white">최신순</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </div>
             </div>
             
             <div ref="commentsScrollRef" class="comments-scroll-area" @scroll="checkCommentsScroll">
               <div v-if="comments.length === 0 && !isLoadingComments" class="text-grey-darken-1 text-caption text-center py-4">표시할 댓글이 없습니다.</div>
               
-              <div v-for="(comment, index) in comments" :key="index" class="comment-item mb-3 pb-2 border-bottom-glass" :class="{ 'ml-8 pl-3 border-left-glass': comment.isReply }">
-                <div class="d-flex align-start">
-                  <v-avatar :size="comment.isReply ? 24 : 32" class="mr-3 mt-1 flex-shrink-0">
-                    <v-img :src="comment.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
-                  </v-avatar>
-                  <div class="flex-grow-1 overflow-hidden">
-                    <div class="d-flex align-center flex-wrap gap-1 mb-1">
-                      <span class="text-caption font-weight-bold mr-1" :class="comment.isOwner ? 'creator-author-badge' : 'text-white'">{{ comment.author }}</span>
-                      <v-chip v-if="comment.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
-                      <span class="text-grey-darken-1 text-caption ml-1">{{ comment.publishedAt }}</span>
-                    </div>
-                    <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="comment.text"></p>
-                    <div class="d-flex align-center gap-2 text-caption text-grey-darken-1">
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
-                        <span>{{ comment.likeCount > 0 ? comment.likeCount : '' }}</span>
+              <!-- 최상위 댓글 루프 -->
+              <template v-for="(comment, index) in topLevelComments" :key="comment.id || index">
+                <div class="comment-item mb-3 pb-2 border-bottom-glass">
+                  <div class="d-flex align-start">
+                    <v-avatar :size="32" class="mr-3 mt-1 flex-shrink-0">
+                      <v-img :src="comment.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
+                    </v-avatar>
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="d-flex align-center flex-wrap gap-1 mb-1">
+                        <span class="text-caption font-weight-bold mr-1" :class="comment.isOwner ? 'creator-author-badge' : 'text-white'">{{ comment.author }}</span>
+                        <v-chip v-if="comment.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
+                        <span class="text-grey-darken-1 text-caption ml-1">{{ comment.publishedAt }}</span>
                       </div>
-                      <v-btn
-                        v-if="comment.replyCount > 0 && !comment.repliesLoaded && !comment.isReply"
-                        variant="text"
-                        size="x-small"
-                        color="accent"
-                        class="text-none font-weight-bold px-1"
-                        @click="fetchRepliesForComment(comment)"
-                      >
-                        답글 {{ comment.replyCount }}개 더보기
-                      </v-btn>
+                      <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="comment.text"></p>
+                      
+                      <div class="d-flex align-center gap-2 text-caption text-grey-darken-1">
+                        <div class="d-flex align-center">
+                          <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
+                          <span>{{ comment.likeCount > 0 ? comment.likeCount : '' }}</span>
+                        </div>
+
+                        <!-- 대댓글 해제 상태일 때 나타나는 '답글 N개' 펼치기 버튼 -->
+                        <v-btn
+                          v-if="!showReplies && comment.replyCount > 0"
+                          variant="text"
+                          size="x-small"
+                          color="accent"
+                          class="text-none font-weight-bold px-1 ml-2"
+                          prepend-icon="mdi-menu-down"
+                          @click="fetchOrToggleReplies(comment)"
+                        >
+                          {{ activeExpandedCommentId === comment.id ? '답글 숨기기 ▲' : `답글 ${comment.replyCount}개` }}
+                        </v-btn>
+                      </div>
                     </div>
                   </div>
+
+                  <!-- 대댓글 체크된 상태일 때 바로 하단에 렌더링되는 대댓글 목록 -->
+                  <div v-if="showReplies && comment.replyCount > 0" class="ml-8 mt-2 pl-3 border-left-glass">
+                    <div v-for="reply in getRepliesForComment(comment.id)" :key="reply.id" class="comment-item mb-2 pb-1">
+                      <div class="d-flex align-start">
+                        <v-avatar :size="24" class="mr-2 mt-1 flex-shrink-0">
+                          <v-img :src="reply.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
+                        </v-avatar>
+                        <div class="flex-grow-1 overflow-hidden">
+                          <div class="d-flex align-center flex-wrap gap-1 mb-1">
+                            <span class="text-caption font-weight-bold mr-1" :class="reply.isOwner ? 'creator-author-badge' : 'text-white'">{{ reply.author }}</span>
+                            <v-chip v-if="reply.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
+                            <span class="text-grey-darken-1 text-caption ml-1">{{ reply.publishedAt }}</span>
+                          </div>
+                          <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="reply.text"></p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 대댓글이 아직 다 안 불러와졌거나 추가 답글이 있을 경우 버튼 -->
+                    <v-btn
+                      v-if="!comment.repliesLoaded && comment.replyCount > (getRepliesForComment(comment.id).length)"
+                      variant="text"
+                      size="x-small"
+                      color="accent"
+                      class="text-none font-weight-bold px-1 mt-1"
+                      @click="fetchRepliesForComment(comment)"
+                    >
+                      답글 더보기
+                    </v-btn>
+                  </div>
                 </div>
+              </template>
+
+              <!-- 대댓글 해제 상태에서 '답글 N개' 버튼을 눌렀을 때 해당 댓글 아래에 펼쳐지는 인라인 대댓글 영역 -->
+              <div v-if="!showReplies && activeExpandedCommentId" class="mb-3 pl-6 border-left-glass">
+                <div v-if="isLoadingReplies" class="text-center py-2">
+                  <v-progress-circular indeterminate color="accent" size="18" width="2"></v-progress-circular>
+                  <span class="text-grey-lighten-1 text-caption ml-2">답글 불러오는 중...</span>
+                </div>
+                <template v-else>
+                  <div v-for="reply in getRepliesForComment(activeExpandedCommentId)" :key="reply.id" class="comment-item mb-2 pb-1">
+                    <div class="d-flex align-start">
+                      <v-avatar :size="24" class="mr-2 mt-1 flex-shrink-0">
+                        <v-img :src="reply.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
+                      </v-avatar>
+                      <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex align-center flex-wrap gap-1 mb-1">
+                          <span class="text-caption font-weight-bold mr-1" :class="reply.isOwner ? 'creator-author-badge' : 'text-white'">{{ reply.author }}</span>
+                          <v-chip v-if="reply.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
+                          <span class="text-grey-darken-1 text-caption ml-1">{{ reply.publishedAt }}</span>
+                        </div>
+                        <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="reply.text"></p>
+                      </div>
+                    </div>
+                  </div>
+                </template>
               </div>
 
               <div v-if="isLoadingComments" class="text-center py-2">
@@ -935,8 +975,6 @@ const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
 const isTrendingMode = ref(false)
-const isRecentUploadsMode = ref(false)     // 최근 업로드된 동영상 모드
-const isCustomTailoredMode = ref(false)   // 새로운 맞춤 동영상 모드
 const isFavoriteVideosMode = ref(false)
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
@@ -969,6 +1007,10 @@ const trendingNextPageToken = ref(null)
 const isPlayerOpen = ref(false)
 const activeVideo = ref(null)
 const showComments = ref(false)
+const showReplies = ref(true)               // 대댓글 표시 여부 체크박스 (기본 체크됨)
+const activeExpandedCommentId = ref(null)   // 대댓글 해제 상태일 때 펼쳐진 특정 댓글 ID
+const isLoadingReplies = ref(false)
+
 const comments = ref([])
 const commentsNextPageToken = ref(null)
 const isLoadingComments = ref(false)
@@ -1094,6 +1136,20 @@ const formatSleepTime = (seconds) => {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return m > 0 ? `${m}분 ${s}초` : `${s}초`
+}
+
+const formatVideoDuration = (totalSeconds) => {
+  const numericSeconds = Math.floor(Number(totalSeconds) || 0)
+  if (numericSeconds <= 0) return ''
+  const hours = Math.floor(numericSeconds / 3600)
+  const minutes = Math.floor((numericSeconds % 3600) / 60)
+  const seconds = numericSeconds % 60
+
+  const pad = (n) => String(n).padStart(2, '0')
+  if (hours > 0) {
+    return `${hours}:${pad(minutes)}:${pad(seconds)}`
+  }
+  return `${minutes}:${pad(seconds)}`
 }
 
 const DB_NAME = 'NeonTubeDB_Clean'
@@ -1379,6 +1435,7 @@ const clearSelectedVideos = () => { selectedVideoIds.value = [] }
 const startPlayingActiveVideo = async (video) => {
   activeVideo.value = video
   showComments.value = false
+  activeExpandedCommentId.value = null
   comments.value = []
   commentsNextPageToken.value = null
   totalCommentCount.value = 0
@@ -1588,7 +1645,22 @@ const changeCommentsOrder = (order) => {
   commentsOrder.value = order
   comments.value = []
   commentsNextPageToken.value = null
+  activeExpandedCommentId.value = null
   if (activeVideo.value) fetchComments(activeVideo.value.youtubeId)
+}
+
+const topLevelComments = computed(() => comments.value.filter(c => !c.isReply))
+const getRepliesForComment = (parentId) => comments.value.filter(c => c.isReply && c.parentId === parentId)
+
+const fetchOrToggleReplies = async (comment) => {
+  if (activeExpandedCommentId.value === comment.id) {
+    activeExpandedCommentId.value = null
+  } else {
+    activeExpandedCommentId.value = comment.id
+    if (!comment.repliesLoaded && getRepliesForComment(comment.id).length === 0) {
+      await fetchRepliesForComment(comment)
+    }
+  }
 }
 
 const fetchComments = async (youtubeId) => {
@@ -1651,15 +1723,13 @@ const fetchComments = async (youtubeId) => {
 
 const fetchRepliesForComment = async (parentComment) => {
   if (API_KEYS.length === 0) return
+  isLoadingReplies.value = true
   try {
     const data = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/comments?part=snippet&parentId=${parentComment.id}&maxResults=50&key=${key}`
     )
     if (data.items) {
       const currentCreatorId = activeVideo.value?.creatorId
-      const parentIndex = comments.value.findIndex(c => c.id === parentComment.id)
-      if (parentIndex === -1) return
-
       const newReplies = data.items.map(replyItem => {
         const rSnippet = replyItem.snippet
         const rAuthorChannelId = rSnippet.authorChannelId?.value
@@ -1680,10 +1750,10 @@ const fetchRepliesForComment = async (parentComment) => {
       const existingIds = new Set(comments.value.map(c => c.id))
       const uniqueReplies = newReplies.filter(r => !existingIds.has(r.id))
 
-      comments.value.splice(parentIndex + 1, 0, ...uniqueReplies)
+      comments.value.push(...uniqueReplies)
       parentComment.repliesLoaded = true
     }
-  } catch (err) { console.error(err) }
+  } catch (err) { console.error(err) } finally { isLoadingReplies.value = false }
 }
 
 const fetchMoreComments = async (youtubeId) => {
@@ -2080,7 +2150,7 @@ const loadMoreChannelVideos = async (creator) => {
 }
 
 const handleSearch = () => {
-  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value || isPlaylistMode.value || isTrendingMode.value || isRecentUploadsMode.value || isCustomTailoredMode.value) return
+  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value || isPlaylistMode.value || isTrendingMode.value) return
   if (isSearchMode.value) searchYouTubeVideos()
 }
 
@@ -2219,8 +2289,6 @@ const selectDiscoverAll = () => {
   currentTab.value = 'discoverAll'
   isSearchMode.value = false
   isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2234,8 +2302,6 @@ const selectDiscoverHeart = () => {
   currentTab.value = 'discoverHeart'
   isSearchMode.value = false
   isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2249,8 +2315,6 @@ const enableTrendingMode = async () => {
   currentTab.value = ''
   isSearchMode.value = false
   isTrendingMode.value = true
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2260,43 +2324,11 @@ const enableTrendingMode = async () => {
   scrollToTop(mainScrollRef.value)
 }
 
-const enableRecentUploadsMode = () => {
-  selectedCreator.value = null
-  currentTab.value = ''
-  isSearchMode.value = false
-  isTrendingMode.value = false
-  isRecentUploadsMode.value = true
-  isCustomTailoredMode.value = false
-  isFavoriteVideosMode.value = false
-  isHistoryMode.value = false
-  isPlaylistMode.value = false
-  searchQuery.value = ''
-  if (window.innerWidth < 960) drawer.value = false
-  scrollToTop(mainScrollRef.value)
-}
-
-const enableCustomTailoredMode = () => {
-  selectedCreator.value = null
-  currentTab.value = ''
-  isSearchMode.value = false
-  isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = true
-  isFavoriteVideosMode.value = false
-  isHistoryMode.value = false
-  isPlaylistMode.value = false
-  searchQuery.value = ''
-  if (window.innerWidth < 960) drawer.value = false
-  scrollToTop(mainScrollRef.value)
-}
-
 const enableFavoriteVideosMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
   isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = true
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2310,8 +2342,6 @@ const enableHistoryMode = () => {
   currentTab.value = ''
   isSearchMode.value = false
   isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = true
   isPlaylistMode.value = false
@@ -2325,8 +2355,6 @@ const enablePlaylistMode = () => {
   currentTab.value = ''
   isSearchMode.value = false
   isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = true
@@ -2341,8 +2369,6 @@ const enableSearchMode = () => {
   currentTab.value = ''
   isSearchMode.value = true
   isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2355,8 +2381,6 @@ const selectCreatorFilter = async (creator) => {
   currentTab.value = ''
   isSearchMode.value = false
   isTrendingMode.value = false
-  isRecentUploadsMode.value = false
-  isCustomTailoredMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
@@ -2379,8 +2403,6 @@ onUnmounted(() => {
 
 const getHeaderTitle = computed(() => {
   if (selectedCreator.value) return selectedCreator.value.name
-  if (isRecentUploadsMode.value) return '최근 업로드된 동영상'
-  if (isCustomTailoredMode.value) return '새로운 맞춤 동영상'
   if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
   if (isHistoryMode.value) return '시청 기록'
   if (isPlaylistMode.value) {
@@ -2401,16 +2423,6 @@ const displayedVideos = computed(() => {
 
   if (isTrendingMode.value) {
     result = trendingVideos.value
-  } else if (isRecentUploadsMode.value) {
-    const subscribedIds = creators.value.map(c => c.id)
-    result = result.filter(v => subscribedIds.includes(v.creatorId))
-    result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
-  } else if (isCustomTailoredMode.value) {
-    const favoriteCreatorIds = creators.value.filter(c => c.isFavorite).map(c => c.id)
-    result = result.filter(v => favoriteCreatorIds.includes(v.creatorId) || v.isFavorite)
-    if (result.length === 0) {
-      result = videos.value.slice(0, 20)
-    }
   } else if (selectedCreator.value) {
     result = result.filter(v => v.creatorId === selectedCreator.value.id)
   } else if (isFavoriteVideosMode.value) {
@@ -2545,7 +2557,7 @@ html, body {
 .play-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
 .video-thumbnail-wrapper:hover .play-overlay, .shorts-thumbnail-wrapper:hover .play-overlay { opacity: 1; }
 
-.video-duration-badge { position: absolute; bottom: 8px; right: 6px; background: rgba(0, 0, 0, 0.8); padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; z-index: 2; }
+.video-duration-badge-left { position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 1px 5px; border-radius: 4px; font-size: 11px; font-weight: bold; z-index: 2; letter-spacing: 0.5px; }
 .safe-player-dialog { margin: 4px !important; max-height: 98vh !important; }
 @media (max-width: 600px) { .safe-player-dialog { margin: 0 !important; max-height: 100vh !important; } }
 
