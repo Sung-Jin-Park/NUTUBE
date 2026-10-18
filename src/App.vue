@@ -19,7 +19,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : '구독 피드 내 검색...'))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : '구독 피드 내 검색...')))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -37,6 +37,16 @@
           ></v-btn>
         </template>
       </v-text-field>
+
+      <!-- 로딩 중일 때 상단 앱바 하단에 표시되는 프로그레스 바 -->
+      <template v-slot:extension>
+        <v-progress-linear
+          v-if="isLoading"
+          indeterminate
+          color="accent"
+          height="3"
+        ></v-progress-linear>
+      </template>
     </v-app-bar>
 
     <!-- 네비게이션 사이드바 -->
@@ -72,6 +82,15 @@
           class="mb-2 custom-list-item"
           :class="{ 'neon-active': isFavoriteVideosMode }"
           @click="enableFavoriteVideosMode"
+        ></v-list-item>
+
+        <v-list-item 
+          prepend-icon="mdi-history" 
+          title="시청 기록" 
+          value="historyMode" 
+          class="mb-2 custom-list-item"
+          :class="{ 'neon-active': isHistoryMode }"
+          @click="enableHistoryMode"
         ></v-list-item>
         
         <v-list-item 
@@ -125,7 +144,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 메인 콘텐츠 영역 (유튜브 검색 모드 시 무한 스크롤 적용) -->
+    <!-- 메인 콘텐츠 영역 -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       <v-container fluid class="pa-2 pa-md-6">
         
@@ -168,6 +187,15 @@
                 @click="enableFavoriteVideosMode"
               ></v-btn>
               <v-btn
+                icon="mdi-history"
+                size="small"
+                variant="flat"
+                :color="isHistoryMode ? 'deep-purple-darken-2' : 'transparent'"
+                class="text-white"
+                title="시청 기록"
+                @click="enableHistoryMode"
+              ></v-btn>
+              <v-btn
                 icon="mdi-magnify"
                 size="small"
                 variant="flat"
@@ -192,14 +220,14 @@
             <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
             <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
             <p class="text-caption text-grey-darken-1 mt-1">
-              {{ isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isSearchMode ? '상단 검색바에 키워드를 입력하거나 빈 상태로 검색 버튼을 눌러 모든 구독자 영상을 확인하세요.' : (currentTab === 'discoverHeart' ? '하트(즐겨찾기)된 크리에이터가 없거나 새로운 영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.')) }}
+              {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isSearchMode ? '상단 검색바에 키워드를 입력하거나 빈 상태로 검색 버튼을 눌러 모든 구독자 영상을 확인하세요.' : (currentTab === 'discoverHeart' ? '하트(즐겨찾기)된 크리에이터가 없거나 새로운 영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
             </p>
           </v-col>
         </v-row>
 
         <template v-else>
-          <!-- 1. 최상단 가로 스크롤 쇼츠 영역 -->
-          <div v-if="shortsVideos.length > 0" class="mb-4">
+          <!-- 1. 최상단 가로 스크롤 쇼츠 영역 (시청 기록 모드 아닐 때 또는 쇼츠가 있을 때) -->
+          <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="mb-4">
             <div class="d-flex align-center mb-2">
               <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="20"></v-icon>
               <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
@@ -243,13 +271,13 @@
           </div>
 
           <!-- 2. 일반 유튜브 영상 그리드 영역 -->
-          <div v-if="normalVideos.length > 0">
-            <div v-if="shortsVideos.length > 0" class="d-flex align-center mb-2">
+          <div v-if="normalVideos.length > 0 || (isHistoryMode && displayedVideos.length > 0)">
+            <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="d-flex align-center mb-2">
               <v-icon icon="mdi-youtube" color="red" class="mr-2" size="20"></v-icon>
               <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">동영상</h2>
             </div>
             <v-row dense>
-              <v-col v-for="video in normalVideos" :key="video.id" cols="12" sm="6" md="4" lg="3">
+              <v-col v-for="video in (isHistoryMode ? displayedVideos : normalVideos)" :key="video.id" cols="12" sm="6" md="4" lg="3">
                 <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0" elevation="0" @click="playVideo(video)">
                   <div class="video-thumbnail-wrapper position-relative bg-black">
                     <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
@@ -272,7 +300,7 @@
                         <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
                       </div>
                       <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
-                        <span class="text-grey-darken-1 text-caption mb-1">{{ formatRelativeTime(video.publishedAt) }}</span>
+                        <span class="text-grey-darken-1 text-caption mb-1">{{ isHistoryMode && video.historyUpdatedAt ? formatRelativeTime(video.historyUpdatedAt) : formatRelativeTime(video.publishedAt) }}</span>
                         <div class="d-flex align-center">
                           <v-btn 
                             icon="mdi-heart" 
@@ -446,15 +474,13 @@
             </div>
           </div>
 
-          <!-- 2. 댓글 영역 (개수, 정렬기준, 유튜버 댓글 배지 지원) -->
+          <!-- 2. 댓글 영역 -->
           <div v-if="showComments" class="comments-section pa-3 border-bottom-glass position-relative">
-            <!-- 헤더: 전체 개수 및 유튜브 스타일 정렬 기준 버튼 -->
             <div class="d-flex align-center gap-4 mb-3 pb-1 border-bottom-glass">
               <span class="text-subtitle-1 font-weight-bold text-white">
                 댓글 {{ totalCommentCount > 0 ? totalCommentCount.toLocaleString() + '개' : '' }}
               </span>
               
-              <!-- 정렬 기준 메뉴 버튼 -->
               <v-menu location="bottom left">
                 <template v-slot:activator="{ props }">
                   <v-btn
@@ -495,14 +521,12 @@
               
               <div v-for="(comment, index) in comments" :key="index" class="comment-item mb-3 pb-2 border-bottom-glass">
                 <div class="d-flex align-start">
-                  <!-- 작성자 프로필 이미지 -->
                   <v-avatar size="32" class="mr-3 mt-1 flex-shrink-0">
                     <v-img :src="comment.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
                   </v-avatar>
 
                   <div class="flex-grow-1 overflow-hidden">
                     <div class="d-flex align-center flex-wrap gap-1 mb-1">
-                      <!-- 작성자 이름 (유튜버 본인일 경우 하이라이트 배지 스타일 적용) -->
                       <span 
                         class="text-caption font-weight-bold mr-1"
                         :class="comment.isOwner ? 'creator-author-badge' : 'text-white'"
@@ -510,7 +534,6 @@
                         {{ comment.author }}
                       </span>
 
-                      <!-- 유튜버(채널 작성자) 전용 배지 -->
                       <v-chip
                         v-if="comment.isOwner"
                         size="x-small"
@@ -525,10 +548,8 @@
                       <span class="text-grey-darken-1 text-caption ml-1">{{ comment.publishedAt }}</span>
                     </div>
 
-                    <!-- 댓글 본문 (링크 태그 가독성 향상) -->
                     <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="comment.text"></p>
 
-                    <!-- 좋아요 및 반응 수 -->
                     <div class="d-flex align-center gap-2 text-caption text-grey-darken-1">
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
@@ -539,7 +560,6 @@
                 </div>
               </div>
 
-              <!-- 댓글 추가 로딩 표시 -->
               <div v-if="isLoadingComments" class="text-center py-2">
                 <v-progress-circular indeterminate color="accent" size="20" width="2"></v-progress-circular>
                 <span class="text-grey-lighten-1 text-caption ml-2">댓글 더 불러오는 중...</span>
@@ -614,7 +634,6 @@
               <v-icon icon="mdi-chevron-up" color="white" size="24"></v-icon>
             </v-btn>
           </v-slide-y-transition>
-<!-- 주석 -->
         </div>
       </v-card>
     </v-dialog>
@@ -630,10 +649,12 @@ const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
 const isFavoriteVideosMode = ref(false)
+const isHistoryMode = ref(false)
 const isLoading = ref(false)
 
 const creators = ref([])
 const videos = ref([])
+const historyList = ref([]) // 시청 기록 목록
 
 const isPlayerOpen = ref(false)
 const activeVideo = ref(null)
@@ -642,9 +663,8 @@ const comments = ref([])
 const commentsNextPageToken = ref(null)
 const isLoadingComments = ref(false)
 
-// 댓글 추가 상태 변수 (전체 댓글 수, 정렬 방식)
 const totalCommentCount = ref(0)
-const commentsOrder = ref('relevance') // 'relevance'(인기순) 또는 'time'(최신순)
+const commentsOrder = ref('relevance')
 
 const initialWatchedTime = ref(0)
 const isLandscapeMode = ref(false)
@@ -1067,10 +1087,12 @@ const saveCurrentHistoryToDB = async () => {
     if (targetVideo) {
       targetVideo.currentTime = Math.floor(currentPlayingTime)
       targetVideo.duration = dur
+      targetVideo.historyUpdatedAt = new Date().toISOString()
       if (dur > 0) {
         targetVideo.progressPercent = Math.min(100, Math.floor((currentPlayingTime / dur) * 100))
       }
     }
+    loadDataFromDB()
   } catch (err) {
     console.error('히스토리 저장 실패:', err)
   }
@@ -1143,7 +1165,6 @@ const formatRelativeTime = (dateString) => {
   }
 }
 
-// 영상의 전체 댓글 개수를 유튜브 API에서 가져오는 함수
 const fetchVideoCommentCount = async (youtubeId) => {
   if (API_KEYS.length === 0) return
   try {
@@ -1159,7 +1180,6 @@ const fetchVideoCommentCount = async (youtubeId) => {
   }
 }
 
-// 정렬 옵션 변경 시 처리 함수
 const changeCommentsOrder = (order) => {
   if (commentsOrder.value === order) return
   commentsOrder.value = order
@@ -1170,12 +1190,10 @@ const changeCommentsOrder = (order) => {
   }
 }
 
-// 최초 댓글 가져오기 (전체 갯수, 정렬기준, 유튜버 작성자 확인 기능 포함)
 const fetchComments = async (youtubeId) => {
   if (API_KEYS.length === 0) return
   isLoadingComments.value = true
 
-  // 영상 총 댓글 수 조회
   fetchVideoCommentCount(youtubeId)
 
   try {
@@ -1196,7 +1214,6 @@ const fetchComments = async (youtubeId) => {
           text: snippet.textDisplay,
           publishedAt: snippet.publishedAt.substring(0, 10),
           likeCount: snippet.likeCount || 0,
-          // 댓글 작성자가 영상 창작자(유튜버)와 동일한지 체크
           isOwner: Boolean(currentCreatorId && authorChannelId === currentCreatorId)
         }
       })
@@ -1209,7 +1226,6 @@ const fetchComments = async (youtubeId) => {
   }
 }
 
-// 스크롤 시 추가 댓글 로드 (pageToken 활용)
 const fetchMoreComments = async (youtubeId) => {
   if (API_KEYS.length === 0 || !commentsNextPageToken.value) return
   isLoadingComments.value = true
@@ -1265,6 +1281,8 @@ const loadDataFromDB = async () => {
   let dbHistory = await new Promise((resolve) => {
     historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
   })
+  
+  historyList.value = dbHistory || []
   const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
   
   const processedVideos = (dbVideos || []).map(v => {
@@ -1279,7 +1297,8 @@ const loadDataFromDB = async () => {
       ...v,
       duration: videoDuration,
       currentTime: currentTime,
-      progressPercent: percent
+      progressPercent: percent,
+      historyUpdatedAt: h?.updatedAt || null
     }
   }).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
@@ -1354,7 +1373,8 @@ const parseVideoItem = (item) => {
     publishedAt: item.snippet.publishedAt,
     duration: 0,
     progressPercent: 0,
-    currentTime: 0
+    currentTime: 0,
+    historyUpdatedAt: null
   }
 }
 
@@ -1368,7 +1388,7 @@ const fetchChannelVideos = async (creator) => {
 
     if (!data.error && data.items) {
       const db = await openDB()
-      const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration }]))
+      const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt }]))
 
       const channelVideos = data.items.map(item => {
         const parsed = parseVideoItem(item)
@@ -1378,6 +1398,7 @@ const fetchChannelVideos = async (creator) => {
           parsed.progressPercent = info.progressPercent
           parsed.currentTime = info.currentTime
           parsed.duration = info.duration
+          parsed.historyUpdatedAt = info.historyUpdatedAt
         }
         return parsed
       })
@@ -1396,7 +1417,7 @@ const fetchChannelVideos = async (creator) => {
 }
 
 const handleSearch = () => {
-  if (selectedCreator.value || isFavoriteVideosMode.value) return
+  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value) return
   if (isSearchMode.value) searchYouTubeVideos()
 }
 
@@ -1462,6 +1483,7 @@ const searchYouTubeVideos = async () => {
       if (h) {
         parsed.currentTime = h.currentTime || 0
         parsed.duration = h.duration || 0
+        parsed.historyUpdatedAt = h.updatedAt || null
         if (parsed.currentTime > 0 && parsed.duration > 0) {
           parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
         }
@@ -1527,6 +1549,7 @@ const loadMoreSearchVideos = async () => {
       if (h) {
         parsed.currentTime = h.currentTime || 0
         parsed.duration = h.duration || 0
+        parsed.historyUpdatedAt = h.updatedAt || null
         if (parsed.currentTime > 0 && parsed.duration > 0) {
           parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
         }
@@ -1554,6 +1577,7 @@ const selectDiscoverAll = () => {
   currentTab.value = 'discoverAll'
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 }
@@ -1563,6 +1587,7 @@ const selectDiscoverHeart = () => {
   currentTab.value = 'discoverHeart'
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 }
@@ -1572,6 +1597,17 @@ const enableFavoriteVideosMode = () => {
   currentTab.value = ''
   isSearchMode.value = false
   isFavoriteVideosMode.value = true
+  isHistoryMode.value = false
+  searchQuery.value = ''
+  if (window.innerWidth < 960) drawer.value = false
+}
+
+const enableHistoryMode = () => {
+  selectedCreator.value = null
+  currentTab.value = ''
+  isSearchMode.value = false
+  isFavoriteVideosMode.value = false
+  isHistoryMode.value = true
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 }
@@ -1581,6 +1617,7 @@ const enableSearchMode = () => {
   currentTab.value = ''
   isSearchMode.value = true
   isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
   if (window.innerWidth < 960) drawer.value = false
 }
 
@@ -1589,6 +1626,7 @@ const selectCreatorFilter = async (creator) => {
   currentTab.value = ''
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
@@ -1608,6 +1646,7 @@ onUnmounted(() => {
 const getHeaderTitle = computed(() => {
   if (selectedCreator.value) return selectedCreator.value.name
   if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
+  if (isHistoryMode.value) return '시청 기록'
   if (isSearchMode.value) return '유튜브 검색'
   if (currentTab.value === 'discoverAll') return '전체 구독 피드'
   if (currentTab.value === 'discoverHeart') return '구독 피드 모음'
@@ -1621,6 +1660,15 @@ const displayedVideos = computed(() => {
     result = result.filter(v => v.creatorId === selectedCreator.value.id)
   } else if (isFavoriteVideosMode.value) {
     result = result.filter(v => v.isFavorite)
+  } else if (isHistoryMode.value) {
+    // 시청 기록 모드: historyList에 존재하는 비디오들만 필터링한 뒤, 최근 시청한 순서(updatedAt 기준 내림차순)로 정렬
+    const historyMap = new Map(historyList.value.map(h => [h.videoId, h.updatedAt]))
+    result = result.filter(v => historyMap.has(v.id))
+    result.sort((a, b) => {
+      const timeA = historyMap.get(a.id) || ''
+      const timeB = historyMap.get(b.id) || ''
+      return new Date(timeB) - new Date(timeA)
+    })
   } else if (isSearchMode.value) {
     return result
   } else if (currentTab.value === 'discoverAll') {
