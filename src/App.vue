@@ -19,7 +19,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : '구독 피드 내 검색...')))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 피드 내 검색...'))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -49,6 +49,17 @@
                 </v-badge>
               </template>
             </v-btn>
+
+            <!-- 선택한 영상을 재생 목록에 저장 버튼 -->
+            <v-btn
+              v-if="selectedVideoIds.length > 0"
+              icon="mdi-folder-plus"
+              size="small"
+              variant="flat"
+              color="deep-purple-accent-2"
+              title="선택한 영상을 재생 목록에 저장"
+              @click.stop="openSaveToPlaylistDialog(null)"
+            ></v-btn>
 
             <!-- 선택 내역 클리어 버튼 (X 표시 아이콘) -->
             <v-btn
@@ -126,6 +137,15 @@
         ></v-list-item>
 
         <v-list-item 
+          prepend-icon="mdi-playlist-music" 
+          title="재생 목록" 
+          value="playlistMode" 
+          class="mb-2 custom-list-item"
+          :class="{ 'neon-active': isPlaylistMode }"
+          @click="enablePlaylistMode"
+        ></v-list-item>
+
+        <v-list-item 
           prepend-icon="mdi-history" 
           title="시청 기록" 
           value="historyMode" 
@@ -195,8 +215,9 @@
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex flex-column flex-md-row justify-space-between align-md-center gap-3">
             <div class="d-flex align-center gap-3">
-              <!-- 전체 선택 체크박스 -->
+              <!-- 전체 선택 체크박스 (재생 목록 메인 폴더 보기 아닐 때만) -->
               <v-checkbox
+                v-if="!isPlaylistMode || activePlaylistId"
                 v-model="isAllSelected"
                 :indeterminate="isIndeterminate"
                 color="accent"
@@ -211,7 +232,7 @@
               </h1>
             </div>
 
-            <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl">
+            <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl flex-wrap">
               <v-btn
                 icon="mdi-play-box-multiple-outline"
                 size="small"
@@ -240,6 +261,15 @@
                 @click="enableFavoriteVideosMode"
               ></v-btn>
               <v-btn
+                icon="mdi-playlist-music"
+                size="small"
+                variant="flat"
+                :color="isPlaylistMode ? 'deep-purple-darken-2' : 'transparent'"
+                class="text-white"
+                title="재생 목록"
+                @click="enablePlaylistMode"
+              ></v-btn>
+              <v-btn
                 icon="mdi-history"
                 size="small"
                 variant="flat"
@@ -261,91 +291,144 @@
           </div>
         </v-card>
 
-        <v-row v-if="isLoading && displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
-          <v-col cols="12" class="text-center">
-            <v-progress-circular indeterminate color="accent" size="48" class="mb-3"></v-progress-circular>
-            <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">영상을 불러오는 중입니다...</h3>
-          </v-col>
-        </v-row>
-
-        <v-row v-else-if="displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
-          <v-col cols="12" class="text-center">
-            <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
-            <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
-            <p class="text-caption text-grey-darken-1 mt-1">
-              {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isSearchMode ? '상단 검색바에 키워드를 입력하거나 빈 상태로 검색 버튼을 눌러 모든 구독자 영상을 확인하세요.' : (currentTab === 'discoverHeart' ? '하트(즐겨찾기)된 크리에이터가 없거나 새로운 영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
-            </p>
-          </v-col>
-        </v-row>
-
-        <template v-else>
-          <!-- 1. 최상단 가로 스크롤 쇼츠 영역 -->
-          <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="mb-4">
-            <div class="d-flex align-center mb-2">
-              <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="20"></v-icon>
-              <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
-            </div>
-            <div class="shorts-horizontal-scroll">
-              <div 
-                v-for="video in shortsVideos" 
-                :key="video.id" 
-                class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
-                @click="playVideo(video)"
-              >
-                <!-- 쇼츠 카드 체크박스 -->
-                <div class="video-checkbox-wrapper">
-                  <v-checkbox
-                    v-model="selectedVideoIds"
-                    :value="video.id"
-                    color="accent"
-                    hide-details
-                    density="compact"
-                    class="ma-1 pa-0 bg-dark-glass rounded"
-                    @click.stop
-                  ></v-checkbox>
-                </div>
-
-                <div class="shorts-thumbnail-wrapper position-relative bg-black">
-                  <v-img :src="video.thumbnail" height="200" contain class="align-end">
-                    <div class="shorts-badge">Shorts</div>
-                    <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
-                      <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
-                    </div>
-                  </v-img>
-                  <div class="play-overlay">
-                    <div class="play-btn-circle">
-                      <v-icon icon="mdi-play" color="white" size="32"></v-icon>
-                    </div>
-                  </div>
-                </div>
-                <div class="pa-2 d-flex flex-column justify-space-between flex-grow-1">
-                  <h3 class="text-white font-weight-bold text-caption text-truncate-2" v-html="video.title"></h3>
-                  <div class="d-flex justify-space-between align-center mt-1">
-                    <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
-                    <v-btn
-                      icon="mdi-heart"
-                      size="x-small"
-                      variant="text"
-                      :color="video.isFavorite ? 'pink' : 'grey'"
-                      title="영상 즐겨찾기"
-                      @click.stop="toggleVideoFavorite(video)"
-                    ></v-btn>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <!-- 재생 목록 폴더 목록 뷰 (재생 목록 탭이면서 특정 폴더를 선택하지 않았을 때) -->
+        <div v-if="isPlaylistMode && !activePlaylistId">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">내 재생 목록 폴더</h2>
+            <v-btn
+              color="deep-purple-darken-2"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-folder-plus"
+              class="text-white font-weight-bold"
+              @click="openCreatePlaylistDialog"
+            >
+              새 폴더 만들기
+            </v-btn>
           </div>
 
-          <!-- 2. 일반 유튜브 영상 그리드 영역 -->
-          <div v-if="normalVideos.length > 0 || (isHistoryMode && displayedVideos.length > 0)">
-            <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="d-flex align-center mb-2">
-              <v-icon icon="mdi-youtube" color="red" class="mr-2" size="20"></v-icon>
-              <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">동영상</h2>
-            </div>
-            <v-row dense>
-              <v-col v-for="video in (isHistoryMode ? displayedVideos : normalVideos)" :key="video.id" cols="12" sm="6" md="4" lg="3">
-                <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
-                  <!-- 일반 영상 카드 체크박스 -->
+          <v-row v-if="playlists.length === 0" justify="center" align="center" style="min-height: 200px;">
+            <v-col cols="12" class="text-center">
+              <v-icon icon="mdi-folder-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
+              <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">생성된 재생 목록 폴더가 없습니다</h3>
+              <p class="text-caption text-grey-darken-1 mt-1">상단의 '새 폴더 만들기' 버튼을 눌러 재생 목록을 만들어 보세요.</p>
+            </v-col>
+          </v-row>
+
+          <v-row v-else dense>
+            <v-col v-for="(playlist, index) in playlists" :key="playlist.id" cols="12" sm="6" md="4" lg="3">
+              <v-card 
+                class="glass-card rounded-xl pa-4 h-100 d-flex flex-column justify-space-between position-relative" 
+                elevation="0"
+                @click="selectPlaylistFolder(playlist)"
+              >
+                <div>
+                  <div class="d-flex justify-space-between align-start mb-2">
+                    <v-icon icon="mdi-folder-music" color="accent" size="36"></v-icon>
+                    <!-- 폴더 관리 버튼 그룹 (위치 변경, 수정, 삭제) -->
+                    <div class="d-flex align-center gap-1" @click.stop>
+                      <v-btn
+                        icon="mdi-arrow-up"
+                        size="x-small"
+                        variant="text"
+                        color="white"
+                        :disabled="index === 0"
+                        title="위로 이동"
+                        @click="movePlaylistOrder(index, -1)"
+                      ></v-btn>
+                      <v-btn
+                        icon="mdi-arrow-down"
+                        size="x-small"
+                        variant="text"
+                        color="white"
+                        :disabled="index === playlists.length - 1"
+                        title="아래로 이동"
+                        @click="movePlaylistOrder(index, 1)"
+                      ></v-btn>
+                      <v-btn
+                        icon="mdi-pencil"
+                        size="x-small"
+                        variant="text"
+                        color="accent"
+                        title="폴더 이름 수정"
+                        @click="openEditPlaylistDialog(playlist)"
+                      ></v-btn>
+                      <v-btn
+                        icon="mdi-delete"
+                        size="x-small"
+                        variant="text"
+                        color="red-lighten-2"
+                        title="폴더 삭제"
+                        @click="deletePlaylist(playlist)"
+                      ></v-btn>
+                    </div>
+                  </div>
+                  <h3 class="text-white font-weight-bold text-subtitle-1 mb-1 text-truncate">{{ playlist.name }}</h3>
+                  <p class="text-grey-lighten-1 text-caption mb-0">동영상 {{ getPlaylistVideoCount(playlist.id) }}개</p>
+                </div>
+                <div class="d-flex justify-end mt-4">
+                  <v-btn
+                    size="small"
+                    variant="flat"
+                    color="deep-purple-darken-2"
+                    class="text-white font-weight-bold"
+                    @click.stop="playPlaylistFolder(playlist)"
+                    :disabled="getPlaylistVideoCount(playlist.id) === 0"
+                  >
+                    전체 재생
+                  </v-btn>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+        </div>
+
+        <!-- 기존 영상 목록 뷰 -->
+        <template v-else>
+          <div v-if="isPlaylistMode && activePlaylistId" class="mb-3">
+            <v-btn
+              variant="text"
+              color="accent"
+              size="small"
+              prepend-icon="mdi-arrow-left"
+              @click="activePlaylistId = null"
+            >
+              재생 목록 폴더 목록으로 돌아가기
+            </v-btn>
+          </div>
+
+          <v-row v-if="isLoading && displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
+            <v-col cols="12" class="text-center">
+              <v-progress-circular indeterminate color="accent" size="48" class="mb-3"></v-progress-circular>
+              <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">영상을 불러오는 중입니다...</h3>
+            </v-col>
+          </v-row>
+
+          <v-row v-else-if="displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
+            <v-col cols="12" class="text-center">
+              <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
+              <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
+              <p class="text-caption text-grey-darken-1 mt-1">
+                {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isPlaylistMode ? '이 재생 목록에 담긴 영상이 없습니다. 영상 카드의 폴더 버튼을 눌러 담아보세요.' : '구독 중인 채널의 새로운 영상이 없습니다.')) }}
+              </p>
+            </v-col>
+          </v-row>
+
+          <template v-else>
+            <!-- 1. 최상단 가로 스크롤 쇼츠 영역 -->
+            <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="mb-4">
+              <div class="d-flex align-center mb-2">
+                <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="20"></v-icon>
+                <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
+              </div>
+              <div class="shorts-horizontal-scroll">
+                <div 
+                  v-for="video in shortsVideos" 
+                  :key="video.id" 
+                  class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
+                  @click="playVideo(video)"
+                >
+                  <!-- 쇼츠 카드 체크박스 -->
                   <div class="video-checkbox-wrapper">
                     <v-checkbox
                       v-model="selectedVideoIds"
@@ -358,59 +441,125 @@
                     ></v-checkbox>
                   </div>
 
-                  <div class="video-thumbnail-wrapper position-relative bg-black">
-                    <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
-                      <div class="video-duration-badge">HD</div>
+                  <div class="shorts-thumbnail-wrapper position-relative bg-black">
+                    <v-img :src="video.thumbnail" height="200" contain class="align-end">
+                      <div class="shorts-badge">Shorts</div>
                       <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                         <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                       </div>
                     </v-img>
                     <div class="play-overlay">
-                      <div class="play-btn-circle shorts-play-btn">
-                        <v-icon icon="mdi-play" color="white" size="24"></v-icon>
+                      <div class="play-btn-circle">
+                        <v-icon icon="mdi-play" color="white" size="32"></v-icon>
                       </div>
                     </div>
                   </div>
-
-                  <v-card-text class="flex-grow-1 d-flex flex-column justify-space-between pa-2 pa-md-3">
-                    <div class="d-flex justify-space-between align-start gap-2">
-                      <div class="flex-grow-1 overflow-hidden">
-                        <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
-                        <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                  <div class="pa-2 d-flex flex-column justify-space-between flex-grow-1">
+                    <h3 class="text-white font-weight-bold text-caption text-truncate-2" v-html="video.title"></h3>
+                    <div class="d-flex justify-space-between align-center mt-1">
+                      <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                      <div class="d-flex align-center">
+                        <v-btn
+                          icon="mdi-folder-plus"
+                          size="x-small"
+                          variant="text"
+                          color="accent"
+                          title="재생 목록에 추가"
+                          @click.stop="openSaveToPlaylistDialog(video)"
+                        ></v-btn>
+                        <v-btn
+                          icon="mdi-heart"
+                          size="x-small"
+                          variant="text"
+                          :color="video.isFavorite ? 'pink' : 'grey'"
+                          title="영상 즐겨찾기"
+                          @click.stop="toggleVideoFavorite(video)"
+                        ></v-btn>
                       </div>
-                      <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
-                        <span class="text-grey-darken-1 text-caption mb-1">{{ isHistoryMode && video.historyUpdatedAt ? formatRelativeTime(video.historyUpdatedAt) : formatRelativeTime(video.publishedAt) }}</span>
-                        <div class="d-flex align-center">
-                          <v-btn 
-                            icon="mdi-heart" 
-                            size="x-small" 
-                            variant="text" 
-                            :color="video.isFavorite ? 'pink' : 'grey'" 
-                            title="영상 즐겨찾기"
-                            @click.stop="toggleVideoFavorite(video)"
-                          ></v-btn>
-                          <v-btn 
-                            icon="mdi-account-plus" 
-                            size="x-small" 
-                            variant="text" 
-                            :color="creators.some(c => c.id === video.creatorId) ? 'accent' : 'grey'" 
-                            :title="creators.some(c => c.id === video.creatorId) ? '이미 구독 중인 채널' : '이 채널 구독하기'"
-                            @click.stop="subscribeCreatorFromCard(video)"
-                          ></v-btn>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. 일반 유튜브 영상 그리드 영역 -->
+            <div v-if="normalVideos.length > 0 || (isHistoryMode && displayedVideos.length > 0)">
+              <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="d-flex align-center mb-2">
+                <v-icon icon="mdi-youtube" color="red" class="mr-2" size="20"></v-icon>
+                <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">동영상</h2>
+              </div>
+              <v-row dense>
+                <v-col v-for="video in (isHistoryMode ? displayedVideos : normalVideos)" :key="video.id" cols="12" sm="6" md="4" lg="3">
+                  <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
+                    <!-- 일반 영상 카드 체크박스 -->
+                    <div class="video-checkbox-wrapper">
+                      <v-checkbox
+                        v-model="selectedVideoIds"
+                        :value="video.id"
+                        color="accent"
+                        hide-details
+                        density="compact"
+                        class="ma-1 pa-0 bg-dark-glass rounded"
+                        @click.stop
+                      ></v-checkbox>
+                    </div>
+
+                    <div class="video-thumbnail-wrapper position-relative bg-black">
+                      <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
+                        <div class="video-duration-badge">HD</div>
+                        <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
+                          <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
+                        </div>
+                      </v-img>
+                      <div class="play-overlay">
+                        <div class="play-btn-circle shorts-play-btn">
+                          <v-icon icon="mdi-play" color="white" size="24"></v-icon>
                         </div>
                       </div>
                     </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </div>
 
-          <!-- 추가 로딩 인디케이터 (검색 모드 또는 채널 선택 모드) -->
-          <div v-if="(isSearchMode || selectedCreator) && isLoading" class="text-center py-4">
-            <v-progress-circular indeterminate color="accent" size="32"></v-progress-circular>
-            <span class="text-grey-lighten-1 text-caption ml-2">다음 영상을 불러오는 중...</span>
-          </div>
+                    <v-card-text class="flex-grow-1 d-flex flex-column justify-space-between pa-2 pa-md-3">
+                      <div class="d-flex justify-space-between align-start gap-2">
+                        <div class="flex-grow-1 overflow-hidden">
+                          <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
+                          <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                        </div>
+                        <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
+                          <span class="text-grey-darken-1 text-caption mb-1">{{ isHistoryMode && video.historyUpdatedAt ? formatRelativeTime(video.historyUpdatedAt) : formatRelativeTime(video.publishedAt) }}</span>
+                          <div class="d-flex align-center">
+                            <v-btn 
+                              icon="mdi-folder-plus" 
+                              size="x-small" 
+                              variant="text" 
+                              color="accent" 
+                              title="재생 목록에 추가"
+                              @click.stop="openSaveToPlaylistDialog(video)"
+                            ></v-btn>
+                            <v-btn 
+                              icon="mdi-heart" 
+                              size="x-small" 
+                              variant="text" 
+                              :color="video.isFavorite ? 'pink' : 'grey'" 
+                              title="영상 즐겨찾기"
+                              @click.stop="toggleVideoFavorite(video)"
+                            ></v-btn>
+                            <v-btn 
+                              icon="mdi-account-plus" 
+                              size="x-small" 
+                              variant="text" 
+                              :color="creators.some(c => c.id === video.creatorId) ? 'accent' : 'grey'" 
+                              :title="creators.some(c => c.id === video.creatorId) ? '이미 구독 중인 채널' : '이 채널 구독하기'"
+                              @click.stop="subscribeCreatorFromCard(video)"
+                            ></v-btn>
+                          </div>
+                        </div>
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </div>
+          </template>
         </template>
 
       </v-container>
@@ -431,7 +580,7 @@
       </v-slide-y-transition>
     </v-main>
 
-    <!-- 조회 중일 때 화면을 살짝 어둡게 하고 띄워주는 로딩 오버레이 (fixed 적용) -->
+    <!-- 조회 중일 때 로딩 오버레이 -->
     <div v-if="isLoading" class="loading-overlay-container">
       <div class="loading-card glass-modal pa-4 rounded-xl d-flex flex-column align-center shadow-lg">
         <v-progress-circular indeterminate color="accent" size="48" width="4" class="mb-3"></v-progress-circular>
@@ -439,6 +588,83 @@
         <p class="text-caption text-grey-lighten-1 mb-0">잠시만 기다려 주세요.</p>
       </div>
     </div>
+
+    <!-- 재생 목록 생성/수정 다이얼로그 -->
+    <v-dialog v-model="isPlaylistDialogVisible" max-width="400px">
+      <v-card class="glass-modal rounded-xl pa-4 text-white">
+        <h3 class="text-subtitle-1 font-weight-bold mb-3">{{ editingPlaylist ? '재생 목록 폴더 이름 수정' : '새 재생 목록 폴더 생성' }}</h3>
+        <v-text-field
+          v-model="playlistFormName"
+          label="폴더 이름"
+          variant="outlined"
+          density="compact"
+          class="mb-3"
+          @keydown.enter="savePlaylistFolder"
+        ></v-text-field>
+        <div class="d-flex justify-end gap-2">
+          <v-btn variant="text" color="grey-lighten-1" size="small" @click="isPlaylistDialogVisible = false">취소</v-btn>
+          <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold" @click="savePlaylistFolder">저장</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- [개선] 영상 -> 재생 목록에 저장 다이얼로그 (신규 폴더 생성 창 포함 + 테마 맞춤 버튼) -->
+    <v-dialog v-model="isSaveToPlaylistDialogVisible" max-width="420px">
+      <v-card class="glass-modal rounded-xl pa-4 text-white">
+        <h3 class="text-subtitle-1 font-weight-bold mb-3">재생 목록에 저장</h3>
+        
+        <!-- 기존 폴더 리스트 또는 없을 때 안내 -->
+        <div v-if="playlists.length === 0" class="text-grey-darken-1 text-caption mb-3">
+          생성된 재생 목록 폴더가 없습니다. 아래에서 새 폴더를 만들어 보세요.
+        </div>
+        <v-list v-else density="compact" class="bg-transparent text-white mb-2" style="max-height: 180px; overflow-y: auto;">
+          <v-list-item v-for="pl in playlists" :key="pl.id" class="px-0">
+            <template v-slot:prepend>
+              <v-checkbox
+                v-model="targetPlaylistIds"
+                :value="pl.id"
+                color="accent"
+                density="compact"
+                hide-details
+              ></v-checkbox>
+            </template>
+            <v-list-item-title class="text-body-2">{{ pl.name }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+
+        <v-divider class="border-opacity-25 my-3"></v-divider>
+
+        <!-- 신규 폴더 즉시 생성 인라인 영역 -->
+        <div class="mb-3">
+          <span class="text-caption text-accent font-weight-bold d-block mb-1">➕ 새 폴더 바로 만들기</span>
+          <div class="d-flex align-center gap-2">
+            <v-text-field
+              v-model="quickNewPlaylistName"
+              placeholder="새 폴더 이름 입력"
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="flex-grow-1"
+              @keydown.enter="quickCreateAndSelectPlaylist"
+            ></v-text-field>
+            <v-btn
+              color="deep-purple-darken-2"
+              variant="flat"
+              size="small"
+              class="text-white font-weight-bold flex-shrink-0"
+              @click="quickCreateAndSelectPlaylist"
+            >
+              폴더 생성
+            </v-btn>
+          </div>
+        </div>
+
+        <div class="d-flex justify-end gap-2 mt-2">
+          <v-btn variant="text" color="grey-lighten-1" size="small" @click="isSaveToPlaylistDialogVisible = false">취소</v-btn>
+          <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold" @click="confirmSaveToPlaylists">확인</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
 
     <!-- 시네마틱 영상 재생 모달 -->
     <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
@@ -836,11 +1062,25 @@ const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
 const isFavoriteVideosMode = ref(false)
 const isHistoryMode = ref(false)
+const isPlaylistMode = ref(false)
 const isLoading = ref(false)
 
 const creators = ref([])
 const videos = ref([])
 const historyList = ref([])
+
+// 재생 목록 폴더 및 관계 관리 State
+const playlists = ref([])
+const playlistItems = ref([])
+const activePlaylistId = ref(null)
+
+const isPlaylistDialogVisible = ref(false)
+const playlistFormName = ref('')
+const editingPlaylist = ref(null)
+
+const isSaveToPlaylistDialogVisible = ref(false)
+const targetPlaylistIds = ref([])
+const quickNewPlaylistName = ref('') // [신설] 저장 다이얼로그 내 빠른 폴더 생성 입력 값
 
 // 영상 체크박스 선택 관리
 const selectedVideoIds = ref([])
@@ -969,7 +1209,6 @@ const setSleepTimer = (minutes) => {
   }, 1000)
 }
 
-// 직접 입력한 커스텀 분으로 취침 예약 설정
 const setCustomSleepTimer = () => {
   const mins = Number(customSleepMinutes.value)
   if (!mins || mins <= 0) {
@@ -1002,7 +1241,7 @@ const formatSleepTime = (seconds) => {
 }
 
 const DB_NAME = 'NeonTubeDB_Clean'
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 const openDB = () => {
   return new Promise((resolve, reject) => {
@@ -1015,6 +1254,8 @@ const openDB = () => {
       if (!db.objectStoreNames.contains('videos')) db.createObjectStore('videos', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'videoId' })
+      if (!db.objectStoreNames.contains('playlists')) db.createObjectStore('playlists', { keyPath: 'id' })
+      if (!db.objectStoreNames.contains('playlistItems')) db.createObjectStore('playlistItems', { keyPath: 'id', autoIncrement: true })
     }
   })
 }
@@ -1154,6 +1395,181 @@ const fetchAndUpdateVideoDurations = async (videoList) => {
   return videoList
 }
 
+// 재생 목록 폴더 생성 및 관리 로직
+const openCreatePlaylistDialog = () => {
+  editingPlaylist.value = null
+  playlistFormName.value = ''
+  isPlaylistDialogVisible.value = true
+}
+
+const openEditPlaylistDialog = (playlist) => {
+  editingPlaylist.value = playlist
+  playlistFormName.value = playlist.name
+  isPlaylistDialogVisible.value = true
+}
+
+const savePlaylistFolder = async () => {
+  const name = playlistFormName.value.trim()
+  if (!name) {
+    alert('폴더 이름을 입력해 주세요.')
+    return
+  }
+
+  const db = await openDB()
+  const tx = db.transaction('playlists', 'readwrite')
+  const store = tx.objectStore('playlists')
+
+  if (editingPlaylist.value) {
+    editingPlaylist.value.name = name
+    store.put(editingPlaylist.value)
+  } else {
+    const newPlaylist = {
+      id: 'pl_' + Date.now(),
+      name: name,
+      order: playlists.value.length
+    }
+    store.put(newPlaylist)
+  }
+
+  tx.oncomplete = async () => {
+    isPlaylistDialogVisible.value = false
+    await loadDataFromDB()
+  }
+}
+
+// [신설] 저장 다이얼로그 내부에서 즉시 폴더 생성 후 체크 선택 처리
+const quickCreateAndSelectPlaylist = async () => {
+  const name = quickNewPlaylistName.value.trim()
+  if (!name) {
+    alert('새 폴더 이름을 입력해 주세요.')
+    return
+  }
+
+  const newId = 'pl_' + Date.now()
+  const newPlaylist = {
+    id: newId,
+    name: name,
+    order: playlists.value.length
+  }
+
+  const db = await openDB()
+  const tx = db.transaction('playlists', 'readwrite')
+  tx.objectStore('playlists').put(newPlaylist)
+
+  tx.oncomplete = async () => {
+    quickNewPlaylistName.value = ''
+    await loadDataFromDB()
+    // 생성된 새 폴더를 자동으로 체크 선택 목록에 추가
+    if (!targetPlaylistIds.value.includes(newId)) {
+      targetPlaylistIds.value.push(newId)
+    }
+  }
+}
+
+const deletePlaylist = async (playlist) => {
+  if (!confirm(`'${playlist.name}' 재생 목록을 삭제하시겠습니까?`)) return
+  const db = await openDB()
+  const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
+  
+  tx.objectStore('playlists').delete(playlist.id)
+  
+  const itemStore = tx.objectStore('playlistItems')
+  itemStore.openCursor().onsuccess = (e) => {
+    const cursor = e.target.result
+    if (cursor) {
+      if (cursor.value.playlistId === playlist.id) {
+        cursor.delete()
+      }
+      cursor.continue()
+    }
+  }
+
+  tx.oncomplete = async () => {
+    if (activePlaylistId.value === playlist.id) {
+      activePlaylistId.value = null
+    }
+    await loadDataFromDB()
+  }
+}
+
+// 재생 목록 위아래 위치 변경
+const movePlaylistOrder = async (index, direction) => {
+  const targetIndex = index + direction
+  if (targetIndex < 0 || targetIndex >= playlists.value.length) return
+
+  const temp = playlists.value[index]
+  playlists.value[index] = playlists.value[targetIndex]
+  playlists.value[targetIndex] = temp
+
+  playlists.value.forEach((pl, idx) => {
+    pl.order = idx
+  })
+
+  const db = await openDB()
+  const tx = db.transaction('playlists', 'readwrite')
+  const store = tx.objectStore('playlists')
+  playlists.value.forEach(pl => store.put(pl))
+}
+
+const getPlaylistVideoCount = (playlistId) => {
+  return playlistItems.value.filter(item => item.playlistId === playlistId).length
+}
+
+// 영상 -> 재생 목록에 저장 관리 버튼 연동
+const openSaveToPlaylistDialog = (video) => {
+  if (video) {
+    selectedVideoIds.value = [video.id]
+  }
+  if (selectedVideoIds.value.length === 0) return
+
+  targetPlaylistIds.value = []
+  quickNewPlaylistName.value = ''
+  isSaveToPlaylistDialogVisible.value = true
+}
+
+const confirmSaveToPlaylists = async () => {
+  if (targetPlaylistIds.value.length === 0 || selectedVideoIds.value.length === 0) {
+    isSaveToPlaylistDialogVisible.value = false
+    return
+  }
+
+  const db = await openDB()
+  const tx = db.transaction('playlistItems', 'readwrite')
+  const store = tx.objectStore('playlistItems')
+
+  const existingItems = playlistItems.value
+
+  selectedVideoIds.value.forEach(videoId => {
+    targetPlaylistIds.value.forEach(playlistId => {
+      const alreadyExists = existingItems.some(item => item.playlistId === playlistId && item.videoId === videoId)
+      if (!alreadyExists) {
+        store.add({ playlistId, videoId })
+      }
+    })
+  })
+
+  tx.oncomplete = async () => {
+    isSaveToPlaylistDialogVisible.value = false
+    selectedVideoIds.value = []
+    alert('선택한 영상이 재생 목록에 저장되었습니다.')
+    await loadDataFromDB()
+  }
+}
+
+const selectPlaylistFolder = (playlist) => {
+  activePlaylistId.value = playlist.id
+}
+
+const playPlaylistFolder = async (playlist) => {
+  const itemVideoIds = playlistItems.value.filter(i => i.playlistId === playlist.id).map(i => i.videoId)
+  const targetVideos = videos.value.filter(v => itemVideoIds.includes(v.id))
+  if (targetVideos.length === 0) return
+
+  playlistQueue.value = targetVideos
+  playlistIndex.value = 0
+  await startPlayingActiveVideo(targetVideos[0])
+}
+
 const playVideo = async (video) => {
   playlistQueue.value = [video]
   playlistIndex.value = 0
@@ -1167,7 +1583,7 @@ const playSelectedVideos = async () => {
 
   playlistQueue.value = selectedList
   playlistIndex.value = 0
-  selectedVideoIds.value = [] // 선택 내역 클리어
+  selectedVideoIds.value = []
   await startPlayingActiveVideo(selectedList[0])
 }
 
@@ -1601,6 +2017,19 @@ const loadDataFromDB = async () => {
 
   videos.value = processedVideos
 
+  // 재생 목록 폴더 및 아이템 로드
+  const plTx = db.transaction('playlists', 'readonly')
+  let dbPls = await new Promise((resolve) => {
+    plTx.objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
+  })
+  playlists.value = (dbPls || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+  const pliTx = db.transaction('playlistItems', 'readonly')
+  let dbPlis = await new Promise((resolve) => {
+    pliTx.objectStore('playlistItems').getAll().onsuccess = (e) => resolve(e.target.result)
+  })
+  playlistItems.value = dbPlis || []
+
   await fetchAndUpdateVideoDurations(videos.value)
 }
 
@@ -1781,7 +2210,7 @@ const loadMoreChannelVideos = async (creator) => {
 }
 
 const handleSearch = () => {
-  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value) return
+  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value || isPlaylistMode.value) return
   if (isSearchMode.value) searchYouTubeVideos()
 }
 
@@ -1942,6 +2371,7 @@ const selectDiscoverAll = () => {
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
+  isPlaylistMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
@@ -1953,6 +2383,7 @@ const selectDiscoverHeart = () => {
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
+  isPlaylistMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
@@ -1964,6 +2395,7 @@ const enableFavoriteVideosMode = () => {
   isSearchMode.value = false
   isFavoriteVideosMode.value = true
   isHistoryMode.value = false
+  isPlaylistMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
@@ -1975,6 +2407,20 @@ const enableHistoryMode = () => {
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = true
+  isPlaylistMode.value = false
+  searchQuery.value = ''
+  if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
+}
+
+const enablePlaylistMode = () => {
+  selectedCreator.value = null
+  currentTab.value = ''
+  isSearchMode.value = false
+  isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
+  isPlaylistMode.value = true
+  activePlaylistId.value = null
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
@@ -1986,6 +2432,7 @@ const enableSearchMode = () => {
   isSearchMode.value = true
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
+  isPlaylistMode.value = false
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -1996,6 +2443,7 @@ const selectCreatorFilter = async (creator) => {
   isSearchMode.value = false
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
+  isPlaylistMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
@@ -2018,6 +2466,13 @@ const getHeaderTitle = computed(() => {
   if (selectedCreator.value) return selectedCreator.value.name
   if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
   if (isHistoryMode.value) return '시청 기록'
+  if (isPlaylistMode.value) {
+    if (activePlaylistId.value) {
+      const pl = playlists.value.find(p => p.id === activePlaylistId.value)
+      return pl ? `재생 목록: ${pl.name}` : '재생 목록'
+    }
+    return '재생 목록'
+  }
   if (isSearchMode.value) return '유튜브 검색'
   if (currentTab.value === 'discoverAll') return '전체 구독 피드'
   if (currentTab.value === 'discoverHeart') return '구독 피드 모음'
@@ -2039,6 +2494,11 @@ const displayedVideos = computed(() => {
       const timeB = historyMap.get(b.id) || ''
       return new Date(timeB) - new Date(timeA)
     })
+  } else if (isPlaylistMode.value && activePlaylistId.value) {
+    const targetVideoIds = playlistItems.value
+      .filter(item => item.playlistId === activePlaylistId.value)
+      .map(item => item.videoId)
+    result = result.filter(v => targetVideoIds.includes(v.id))
   } else if (isSearchMode.value) {
     return result
   } else if (currentTab.value === 'discoverAll') {
@@ -2325,7 +2785,6 @@ html, body {
   max-height: calc(100vh - 64px);
 }
 
-/* 조회 중일 때 화면을 살짝 어둡게 해주는 오버레이 스타일 (fixed 처리) */
 .loading-overlay-container {
   position: fixed;
   top: 0;
@@ -2472,7 +2931,7 @@ html, body {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(167, 139, 250, 0.9);
+  background: rgba(167, 139, 250, 1);
   display: flex;
   justify-content: center;
   align-items: center;
