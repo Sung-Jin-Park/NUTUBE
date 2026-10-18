@@ -27,14 +27,55 @@
         @keydown.enter="handleSearch"
       >
         <template v-slot:append-inner>
-          <v-btn
-            icon="mdi-cloud-search"
-            size="small"
-            variant="text"
-            color="accent"
-            title="유튜브 API로 실시간 검색 실행 (빈 값이면 모든 구독자 채널의 최신 영상 리스트 로드)"
-            @click.stop="triggerLiveSearch"
-          ></v-btn>
+          <div class="d-flex align-center gap-1">
+            <!-- 선택한 영상 일괄 재생 버튼 -->
+            <v-btn
+              v-if="selectedVideoIds.length > 0"
+              icon="mdi-playlist-play"
+              size="small"
+              variant="flat"
+              color="accent"
+              :title="`선택한 ${selectedVideoIds.length}개 영상 연속 재생`"
+              @click.stop="playSelectedVideos"
+            >
+              <template v-slot:default>
+                <v-badge
+                  color="error"
+                  :content="selectedVideoIds.length"
+                  offset-x="-2"
+                  offset-y="-2"
+                >
+                  <v-icon icon="mdi-playlist-play" size="20" color="accent"></v-icon>
+                </v-badge>
+              </template>
+            </v-btn>
+
+            <!-- 선택 내역 클리어 버튼 (X 표시 아이콘) -->
+            <v-btn
+              v-if="selectedVideoIds.length > 0"
+              icon="mdi-close-circle"
+              size="small"
+              variant="text"
+              color="red-lighten-2"
+              title="선택한 영상 내역 초기화"
+              @click.stop="clearSelectedVideos"
+            ></v-btn>
+
+            <!-- 실시간 검색 버튼 (아이콘 회전 포함) -->
+            <v-btn
+              icon
+              size="small"
+              variant="text"
+              color="accent"
+              title="유튜브 API로 실시간 검색 실행 (빈 값이면 모든 구독자 채널의 최신 영상 리스트 로드)"
+              @click.stop="triggerLiveSearch"
+            >
+              <v-icon
+                icon="mdi-cloud-search"
+                :spinning="isLoading"
+              ></v-icon>
+            </v-btn>
+          </div>
         </template>
       </v-text-field>
 
@@ -146,15 +187,36 @@
 
     <!-- 메인 콘텐츠 영역 -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
+      
+      <!-- 조회 중일 때 화면을 살짝 어둡게 하고 띄워주는 로딩 오버레이 -->
+      <div v-if="isLoading" class="loading-overlay-container">
+        <div class="loading-card glass-modal pa-4 rounded-xl d-flex flex-column align-center shadow-lg">
+          <v-progress-circular indeterminate color="accent" size="48" width="4" class="mb-3"></v-progress-circular>
+          <h3 class="text-subtitle-1 text-white font-weight-bold mb-1">조회 중입니다...</h3>
+          <p class="text-caption text-grey-lighten-1 mb-0">잠시만 기다려 주세요.</p>
+        </div>
+      </div>
+
       <v-container fluid class="pa-2 pa-md-6">
         
         <!-- 타이틀 및 아이콘 탭 영역 -->
         <v-card class="glass-banner mb-3 mb-md-6 pa-3 pa-md-4 rounded-xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex flex-column flex-md-row justify-space-between align-md-center gap-3">
-            <div>
+            <div class="d-flex align-center gap-3">
+              <!-- 전체 선택 체크박스 -->
+              <v-checkbox
+                v-model="isAllSelected"
+                :indeterminate="isIndeterminate"
+                color="accent"
+                hide-details
+                density="compact"
+                class="ma-0 pa-0"
+                title="현재 표시된 모든 영상 선택/해제"
+                @change="toggleSelectAll"
+              ></v-checkbox>
               <h1 class="text-subtitle-1 text-md-h5 font-weight-black text-white ma-0">
-                {{ getHeaderTitle }}
+                {{ getHeaderTitle }} <span v-if="selectedVideoIds.length > 0" class="text-accent text-subtitle-2">({{ selectedVideoIds.length }}개 선택됨)</span>
               </h1>
             </div>
 
@@ -226,7 +288,7 @@
         </v-row>
 
         <template v-else>
-          <!-- 1. 최상단 가로 스크롤 쇼츠 영역 (시청 기록 모드 아닐 때 또는 쇼츠가 있을 때) -->
+          <!-- 1. 최상단 가로 스크롤 쇼츠 영역 -->
           <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="mb-4">
             <div class="d-flex align-center mb-2">
               <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="20"></v-icon>
@@ -236,9 +298,22 @@
               <div 
                 v-for="video in shortsVideos" 
                 :key="video.id" 
-                class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0"
+                class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
                 @click="playVideo(video)"
               >
+                <!-- 쇼츠 카드 체크박스 -->
+                <div class="video-checkbox-wrapper">
+                  <v-checkbox
+                    v-model="selectedVideoIds"
+                    :value="video.id"
+                    color="accent"
+                    hide-details
+                    density="compact"
+                    class="ma-1 pa-0 bg-dark-glass rounded"
+                    @click.stop
+                  ></v-checkbox>
+                </div>
+
                 <div class="shorts-thumbnail-wrapper position-relative bg-black">
                   <v-img :src="video.thumbnail" height="200" contain class="align-end">
                     <div class="shorts-badge">Shorts</div>
@@ -278,7 +353,20 @@
             </div>
             <v-row dense>
               <v-col v-for="video in (isHistoryMode ? displayedVideos : normalVideos)" :key="video.id" cols="12" sm="6" md="4" lg="3">
-                <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0" elevation="0" @click="playVideo(video)">
+                <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
+                  <!-- 일반 영상 카드 체크박스 -->
+                  <div class="video-checkbox-wrapper">
+                    <v-checkbox
+                      v-model="selectedVideoIds"
+                      :value="video.id"
+                      color="accent"
+                      hide-details
+                      density="compact"
+                      class="ma-1 pa-0 bg-dark-glass rounded"
+                      @click.stop
+                    ></v-checkbox>
+                  </div>
+
                   <div class="video-thumbnail-wrapper position-relative bg-black">
                     <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
                       <div class="video-duration-badge">HD</div>
@@ -327,8 +415,8 @@
             </v-row>
           </div>
 
-          <!-- 검색 모드 추가 로딩 인디케이터 -->
-          <div v-if="isSearchMode && isLoading" class="text-center py-4">
+          <!-- 추가 로딩 인디케이터 (검색 모드 또는 채널 선택 모드) -->
+          <div v-if="(isSearchMode || selectedCreator) && isLoading" class="text-center py-4">
             <v-progress-circular indeterminate color="accent" size="32"></v-progress-circular>
             <span class="text-grey-lighten-1 text-caption ml-2">다음 영상을 불러오는 중...</span>
           </div>
@@ -357,8 +445,16 @@
       <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
         <!-- 타이틀바 -->
         <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
-          <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate pr-2">{{ activeVideo?.title }}</span>
-          <div class="d-flex align-center">
+          <div class="d-flex align-center overflow-hidden pr-2">
+            <span v-if="playlistQueue.length > 1" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
+              [{{ playlistIndex + 1 }}/{{ playlistQueue.length }}]
+            </span>
+            <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
+          </div>
+          <div class="d-flex align-center flex-shrink-0">
+            <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
+            <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playlistIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
+
             <v-btn 
               icon
               variant="text" 
@@ -382,7 +478,7 @@
             <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
 
-          <!-- 영상 정보 및 시간 이동 컨트롤 영역 -->
+          <!-- 영상 정보 및 시간 이동 컨트롤 영역 (이전(-), 이후(+) 누적 이동 버튼으로 변경) -->
           <div class="pa-3 pa-md-4 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-2 border-bottom-glass">
             <div class="flex-grow-1 overflow-hidden pr-2">
               <div class="d-flex align-center flex-wrap gap-2 mb-1">
@@ -437,6 +533,7 @@
                 <span class="text-caption text-white">초</span>
               </div>
 
+              <!-- 이전(-) / 이후(+) 누적 이동 버튼 그룹 -->
               <div class="d-flex align-center gap-1">
                 <v-btn
                   color="accent"
@@ -449,14 +546,24 @@
                   이동
                 </v-btn>
                 <v-btn
-                  color="deep-purple-lighten-2"
+                  color="blue-grey-darken-2"
                   variant="flat"
                   size="small"
-                  class="px-2"
-                  title="현재 위치에서 입력한 시간만큼 이전으로 되감기"
-                  @click="rewindTime"
+                  class="px-2 font-weight-bold"
+                  title="입력한 분/초만큼 현재 위치에서 뒤로(누적 이전) 이동"
+                  @click="cumulativeJump(-1)"
                 >
-                  이전
+                  - 이전
+                </v-btn>
+                <v-btn
+                  color="amber-darken-2"
+                  variant="flat"
+                  size="small"
+                  class="px-2 font-weight-bold"
+                  title="입력한 분/초만큼 현재 위치에서 앞으로(누적 이후) 이동"
+                  @click="cumulativeJump(1)"
+                >
+                  + 이후
                 </v-btn>
               </div>
             </div>
@@ -654,7 +761,15 @@ const isLoading = ref(false)
 
 const creators = ref([])
 const videos = ref([])
-const historyList = ref([]) // 시청 기록 목록
+const historyList = ref([])
+
+// 영상 체크박스 선택 관리
+const selectedVideoIds = ref([])
+const playlistQueue = ref([])
+const playlistIndex = ref(0)
+
+// 채널별 페이징 토큰 관리 맵 (channelId -> nextPageToken)
+const channelNextPageTokens = ref(new Map())
 
 const isPlayerOpen = ref(false)
 const activeVideo = ref(null)
@@ -702,10 +817,12 @@ const checkMainScroll = (e) => {
   const target = e.target
   showMainScrollTop.value = target.scrollTop > 100
 
-  if (isSearchMode.value && !isLoading.value && searchNextPageToken.value) {
-    const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
-    if (bottomReached) {
+  const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
+  if (bottomReached && !isLoading.value) {
+    if (isSearchMode.value && searchNextPageToken.value) {
       loadMoreSearchVideos()
+    } else if (selectedCreator.value) {
+      loadMoreChannelVideos(selectedCreator.value)
     }
   }
 }
@@ -900,6 +1017,27 @@ const fetchAndUpdateVideoDurations = async (videoList) => {
 }
 
 const playVideo = async (video) => {
+  playlistQueue.value = [video]
+  playlistIndex.value = 0
+  await startPlayingActiveVideo(video)
+}
+
+const playSelectedVideos = async () => {
+  if (selectedVideoIds.value.length === 0) return
+  const selectedList = displayedVideos.value.filter(v => selectedVideoIds.value.includes(v.id))
+  if (selectedList.length === 0) return
+
+  playlistQueue.value = selectedList
+  playlistIndex.value = 0
+  selectedVideoIds.value = [] // 선택 내역 클리어
+  await startPlayingActiveVideo(selectedList[0])
+}
+
+const clearSelectedVideos = () => {
+  selectedVideoIds.value = []
+}
+
+const startPlayingActiveVideo = async (video) => {
   activeVideo.value = video
   showComments.value = false
   comments.value = []
@@ -939,6 +1077,20 @@ const playVideo = async (video) => {
 
   await nextTick()
   initYouTubePlayer(video.youtubeId, initialWatchedTime.value)
+}
+
+const playNextInQueue = async () => {
+  if (playlistIndex.value < playlistQueue.value.length - 1) {
+    playlistIndex.value++
+    await startPlayingActiveVideo(playlistQueue.value[playlistIndex.value])
+  }
+}
+
+const playPreviousInQueue = async () => {
+  if (playlistIndex.value > 0) {
+    playlistIndex.value--
+    await startPlayingActiveVideo(playlistQueue.value[playlistIndex.value])
+  }
 }
 
 const toggleCommentsView = () => {
@@ -996,6 +1148,13 @@ const initYouTubePlayer = (youtubeId, startTime) => {
             }
           }
           startHistoryTracker()
+        },
+        onStateChange: (event) => {
+          if (event.data === 0 && playlistQueue.value.length > 1) {
+            if (playlistIndex.value < playlistQueue.value.length - 1) {
+              playNextInQueue()
+            }
+          }
         }
       }
     })
@@ -1113,23 +1272,24 @@ const jumpToTime = () => {
   }
 }
 
-const rewindTime = () => {
+// 입력한 분/초만큼 현재 위치에서 누적 이전(-) 또는 이후(+) 이동하는 함수
+const cumulativeJump = (direction) => {
   const m = Number(jumpMinutes.value) || 0
   const s = Number(jumpSeconds.value) || 0
-  const totalSeconds = (m * 60) + s
+  const stepSeconds = (m * 60) + s
 
-  if (totalSeconds <= 0) return
+  if (stepSeconds <= 0) return
 
   let currentTime = currentPlayingTime
   if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
     try {
       currentTime = ytPlayer.getCurrentTime()
     } catch (e) {
-      console.debug('되감기 시간 가져오기 에러 무시:', e)
+      console.debug('누적 이동 시간 가져오기 에러 무시:', e)
     }
   }
 
-  const targetSeconds = Math.max(0, currentTime - totalSeconds)
+  const targetSeconds = Math.max(0, currentTime + (stepSeconds * direction))
   currentPlayingTime = targetSeconds
   saveCurrentHistoryToDB()
 
@@ -1382,11 +1542,16 @@ const fetchChannelVideos = async (creator) => {
   if (API_KEYS.length === 0) return
 
   try {
+    channelNextPageTokens.value.delete(creator.id)
     const data = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&channelId=${creator.id}&order=date&type=video&key=${key}`
     )
 
     if (!data.error && data.items) {
+      if (data.nextPageToken) {
+        channelNextPageTokens.value.set(creator.id, data.nextPageToken)
+      }
+
       const db = await openDB()
       const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt }]))
 
@@ -1413,6 +1578,68 @@ const fetchChannelVideos = async (creator) => {
     }
   } catch (error) {
     console.error('채널 영상 불러오기 실패:', error)
+  }
+}
+
+const loadMoreChannelVideos = async (creator) => {
+  if (API_KEYS.length === 0 || !creator) return
+  const pageToken = channelNextPageTokens.value.get(creator.id)
+  if (!pageToken) return
+
+  isLoading.value = true
+
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&channelId=${creator.id}&order=date&type=video&pageToken=${pageToken}&key=${key}`
+    )
+
+    if (data.error || !data.items) {
+      isLoading.value = false
+      return
+    }
+
+    if (data.nextPageToken) {
+      channelNextPageTokens.value.set(creator.id, data.nextPageToken)
+    } else {
+      channelNextPageTokens.value.delete(creator.id)
+    }
+
+    const db = await openDB()
+    const historyTx = db.transaction('history', 'readonly')
+    let dbHistory = await new Promise((resolve) => {
+      historyTx.objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    })
+    const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
+    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+    const moreVideos = data.items.map(item => {
+      const parsed = parseVideoItem(item)
+      if (existingMap.has(parsed.id)) {
+        parsed.isFavorite = existingMap.get(parsed.id)
+      }
+      const h = historyMap.get(parsed.id)
+      if (h) {
+        parsed.currentTime = h.currentTime || 0
+        parsed.duration = h.duration || 0
+        parsed.historyUpdatedAt = h.updatedAt || null
+        if (parsed.currentTime > 0 && parsed.duration > 0) {
+          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
+        }
+      }
+      return parsed
+    })
+
+    await fetchAndUpdateVideoDurations(moreVideos)
+    videos.value.push(...moreVideos)
+
+    const tx = db.transaction('videos', 'readwrite')
+    const store = tx.objectStore('videos')
+    moreVideos.forEach(v => store.put(v))
+
+  } catch (error) {
+    console.error('추가 채널 영상 요청 실패:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -1580,6 +1807,7 @@ const selectDiscoverAll = () => {
   isHistoryMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
 }
 
 const selectDiscoverHeart = () => {
@@ -1590,6 +1818,7 @@ const selectDiscoverHeart = () => {
   isHistoryMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
 }
 
 const enableFavoriteVideosMode = () => {
@@ -1600,6 +1829,7 @@ const enableFavoriteVideosMode = () => {
   isHistoryMode.value = false
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
 }
 
 const enableHistoryMode = () => {
@@ -1610,6 +1840,7 @@ const enableHistoryMode = () => {
   isHistoryMode.value = true
   searchQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
 }
 
 const enableSearchMode = () => {
@@ -1619,6 +1850,7 @@ const enableSearchMode = () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
 }
 
 const selectCreatorFilter = async (creator) => {
@@ -1631,6 +1863,7 @@ const selectCreatorFilter = async (creator) => {
   if (window.innerWidth < 960) drawer.value = false
 
   await fetchChannelVideos(creator)
+  scrollToTop(mainScrollRef.value)
 }
 
 onMounted(async () => {
@@ -1661,7 +1894,6 @@ const displayedVideos = computed(() => {
   } else if (isFavoriteVideosMode.value) {
     result = result.filter(v => v.isFavorite)
   } else if (isHistoryMode.value) {
-    // 시청 기록 모드: historyList에 존재하는 비디오들만 필터링한 뒤, 최근 시청한 순서(updatedAt 기준 내림차순)로 정렬
     const historyMap = new Map(historyList.value.map(h => [h.videoId, h.updatedAt]))
     result = result.filter(v => historyMap.has(v.id))
     result.sort((a, b) => {
@@ -1689,6 +1921,28 @@ const displayedVideos = computed(() => {
 
   return result
 })
+
+const isAllSelected = computed({
+  get() {
+    if (displayedVideos.value.length === 0) return false
+    return displayedVideos.value.every(v => selectedVideoIds.value.includes(v.id))
+  },
+  set(val) {
+    if (val) {
+      selectedVideoIds.value = displayedVideos.value.map(v => v.id)
+    } else {
+      selectedVideoIds.value = []
+    }
+  }
+})
+
+const isIndeterminate = computed(() => {
+  if (displayedVideos.value.length === 0) return false
+  const selectedCount = displayedVideos.value.filter(v => selectedVideoIds.value.includes(v.id)).length
+  return selectedCount > 0 && selectedCount < displayedVideos.value.length
+})
+
+const toggleSelectAll = () => {}
 
 const relatedVideos = computed(() => {
   if (!activeVideo.value) return []
@@ -1764,6 +2018,19 @@ html, body {
   background: rgba(0, 0, 0, 0.3) !important;
   color: white !important;
   font-size: 13px !important;
+}
+
+.video-checkbox-wrapper {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
+}
+
+.bg-dark-glass {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .jump-box-container {
@@ -1918,6 +2185,29 @@ html, body {
 .main-content {
   overflow-y: auto !important;
   max-height: calc(100vh - 64px);
+}
+
+/* 조회 중일 때 화면을 살짝 어둡게 해주는 오버레이 스타일 */
+.loading-overlay-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-card {
+  border: 1px solid rgba(167, 139, 250, 0.3) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+  min-width: 220px;
+  text-align: center;
 }
 
 .modal-vertical-container {
