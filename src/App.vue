@@ -614,7 +614,7 @@
               <v-icon icon="mdi-chevron-up" color="white" size="24"></v-icon>
             </v-btn>
           </v-slide-y-transition>
-
+<!-- 주석 -->
         </div>
       </v-card>
     </v-dialog>
