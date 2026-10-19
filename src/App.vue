@@ -4,11 +4,11 @@
     <div class="bg-blob blob-1"></div>
     <div class="bg-blob blob-2"></div>
 
-    <!-- 숨겨진 파일 업로드 인풋들 -->
-    <input ref="creatorFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadCreators" />
-    <input ref="playlistFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadPlaylists" />
-    <input ref="singlePlaylistFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadSinglePlaylist" />
-    <input ref="musicFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadMusic" />
+    <!-- 숨겨진 파일 업로드 인풋들 (모바일 호환성 위해 application/json 추가) -->
+    <input ref="creatorFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadCreators" />
+    <input ref="playlistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadPlaylists" />
+    <input ref="singlePlaylistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadSinglePlaylist" />
+    <input ref="musicFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadMusic" />
 
     <!-- 상단 앱바 -->
     <v-app-bar flat class="glass-app-bar px-1 px-md-4" height="64">
@@ -474,8 +474,8 @@
                   <div class="d-flex justify-space-between align-start mb-2">
                     <v-icon icon="mdi-folder-music" color="accent" size="36"></v-icon>
                     <div class="d-flex align-center gap-1" @click.stop>
-                      <v-btn icon="mdi-download-box" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
-                      <v-btn icon="mdi-upload-box" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
+                      <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
+                      <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
                       <v-btn
                         icon="mdi-arrow-up"
                         size="x-small"
@@ -1276,7 +1276,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
 const drawer = ref(false)
 const searchQuery = ref('')
-const lastSearchQuery = ref('') // 유튜브 전체 검색 탭 전용 이전 검색어 저장
+const lastSearchQuery = ref('') 
 const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
@@ -1344,7 +1344,7 @@ const commentsOrder = ref('relevance')
 
 const initialWatchedTime = ref(0)
 const isLandscapeMode = ref(false)
-const isAudioOnlyMode = ref(false) // 라디오 모드 (영상 숨김 오디오 재생)
+const isAudioOnlyMode = ref(false) 
 
 const sleepTimerSecondsLeft = ref(0)
 const customSleepMinutes = ref(null)
@@ -1703,7 +1703,6 @@ const handleUploadPlaylists = async (event) => {
       if (imported.playlists && Array.isArray(imported.playlists)) {
         const plStore = tx.objectStore('playlists')
         imported.playlists.forEach(pl => {
-          // 이름이나 ID 중복 검사
           const isExist = playlists.value.some(p => p.id === pl.id || p.name === pl.name)
           if (!isExist) {
             plStore.put(pl)
@@ -1735,7 +1734,7 @@ const handleUploadPlaylists = async (event) => {
   reader.readAsText(file)
 }
 
-// 개별 재생 목록 백업 및 불러오기 (동일 타이틀 시 오류 알림 기능 추가)
+// 개별 재생 목록 백업 및 불러오기
 const downloadSinglePlaylistBackup = (playlist) => {
   const items = playlistItems.value.filter(i => i.playlistId === playlist.id)
   const backupData = {
@@ -1772,9 +1771,7 @@ const handleUploadSinglePlaylist = async (event) => {
 
       const importedName = imported.playlist.name
 
-      // 만약 대상 폴더를 지정하지 않고 업로드하거나 새 폴더로 들어오는 경우
       if (!targetUploadPlaylistObj) {
-        // 동일한 타이틀 검사
         const isDuplicateName = playlists.value.some(p => p.name === importedName)
         if (isDuplicateName) {
           alert(`오류: 이미 동일한 이름("${importedName}")의 재생 목록 폴더가 존재합니다!`)
@@ -1798,7 +1795,6 @@ const handleUploadSinglePlaylist = async (event) => {
           await loadDataFromDB()
         }
       } else {
-        // 기존 폴더에 덮어쓰거나 항목 추가하는 경우
         const db = await openDB()
         const tx = db.transaction(['playlistItems'], 'readwrite')
         const itemStore = tx.objectStore('playlistItems')
@@ -1881,7 +1877,6 @@ const savePlaylistFolder = async () => {
   const name = playlistFormName.value.trim()
   if (!name) { alert('폴더 이름을 입력해 주세요.'); return }
 
-  // 중복 타이틀 체크
   const isDuplicateName = playlists.value.some(p => p.name === name && p.id !== editingPlaylist.value?.id)
   if (isDuplicateName) {
     alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
@@ -1909,7 +1904,6 @@ const quickCreateAndSelectPlaylist = async () => {
   const name = quickNewPlaylistName.value.trim()
   if (!name) { alert('새 폴더 이름을 입력해 주세요.'); return }
 
-  // 중복 타이틀 체크
   const isDuplicateName = playlists.value.some(p => p.name === name)
   if (isDuplicateName) {
     alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
@@ -2993,7 +2987,7 @@ const triggerTabSearchOrUpdate = async () => {
 
     if (isSearchMode.value) {
       if (query) {
-        lastSearchQuery.value = query // 유튜브 검색 시 이전 검색어로 보존
+        lastSearchQuery.value = query 
         await searchYouTubeVideos()
       }
       return
@@ -3158,7 +3152,7 @@ const selectDiscoverAll = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3175,7 +3169,7 @@ const selectDiscoverHeart = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3192,7 +3186,7 @@ const enableTrendingMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await fetchTrendingVideos()
   scrollToTop(mainScrollRef.value)
@@ -3208,7 +3202,7 @@ const enableFavoriteVideosMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3225,7 +3219,7 @@ const enableHistoryMode = async () => {
   isHistoryMode.value = true
   isPlaylistMode.value = false
   isMusicMode.value = false
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3243,14 +3237,13 @@ const enablePlaylistMode = async () => {
   isPlaylistMode.value = true
   isMusicMode.value = false
   activePlaylistId.value = null
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-// 유튜브 전체 검색 탭으로 진입 시 이전 검색어 복원
 const enableSearchMode = async () => {
   isLoading.value = true
   selectedCreator.value = null
@@ -3262,7 +3255,6 @@ const enableSearchMode = async () => {
   isPlaylistMode.value = false
   isMusicMode.value = false
   
-  // 이전 유튜브 검색어가 존재하는 경우 복원
   if (lastSearchQuery.value) {
     searchQuery.value = lastSearchQuery.value
   }
@@ -3283,7 +3275,7 @@ const enableMusicMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = true
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await fetchMusicVideos('인기 가요 믹스')
   scrollToTop(mainScrollRef.value)
@@ -3299,7 +3291,7 @@ const selectCreatorFilter = async (creator) => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
-  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
   await fetchChannelVideosParallel([creator])
   scrollToTop(mainScrollRef.value)
