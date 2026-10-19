@@ -474,8 +474,8 @@
                   <div class="d-flex justify-space-between align-start mb-2">
                     <v-icon icon="mdi-folder-music" color="accent" size="36"></v-icon>
                     <div class="d-flex align-center gap-1" @click.stop>
-                      <v-btn icon="mdi-tray-arrow-down" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
-                      <v-btn icon="mdi-tray-arrow-up" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
+                      <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
+                      <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
                       <v-btn
                         icon="mdi-arrow-up"
                         size="x-small"
