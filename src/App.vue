@@ -1611,7 +1611,6 @@ const fetchAndUpdateVideoDurations = async (videoList) => {
   return videoList
 }
 
-// 공통: 누락된 영상 ID들을 유튜브 API로 조회하여 DB에 저장하는 헬퍼 함수
 const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
   if (!itemVideoIds || itemVideoIds.length === 0 || API_KEYS.length === 0) return
 
@@ -1668,7 +1667,6 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
   }
 }
 
-// 구독 백업 및 불러오기
 const downloadCreatorsBackup = () => {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creators.value, null, 2))
   const downloadAnchor = document.createElement('a')
@@ -1730,7 +1728,6 @@ const handleUploadCreators = async (event) => {
   reader.readAsText(file)
 }
 
-// 전체 재생 목록 백업 및 불러오기 (폴더가 없으면 자동 생성 기능 포함)
 const downloadPlaylistsBackup = () => {
   const backupData = {
     playlists: playlists.value,
@@ -1760,7 +1757,6 @@ const handleUploadPlaylists = async (event) => {
       const imported = JSON.parse(e.target.result)
       const db = await openDB()
 
-      // 1. 누락된 영상 정보 일괄 API 조회 및 DB 저장
       const allItemVideoIds = imported.playlistItems ? imported.playlistItems.map(i => i.videoId) : []
       await fetchAndSaveMissingVideos(db, allItemVideoIds)
 
@@ -1803,7 +1799,6 @@ const handleUploadPlaylists = async (event) => {
   reader.readAsText(file)
 }
 
-// 개별 재생 목록 백업 및 불러오기 (폴더가 없으면 자동 생성 및 성공 알림/재조회 보장)
 const downloadSinglePlaylistBackup = (playlist) => {
   const items = playlistItems.value.filter(i => i.playlistId === playlist.id)
   const backupData = {
@@ -1843,18 +1838,15 @@ const handleUploadSinglePlaylist = async (event) => {
       const importedName = imported.playlist.name
       const db = await openDB()
 
-      // 1. 백업된 videoId 목록 추출 및 누락된 영상 정보 API 자동 조회/저장
       const importedItemVideoIds = imported.items ? imported.items.map(i => i.videoId) : []
       await fetchAndSaveMissingVideos(db, importedItemVideoIds)
 
-      // 2. 대상 폴더(targetUploadPlaylistObj)가 지정되지 않았거나 앱 내에 해당 이름의 폴더가 없는 경우 자동 생성
       let targetFolder = targetUploadPlaylistObj
       if (!targetFolder) {
         targetFolder = playlists.value.find(p => p.name === importedName)
       }
 
       if (!targetFolder) {
-        // 폴더가 아예 없으므로 새로 생성
         const newPlId = 'pl_' + Date.now()
         const newPl = { id: newPlId, name: importedName, order: playlists.value.length }
         
@@ -1874,7 +1866,6 @@ const handleUploadSinglePlaylist = async (event) => {
           alert(`새로운 재생 목록 폴더 "${importedName}"이(가) 자동 생성되고 영상들이 정상적으로 불러와졌습니다!`)
         }
       } else {
-        // 기존 폴더가 있으므로 항목 추가
         const tx = db.transaction(['playlistItems'], 'readwrite')
         const itemStore = tx.objectStore('playlistItems')
 
@@ -2229,6 +2220,7 @@ const startPlayingActiveVideo = async (video) => {
   fetchComments(video.youtubeId)
   await nextTick()
   initYouTubePlayer(video.youtubeId, initialWatchedTime.value)
+  setupMediaSession(video)
 }
 
 const playNextInQueue = async () => {
@@ -2260,9 +2252,41 @@ const closePlayer = () => {
   if (!isPopStateTriggered) window.history.back()
   isPopStateTriggered = false
   window.removeEventListener('popstate', handlePopState)
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.playbackState = 'none'
+  }
 }
 
 const onDialogModelUpdate = (val) => { if (!val) closePlayer() }
+
+const setupMediaSession = (video) => {
+  if (!('mediaSession' in navigator)) return
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: video.title || 'NeonTube 재생',
+      artist: video.creatorName || 'YouTube',
+      album: 'NeonTube Player',
+      artwork: [
+        { src: video.thumbnail || '', sizes: '512x512', type: 'image/jpeg' }
+      ]
+    })
+
+    navigator.mediaSession.setActionHandler('play', () => {
+      if (ytPlayer && typeof ytPlayer.playVideo === 'function') ytPlayer.playVideo()
+    })
+    navigator.mediaSession.setActionHandler('pause', () => {
+      if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo()
+    })
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      if (playlistIndex.value > 0) playPreviousInQueue()
+    })
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      if (playlistIndex.value < playlistQueue.value.length - 1) playNextInQueue()
+    })
+  } catch (e) {
+    console.debug('MediaSession 설정 오류:', e)
+  }
+}
 
 const initYouTubePlayer = (youtubeId, startTime) => {
   destroyYouTubePlayer()
@@ -2277,8 +2301,16 @@ const initYouTubePlayer = (youtubeId, startTime) => {
         onReady: (event) => {
           if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
           startHistoryTracker()
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing'
+          }
         },
         onStateChange: async (event) => {
+          if ('mediaSession' in navigator) {
+            if (event.data === 1) navigator.mediaSession.playbackState = 'playing'
+            else if (event.data === 2) navigator.mediaSession.playbackState = 'paused'
+          }
+
           if (event.data === 0) {
             if (activeVideo.value) {
               try {
@@ -2329,11 +2361,18 @@ const destroyYouTubePlayer = () => {
 const startHistoryTracker = () => {
   stopHistoryTracker()
   historyInterval = setInterval(async () => {
+    // 백그라운드 전환 시 브라우저 최적화로 인해 Iframe 상태 체크가 누락되는 것을 보완하기 위한 fallback 처리 추가
     if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
       try {
         const t = ytPlayer.getCurrentTime()
         const dur = ytPlayer.getDuration()
         if (t && t > 0 && dur && dur > 0) {
+          // 백그라운드 환경에서 비디오가 끝났거나 거의 끝에 도달했을 때(5초 이내) 다음 곡으로 안전하게 넘김
+          if (dur - t <= 1 && playlistIndex.value < playlistQueue.value.length - 1) {
+            playNextInQueue()
+            return
+          }
+
           if (dur - t <= 5) {
             currentPlayingTime = 0
             if (activeVideo.value) {
@@ -3383,15 +3422,33 @@ const selectCreatorFilter = async (creator) => {
   scrollToTop(mainScrollRef.value)
 }
 
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+      try {
+        const state = ytPlayer.getPlayerState()
+        // 백그라운드 해제 시 재생이 끊겼다면 플레이어 강제 동기화
+        if (state === 2 && isPlayerOpen.value) {
+          ytPlayer.playVideo()
+        }
+      } catch (e) {
+        console.debug(e)
+      }
+    }
+  }
+}
+
 onMounted(async () => {
   await getActiveApiKeyIndex()
   await loadDataFromDB()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
   destroyYouTubePlayer()
   clearSleepTimer()
   window.removeEventListener('popstate', handlePopState)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 const getHeaderTitle = computed(() => {
