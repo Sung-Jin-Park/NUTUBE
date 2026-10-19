@@ -4,7 +4,7 @@
     <div class="bg-blob blob-1"></div>
     <div class="bg-blob blob-2"></div>
 
-    <!-- 숨겨진 파일 업로드 인풋들 (모바일 호환성 위해 application/json 추가) -->
+    <!-- 숨겨진 파일 업로드 인풋들 -->
     <input ref="creatorFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadCreators" />
     <input ref="playlistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadPlaylists" />
     <input ref="singlePlaylistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadSinglePlaylist" />
@@ -474,8 +474,8 @@
                   <div class="d-flex justify-space-between align-start mb-2">
                     <v-icon icon="mdi-folder-music" color="accent" size="36"></v-icon>
                     <div class="d-flex align-center gap-1" @click.stop>
-                      <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
-                      <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
+                      <v-btn icon="mdi-tray-arrow-down" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
+                      <v-btn icon="mdi-tray-arrow-up" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
                       <v-btn
                         icon="mdi-arrow-up"
                         size="x-small"
@@ -1611,6 +1611,63 @@ const fetchAndUpdateVideoDurations = async (videoList) => {
   return videoList
 }
 
+// 공통: 누락된 영상 ID들을 유튜브 API로 조회하여 DB에 저장하는 헬퍼 함수
+const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
+  if (!itemVideoIds || itemVideoIds.length === 0 || API_KEYS.length === 0) return
+
+  const existingVideosStore = await new Promise((resolve) => {
+    db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (ev) => resolve(ev.target.result || [])
+  })
+  const existingVideoIds = new Set(existingVideosStore.map(v => v.id))
+  const missingIds = itemVideoIds.filter(id => !existingVideoIds.has(id))
+
+  if (missingIds.length > 0) {
+    for (let i = 0; i < missingIds.length; i += 50) {
+      const chunk = missingIds.slice(i, i + 50).join(',')
+      try {
+        const data = await fetchWithKeyRotation((key) => 
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${chunk}&key=${key}`
+        )
+        if (data.items) {
+          const videoTx = db.transaction('videos', 'readwrite')
+          const videoStore = videoTx.objectStore('videos')
+
+          data.items.forEach(item => {
+            const snippet = item.snippet
+            const videoId = item.id
+            const title = snippet.title.toLowerCase()
+            const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+            const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+            const parsed = {
+              id: videoId,
+              youtubeId: videoId,
+              creatorId: snippet.channelId,
+              creatorName: snippet.channelTitle,
+              title: snippet.title,
+              thumbnail: thumbUrl,
+              isShorts: isShorts,
+              isFavorite: false,
+              views: snippet.publishedAt.substring(0, 10),
+              publishedAt: snippet.publishedAt,
+              duration: parseISO8601Duration(item.contentDetails?.duration),
+              progressPercent: 0,
+              currentTime: 0,
+              historyUpdatedAt: null
+            }
+            videoStore.put(parsed)
+            if (!videos.value.some(v => v.id === parsed.id)) {
+              videos.value.push(parsed)
+            }
+          })
+        }
+      } catch (err) {
+        console.error('누락된 영상 정보 조회 실패:', err)
+      }
+    }
+  }
+}
+
 // 구독 백업 및 불러오기
 const downloadCreatorsBackup = () => {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creators.value, null, 2))
@@ -1630,12 +1687,14 @@ const handleUploadCreators = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  isLoading.value = true
   const reader = new FileReader()
   reader.onload = async (e) => {
     try {
       const importedCreators = JSON.parse(e.target.result)
       if (!Array.isArray(importedCreators)) {
         alert('올바르지 않은 구독 백업 파일 형식입니다.')
+        isLoading.value = false
         return
       }
 
@@ -1653,14 +1712,16 @@ const handleUploadCreators = async (event) => {
       })
 
       tx.oncomplete = async () => {
-        alert(`구독 불러오기 완료! 새로운 크리에이터 ${addedCount}명이 추가되었습니다. (중복 채널은 패스됨)`)
         await loadDataFromDB()
+        isLoading.value = false
+        alert(`구독 불러오기 완료! 새로운 크리에이터 ${addedCount}명이 추가되었습니다.`)
         if (addedCount > 0) {
           await fetchChannelVideosParallel(creators.value.filter(c => importedCreators.some(ic => ic.id === c.id)))
         }
       }
     } catch (err) {
       console.error(err)
+      isLoading.value = false
       alert('파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
@@ -1669,7 +1730,7 @@ const handleUploadCreators = async (event) => {
   reader.readAsText(file)
 }
 
-// 전체 재생 목록 백업 및 불러오기
+// 전체 재생 목록 백업 및 불러오기 (폴더가 없으면 자동 생성 기능 포함)
 const downloadPlaylistsBackup = () => {
   const backupData = {
     playlists: playlists.value,
@@ -1692,11 +1753,17 @@ const handleUploadPlaylists = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  isLoading.value = true
   const reader = new FileReader()
   reader.onload = async (e) => {
     try {
       const imported = JSON.parse(e.target.result)
       const db = await openDB()
+
+      // 1. 누락된 영상 정보 일괄 API 조회 및 DB 저장
+      const allItemVideoIds = imported.playlistItems ? imported.playlistItems.map(i => i.videoId) : []
+      await fetchAndSaveMissingVideos(db, allItemVideoIds)
+
       const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
       
       let addedPlCount = 0
@@ -1721,11 +1788,13 @@ const handleUploadPlaylists = async (event) => {
       }
 
       tx.oncomplete = async () => {
-        alert(`전체 재생 목록 불러오기 완료! (${addedPlCount}개 새로운 폴더 추가)`)
         await loadDataFromDB()
+        isLoading.value = false
+        alert(`전체 재생 목록 불러오기 완료! (${addedPlCount}개 새로운 폴더 추가됨)`)
       }
     } catch (err) {
       console.error(err)
+      isLoading.value = false
       alert('재생 목록 파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
@@ -1734,7 +1803,7 @@ const handleUploadPlaylists = async (event) => {
   reader.readAsText(file)
 }
 
-// 개별 재생 목록 백업 및 불러오기
+// 개별 재생 목록 백업 및 불러오기 (폴더가 없으면 자동 생성 및 성공 알림/재조회 보장)
 const downloadSinglePlaylistBackup = (playlist) => {
   const items = playlistItems.value.filter(i => i.playlistId === playlist.id)
   const backupData = {
@@ -1751,7 +1820,7 @@ const downloadSinglePlaylistBackup = (playlist) => {
 }
 
 const triggerUploadSinglePlaylist = (playlist) => {
-  targetUploadPlaylistObj = playlist
+  targetUploadPlaylistObj = playlist || null
   if (singlePlaylistFileInput.value) singlePlaylistFileInput.value.click()
 }
 
@@ -1759,63 +1828,75 @@ const handleUploadSinglePlaylist = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  isLoading.value = true
   const reader = new FileReader()
   reader.onload = async (e) => {
     try {
       const imported = JSON.parse(e.target.result)
       
       if (!imported.playlist || !imported.playlist.name) {
+        isLoading.value = false
         alert('올바르지 않은 개별 재생 목록 백업 파일 형식입니다.')
         return
       }
 
       const importedName = imported.playlist.name
+      const db = await openDB()
 
-      if (!targetUploadPlaylistObj) {
-        const isDuplicateName = playlists.value.some(p => p.name === importedName)
-        if (isDuplicateName) {
-          alert(`오류: 이미 동일한 이름("${importedName}")의 재생 목록 폴더가 존재합니다!`)
-          return
-        }
+      // 1. 백업된 videoId 목록 추출 및 누락된 영상 정보 API 자동 조회/저장
+      const importedItemVideoIds = imported.items ? imported.items.map(i => i.videoId) : []
+      await fetchAndSaveMissingVideos(db, importedItemVideoIds)
 
-        const newPl = { id: 'pl_' + Date.now(), name: importedName, order: playlists.value.length }
-        const db = await openDB()
+      // 2. 대상 폴더(targetUploadPlaylistObj)가 지정되지 않았거나 앱 내에 해당 이름의 폴더가 없는 경우 자동 생성
+      let targetFolder = targetUploadPlaylistObj
+      if (!targetFolder) {
+        targetFolder = playlists.value.find(p => p.name === importedName)
+      }
+
+      if (!targetFolder) {
+        // 폴더가 아예 없으므로 새로 생성
+        const newPlId = 'pl_' + Date.now()
+        const newPl = { id: newPlId, name: importedName, order: playlists.value.length }
+        
         const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
         tx.objectStore('playlists').put(newPl)
 
         if (imported.items && Array.isArray(imported.items)) {
           const itemStore = tx.objectStore('playlistItems')
           imported.items.forEach(item => {
-            itemStore.add({ playlistId: newPl.id, videoId: item.videoId })
+            itemStore.add({ playlistId: newPlId, videoId: item.videoId })
           })
         }
 
         tx.oncomplete = async () => {
-          alert(`새로운 개별 재생 목록 "${importedName}"을(를) 정상적으로 불러왔습니다!`)
           await loadDataFromDB()
+          isLoading.value = false
+          alert(`새로운 재생 목록 폴더 "${importedName}"이(가) 자동 생성되고 영상들이 정상적으로 불러와졌습니다!`)
         }
       } else {
-        const db = await openDB()
+        // 기존 폴더가 있으므로 항목 추가
         const tx = db.transaction(['playlistItems'], 'readwrite')
         const itemStore = tx.objectStore('playlistItems')
 
         let addedCount = 0
         if (imported.items && Array.isArray(imported.items)) {
           imported.items.forEach(item => {
-            if (!playlistItems.value.some(i => i.playlistId === targetUploadPlaylistObj.id && i.videoId === item.videoId)) {
-              itemStore.add({ playlistId: targetUploadPlaylistObj.id, videoId: item.videoId })
+            if (!playlistItems.value.some(i => i.playlistId === targetFolder.id && i.videoId === item.videoId)) {
+              itemStore.add({ playlistId: targetFolder.id, videoId: item.videoId })
               addedCount++
             }
           })
         }
 
         tx.oncomplete = async () => {
-          alert(`"${targetUploadPlaylistObj.name}" 폴더에 영상 ${addedCount}개가 새로 추가되었습니다.`)
           await loadDataFromDB()
+          isLoading.value = false
+          alert(`"${targetFolder.name}" 폴더에 영상 ${addedCount}개가 성공적으로 추가되었습니다!`)
         }
       }
     } catch (err) {
       console.error(err)
+      isLoading.value = false
       alert('파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
@@ -1843,16 +1924,21 @@ const handleUploadMusic = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  isLoading.value = true
   const reader = new FileReader()
   reader.onload = async (e) => {
     try {
       const imported = JSON.parse(e.target.result)
       if (Array.isArray(imported)) {
         musicVideos.value = imported
+        isLoading.value = false
         alert('음악 탭 데이터를 성공적으로 불러왔습니다.')
+      } else {
+        isLoading.value = false
       }
     } catch (err) {
       console.error(err)
+      isLoading.value = false
       alert('음악 파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
