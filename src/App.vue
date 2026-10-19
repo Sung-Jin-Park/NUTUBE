@@ -1,25 +1,29 @@
 <template>
   <v-app class="neon-youtube-app">
-    <!-- 배경 네온 블러 효과 요소 (스크롤 공백 방지) -->
+    <!-- 배경 네온 블러 효과 요소 -->
     <div class="bg-blob blob-1"></div>
     <div class="bg-blob blob-2"></div>
+
+    <!-- 숨겨진 파일 업로드 인풋들 -->
+    <input ref="creatorFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadCreators" />
+    <input ref="playlistFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadPlaylists" />
+    <input ref="singlePlaylistFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadSinglePlaylist" />
+    <input ref="musicFileInput" type="file" accept=".json" style="display: none;" @change="handleUploadMusic" />
 
     <!-- 상단 앱바 -->
     <v-app-bar flat class="glass-app-bar px-1 px-md-4" height="64">
       <v-app-bar-nav-icon @click="drawer = !drawer" class="text-white" density="compact"></v-app-bar-nav-icon>
       
-      <!-- 유튜브 로고 아이콘 + 현재 사용 중인 API Key 번호 표기 -->
       <div class="d-flex align-center ml-0 mr-2 gap-1 flex-shrink-0">
         <v-icon icon="mdi-play-box-multiple" class="text-accent" size="26"></v-icon>
         <span class="text-accent text-caption font-weight-bold ml-1" title="현재 사용 중인 YouTube API 키 번호">#{{ currentApiKeyNumber }}</span>
       </div>
       
-      <!-- 검색창 및 실시간 검색 옵션 버튼 -->
       <v-text-field
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isTrendingMode ? '인기 급상승 영상 내 검색...' : (isSearchMode ? '새로운 유튜버 또는 영상 검색 (엔터 또는 검색 버튼 시 전체 구독 피드 갱신)...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 피드 내 검색...')))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isMusicMode ? '음악/아티스트 검색...' : (isTrendingMode ? '인기 급상승 영상 (검색어 무시)...' : (isSearchMode ? '유튜브 전체 검색어를 입력하세요...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 전체 피드 내 검색...'))))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -28,7 +32,6 @@
       >
         <template v-slot:append-inner>
           <div class="d-flex align-center gap-1">
-            <!-- 선택한 영상 일괄 재생 버튼 -->
             <v-btn
               v-if="selectedVideoIds.length > 0"
               icon="mdi-playlist-play"
@@ -50,7 +53,6 @@
               </template>
             </v-btn>
 
-            <!-- 선택한 영상을 재생 목록에 저장 버튼 -->
             <v-btn
               v-if="selectedVideoIds.length > 0"
               icon="mdi-folder-plus"
@@ -61,7 +63,6 @@
               @click.stop="openSaveToPlaylistDialog(null)"
             ></v-btn>
 
-            <!-- 선택 내역 클리어 버튼 (X 표시 아이콘) -->
             <v-btn
               v-if="selectedVideoIds.length > 0"
               icon="mdi-close-circle"
@@ -72,25 +73,20 @@
               @click.stop="clearSelectedVideos"
             ></v-btn>
 
-            <!-- 실시간 검색 버튼 (아이콘 회전 포함) -->
             <v-btn
               icon
               size="small"
               variant="text"
               color="accent"
-              title="유튜브 API로 실시간 검색 실행 (빈 값이면 모든 구독자 채널의 최신 영상 리스트 로드)"
-              @click.stop="triggerLiveSearch"
+              title="조회/검색 실행"
+              @click.stop="triggerTabSearchOrUpdate"
             >
-              <v-icon
-                icon="mdi-cloud-search"
-                :spinning="isLoading"
-              ></v-icon>
+              <v-icon icon="mdi-cloud-search"></v-icon>
             </v-btn>
           </div>
         </template>
       </v-text-field>
 
-      <!-- 스크롤해도 항상 고정되는 상단 앱바 하단 영역 (아이콘 탭 그룹 배치) -->
       <template v-slot:extension>
         <div class="d-flex align-center px-4 py-1 w-100 overflow-x-auto glass-extension-bar">
           <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl flex-nowrap w-100 justify-start justify-md-center">
@@ -154,8 +150,17 @@
               variant="flat"
               :color="isTrendingMode ? 'deep-purple-darken-2' : 'transparent'"
               class="text-white flex-shrink-0"
-              title="인기 급상승 영상"
+              title="실시간 급상승 영상"
               @click="enableTrendingMode"
+            ></v-btn>
+            <v-btn
+              icon="mdi-music-box-outline"
+              size="small"
+              variant="flat"
+              :color="isMusicMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="음악 탭"
+              @click="enableMusicMode"
             ></v-btn>
           </div>
         </div>
@@ -232,16 +237,31 @@
 
         <v-list-item 
           prepend-icon="mdi-fire" 
-          title="인기 급상승 영상" 
+          title="실시간 급상승 영상" 
           value="trendingMode" 
           class="mb-2 custom-list-item"
           :class="{ 'neon-active': isTrendingMode }"
           @click="enableTrendingMode"
         ></v-list-item>
+
+        <v-list-item 
+          prepend-icon="mdi-music-box-outline" 
+          title="음악 탭" 
+          value="musicMode" 
+          class="mb-2 custom-list-item"
+          :class="{ 'neon-active': isMusicMode }"
+          @click="enableMusicMode"
+        ></v-list-item>
         
         <v-divider class="border-opacity-25 my-4"></v-divider>
         
-        <div class="px-4 text-subtitle-2 text-grey-lighten-1 mb-2">구독 크리에이터</div>
+        <div class="px-4 d-flex align-center justify-space-between mb-2">
+          <span class="text-subtitle-2 text-grey-lighten-1">구독 크리에이터</span>
+          <div class="d-flex align-center gap-1">
+            <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="구독 목록 백업 (내려받기)" @click="downloadCreatorsBackup"></v-btn>
+            <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="구독 목록 불러오기 (올리기)" @click="triggerUploadCreators"></v-btn>
+          </div>
+        </div>
         
         <div v-if="creators.length === 0" class="px-4 py-3 text-grey-darken-1 text-caption text-center">
           검색 후 채널을 구독하거나<br/>영상을 추가해 보세요.
@@ -285,14 +305,13 @@
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       <v-container fluid class="pa-2 pa-md-6">
         
-        <!-- 현재 선택된 타이틀 영역 -->
+        <!-- 타이틀 영역 -->
         <v-card class="glass-banner mb-3 mb-md-6 pa-3 pa-md-4 rounded-xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3">
             <div class="d-flex align-center gap-3">
-              <!-- 전체 선택 체크박스 (재생 목록 메인 폴더 보기 아닐 때만) -->
               <v-checkbox
-                v-if="!isPlaylistMode || activePlaylistId"
+                v-if="(!isPlaylistMode || activePlaylistId) && !isHistoryMode"
                 v-model="isAllSelected"
                 :indeterminate="isIndeterminate"
                 color="accent"
@@ -309,10 +328,121 @@
           </div>
         </v-card>
 
+        <!-- 음악 탭 전용 UI -->
+        <div v-if="isMusicMode">
+          <div class="d-flex align-center gap-2 overflow-x-auto pb-3 mb-4">
+            <v-chip
+              v-for="cat in musicCategories"
+              :key="cat.value"
+              :color="musicCategory === cat.value ? 'deep-purple-darken-2' : 'default'"
+              class="text-white font-weight-bold glass-chip flex-shrink-0 cursor-pointer"
+              @click="selectMusicCategory(cat.value)"
+            >
+              {{ cat.title }}
+            </v-chip>
+          </div>
+
+          <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+            <div class="d-flex align-center gap-2">
+              <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">🎵 추천 및 검색된 음악 트랙</h2>
+              <div class="d-flex align-center gap-1">
+                <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="음악 탭 데이터 백업" @click="downloadMusicBackup"></v-btn>
+                <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="음악 탭 데이터 불러오기" @click="triggerUploadMusic"></v-btn>
+              </div>
+            </div>
+            <div class="d-flex align-center gap-2">
+              <v-btn
+                color="deep-purple-darken-2"
+                variant="flat"
+                size="small"
+                prepend-icon="mdi-playlist-play"
+                class="text-white font-weight-bold"
+                :disabled="displayedVideos.length === 0"
+                @click="playSelectedOrAllMusic"
+              >
+                음악 전체/선택 재생
+              </v-btn>
+            </div>
+          </div>
+
+          <v-row v-if="isLoading && displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
+            <v-col cols="12" class="text-center">
+              <v-progress-circular indeterminate color="accent" size="48" class="mb-3"></v-progress-circular>
+              <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">음악을 불러오는 중입니다...</h3>
+            </v-col>
+          </v-row>
+
+          <v-row v-else-if="displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
+            <v-col cols="12" class="text-center">
+              <v-icon icon="mdi-music-note-off" size="56" class="text-grey-darken-2 mb-2"></v-icon>
+              <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 음악이 없습니다</h3>
+              <p class="text-caption text-grey-darken-1 mt-1">상단 검색창에 가수나 곡명을 입력하여 검색해 보세요.</p>
+            </v-col>
+          </v-row>
+
+          <div v-else class="d-flex flex-column gap-2">
+            <v-card
+              v-for="(video) in displayedVideos"
+              :key="video.id"
+              class="glass-card rounded-xl pa-2 d-flex align-center justify-space-between position-relative playlist-list-item"
+              elevation="0"
+              @click="playVideo(video)"
+            >
+              <div class="d-flex align-center gap-3 overflow-hidden flex-grow-1 pr-2">
+                <v-checkbox
+                  v-model="selectedVideoIds"
+                  :value="video.id"
+                  color="accent"
+                  hide-details
+                  density="compact"
+                  class="ma-0 pa-0 flex-shrink-0"
+                  @click.stop
+                ></v-checkbox>
+
+                <div class="playlist-thumb-wrapper position-relative bg-black rounded-lg overflow-hidden flex-shrink-0">
+                  <v-img :src="video.thumbnail" width="96" height="54" cover>
+                    <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
+                  </v-img>
+                </div>
+
+                <div class="overflow-hidden flex-grow-1">
+                  <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
+                  <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                </div>
+              </div>
+
+              <div class="d-flex align-center gap-1 flex-shrink-0" @click.stop>
+                <v-btn
+                  icon="mdi-folder-plus"
+                  size="small"
+                  variant="text"
+                  color="accent"
+                  title="재생 목록에 추가"
+                  @click.stop="openSaveToPlaylistDialog(video)"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-heart"
+                  size="small"
+                  variant="text"
+                  :color="video.isFavorite ? 'pink' : 'grey'"
+                  title="좋아요(즐겨찾기)"
+                  @click.stop="toggleVideoFavorite(video)"
+                ></v-btn>
+              </div>
+            </v-card>
+          </div>
+        </div>
+
         <!-- 재생 목록 폴더 목록 뷰 -->
-        <div v-if="isPlaylistMode && !activePlaylistId">
+        <div v-else-if="isPlaylistMode && !activePlaylistId">
           <div class="d-flex justify-space-between align-center mb-4">
-            <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">내 재생 목록 폴더</h2>
+            <div class="d-flex align-center gap-2">
+              <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">내 재생 목록 폴더</h2>
+              <div class="d-flex align-center gap-1">
+                <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="전체 재생 목록 백업" @click="downloadPlaylistsBackup"></v-btn>
+                <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="전체 재생 목록 불러오기" @click="triggerUploadPlaylists"></v-btn>
+              </div>
+            </div>
             <v-btn
               color="deep-purple-darken-2"
               variant="flat"
@@ -344,6 +474,8 @@
                   <div class="d-flex justify-space-between align-start mb-2">
                     <v-icon icon="mdi-folder-music" color="accent" size="36"></v-icon>
                     <div class="d-flex align-center gap-1" @click.stop>
+                      <v-btn icon="mdi-download-box" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
+                      <v-btn icon="mdi-upload-box" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
                       <v-btn
                         icon="mdi-arrow-up"
                         size="x-small"
@@ -400,9 +532,9 @@
           </v-row>
         </div>
 
-        <!-- 기존 영상 목록 뷰 -->
-        <template v-else>
-          <div v-if="isPlaylistMode && activePlaylistId" class="mb-3">
+        <!-- 재생 목록 폴더 안의 영상 뷰 -->
+        <template v-else-if="isPlaylistMode && activePlaylistId">
+          <div class="mb-3 d-flex align-center justify-space-between flex-wrap gap-2">
             <v-btn
               variant="text"
               color="accent"
@@ -412,8 +544,98 @@
             >
               재생 목록 폴더 목록으로 돌아가기
             </v-btn>
+
+            <v-btn
+              color="deep-purple-darken-2"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-play"
+              class="text-white font-weight-bold"
+              :disabled="displayedVideos.length === 0"
+              @click="playPlaylistFolder({ id: activePlaylistId })"
+            >
+              재생 목록 전체 재생
+            </v-btn>
           </div>
 
+          <v-row v-if="displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
+            <v-col cols="12" class="text-center">
+              <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
+              <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">이 재생 목록에 담긴 영상이 없습니다</h3>
+            </v-col>
+          </v-row>
+
+          <div v-else class="d-flex flex-column gap-2">
+            <v-card
+              v-for="(video, index) in displayedVideos"
+              :key="video.id"
+              class="glass-card rounded-xl pa-2 d-flex align-center justify-space-between position-relative playlist-list-item"
+              elevation="0"
+              draggable="true"
+              @dragstart="onDragStart(index)"
+              @dragover.prevent
+              @drop="onDrop(index)"
+              @click="playVideo(video)"
+            >
+              <div class="d-flex align-center gap-3 overflow-hidden flex-grow-1 pr-2">
+                <v-icon icon="mdi-drag" color="grey-darken-1" size="20" class="cursor-grab flex-shrink-0" title="드래그하여 순서 변경"></v-icon>
+                
+                <v-checkbox
+                  v-model="selectedVideoIds"
+                  :value="video.id"
+                  color="accent"
+                  hide-details
+                  density="compact"
+                  class="ma-0 pa-0 flex-shrink-0"
+                  @click.stop
+                ></v-checkbox>
+
+                <div class="playlist-thumb-wrapper position-relative bg-black rounded-lg overflow-hidden flex-shrink-0">
+                  <v-img :src="video.thumbnail" width="96" height="54" cover>
+                    <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
+                  </v-img>
+                </div>
+
+                <div class="overflow-hidden flex-grow-1">
+                  <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
+                  <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                </div>
+              </div>
+
+              <div class="d-flex align-center gap-1 flex-shrink-0" @click.stop>
+                <v-btn
+                  icon="mdi-arrow-up"
+                  size="x-small"
+                  variant="text"
+                  color="white"
+                  :disabled="index === 0"
+                  title="위로 이동"
+                  @click="movePlaylistItemOrder(index, -1)"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-arrow-down"
+                  size="x-small"
+                  variant="text"
+                  color="white"
+                  :disabled="index === displayedVideos.length - 1"
+                  title="아래로 이동"
+                  @click="movePlaylistItemOrder(index, 1)"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-delete"
+                  size="small"
+                  variant="text"
+                  color="red-lighten-2"
+                  title="재생 목록에서 제거"
+                  @click="removeVideoFromActivePlaylist(video)"
+                ></v-btn>
+              </div>
+            </v-card>
+          </div>
+        </template>
+
+        <!-- 일반 영상 목록 뷰 -->
+        <template v-else>
           <v-row v-if="isLoading && displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
             <v-col cols="12" class="text-center">
               <v-progress-circular indeterminate color="accent" size="48" class="mb-3"></v-progress-circular>
@@ -426,88 +648,66 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isPlaylistMode ? '이 재생 목록에 담긴 영상이 없습니다.' : (isTrendingMode ? '인기 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
+                {{ isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 검색해 보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
               </p>
             </v-col>
           </v-row>
 
           <template v-else>
-            <!-- 1. 최상단 가로 스크롤 쇼츠 영역 -->
-            <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="mb-4">
-              <div class="d-flex align-center mb-2">
-                <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="20"></v-icon>
-                <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
-              </div>
-              <div class="shorts-horizontal-scroll">
-                <div 
-                  v-for="video in shortsVideos" 
-                  :key="video.id" 
-                  class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
-                  @click="playVideo(video)"
-                >
-                  <div class="video-checkbox-wrapper">
-                    <v-checkbox
-                      v-model="selectedVideoIds"
-                      :value="video.id"
-                      color="accent"
-                      hide-details
-                      density="compact"
-                      class="ma-1 pa-0 bg-dark-glass rounded"
-                      @click.stop
-                    ></v-checkbox>
-                  </div>
-
-                  <div class="shorts-thumbnail-wrapper position-relative bg-black">
-                    <v-img :src="video.thumbnail" height="200" contain class="align-end">
-                      <div class="shorts-badge">Shorts</div>
-                      <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
+            <!-- 시청 기록 탭 전용 리스트 뷰 -->
+            <div v-if="isHistoryMode" class="d-flex flex-column gap-2">
+              <v-card
+                v-for="video in displayedVideos"
+                :key="video.id"
+                class="glass-card rounded-xl pa-2 d-flex align-center justify-space-between position-relative playlist-list-item"
+                elevation="0"
+                @click="playVideo(video)"
+              >
+                <div class="d-flex align-center gap-3 overflow-hidden flex-grow-1 pr-2">
+                  <div class="playlist-thumb-wrapper position-relative bg-black rounded-lg overflow-hidden flex-shrink-0">
+                    <v-img :src="video.thumbnail" width="96" height="54" cover>
+                      <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
                       <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                         <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                       </div>
                     </v-img>
-                    <div class="play-overlay">
-                      <div class="play-btn-circle">
-                        <v-icon icon="mdi-play" color="white" size="32"></v-icon>
-                      </div>
-                    </div>
                   </div>
-                  <div class="pa-2 d-flex flex-column justify-space-between flex-grow-1">
-                    <h3 class="text-white font-weight-bold text-caption text-truncate-2" v-html="video.title"></h3>
-                    <div class="d-flex justify-space-between align-center mt-1">
+                  <div class="overflow-hidden flex-grow-1">
+                    <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
+                    <div class="d-flex align-center gap-2">
                       <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
-                      <div class="d-flex align-center">
-                        <v-btn
-                          icon="mdi-folder-plus"
-                          size="x-small"
-                          variant="text"
-                          color="accent"
-                          title="재생 목록에 추가"
-                          @click.stop="openSaveToPlaylistDialog(video)"
-                        ></v-btn>
-                        <v-btn
-                          icon="mdi-heart"
-                          size="x-small"
-                          variant="text"
-                          :color="video.isFavorite ? 'pink' : 'grey'"
-                          title="영상 즐겨찾기"
-                          @click.stop="toggleVideoFavorite(video)"
-                        ></v-btn>
-                      </div>
+                      <span class="text-grey-darken-1 text-caption">• 시청일: {{ formatRelativeTime(video.historyUpdatedAt) }}</span>
                     </div>
                   </div>
                 </div>
-              </div>
+
+                <div class="d-flex align-center flex-shrink-0" @click.stop>
+                  <v-btn
+                    icon="mdi-delete"
+                    size="small"
+                    variant="text"
+                    color="red-lighten-2"
+                    title="시청 기록에서 삭제"
+                    @click="deleteHistoryRecord(video)"
+                  ></v-btn>
+                </div>
+              </v-card>
             </div>
 
-            <!-- 2. 일반 유튜브 영상 그리드 영역 -->
-            <div v-if="normalVideos.length > 0 || (isHistoryMode && displayedVideos.length > 0)">
-              <div v-if="shortsVideos.length > 0 && !isHistoryMode" class="d-flex align-center mb-2">
-                <v-icon icon="mdi-youtube" color="red" class="mr-2" size="20"></v-icon>
-                <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">동영상</h2>
-              </div>
-              <v-row dense>
-                <v-col v-for="video in (isHistoryMode ? displayedVideos : normalVideos)" :key="video.id" cols="12" sm="6" md="4" lg="3">
-                  <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
+            <!-- 일반 그리드 뷰 -->
+            <template v-else>
+              <div v-if="shortsVideos.length > 0" class="mb-4">
+                <div class="d-flex align-center mb-2">
+                  <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="20"></v-icon>
+                  <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
+                </div>
+                <div class="shorts-horizontal-scroll">
+                  <div 
+                    v-for="video in shortsVideos" 
+                    :key="video.id" 
+                    class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
+                    @click="playVideo(video)"
+                  >
                     <div class="video-checkbox-wrapper">
                       <v-checkbox
                         v-model="selectedVideoIds"
@@ -520,61 +720,124 @@
                       ></v-checkbox>
                     </div>
 
-                    <div class="video-thumbnail-wrapper position-relative bg-black">
-                      <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
+                    <div class="shorts-thumbnail-wrapper position-relative bg-black">
+                      <v-img :src="video.thumbnail" height="200" contain class="align-end">
+                        <div class="shorts-badge">Shorts</div>
                         <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
                         <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                           <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                         </div>
                       </v-img>
                       <div class="play-overlay">
-                        <div class="play-btn-circle shorts-play-btn">
-                          <v-icon icon="mdi-play" color="white" size="24"></v-icon>
+                        <div class="play-btn-circle">
+                          <v-icon icon="mdi-play" color="white" size="32"></v-icon>
                         </div>
                       </div>
                     </div>
-
-                    <v-card-text class="flex-grow-1 d-flex flex-column justify-space-between pa-2 pa-md-3">
-                      <div class="d-flex justify-space-between align-start gap-2">
-                        <div class="flex-grow-1 overflow-hidden">
-                          <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
-                          <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                    <div class="pa-2 d-flex flex-column justify-space-between flex-grow-1">
+                      <h3 class="text-white font-weight-bold text-caption text-truncate-2" v-html="video.title"></h3>
+                      <div class="d-flex justify-space-between align-center mt-1">
+                        <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                        <div class="d-flex align-center">
+                          <v-btn
+                            icon="mdi-folder-plus"
+                            size="x-small"
+                            variant="text"
+                            color="accent"
+                            title="재생 목록에 추가"
+                            @click.stop="openSaveToPlaylistDialog(video)"
+                          ></v-btn>
+                          <v-btn
+                            icon="mdi-heart"
+                            size="x-small"
+                            variant="text"
+                            :color="video.isFavorite ? 'pink' : 'grey'"
+                            title="영상 즐겨찾기"
+                            @click.stop="toggleVideoFavorite(video)"
+                          ></v-btn>
                         </div>
-                        <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
-                          <span class="text-grey-darken-1 text-caption mb-1">{{ isHistoryMode && video.historyUpdatedAt ? formatRelativeTime(video.historyUpdatedAt) : formatRelativeTime(video.publishedAt) }}</span>
-                          <div class="d-flex align-center">
-                            <v-btn 
-                              icon="mdi-folder-plus" 
-                              size="x-small" 
-                              variant="text" 
-                              color="accent" 
-                              title="재생 목록에 추가"
-                              @click.stop="openSaveToPlaylistDialog(video)"
-                            ></v-btn>
-                            <v-btn 
-                              icon="mdi-heart" 
-                              size="x-small" 
-                              variant="text" 
-                              :color="video.isFavorite ? 'pink' : 'grey'" 
-                              title="영상 즐겨찾기"
-                              @click.stop="toggleVideoFavorite(video)"
-                            ></v-btn>
-                            <v-btn 
-                              icon="mdi-account-plus" 
-                              size="x-small" 
-                              variant="text" 
-                              :color="creators.some(c => c.id === video.creatorId) ? 'accent' : 'grey'" 
-                              :title="creators.some(c => c.id === video.creatorId) ? '이미 구독 중인 채널' : '이 채널 구독하기'"
-                              @click.stop="subscribeCreatorFromCard(video)"
-                            ></v-btn>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="normalVideos.length > 0">
+                <div v-if="shortsVideos.length > 0" class="d-flex align-center mb-2">
+                  <v-icon icon="mdi-youtube" color="red" class="mr-2" size="20"></v-icon>
+                  <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">동영상</h2>
+                </div>
+                <v-row dense>
+                  <v-col v-for="video in normalVideos" :key="video.id" cols="12" sm="6" md="4" lg="3">
+                    <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
+                      <div class="video-checkbox-wrapper">
+                        <v-checkbox
+                          v-model="selectedVideoIds"
+                          :value="video.id"
+                          color="accent"
+                          hide-details
+                          density="compact"
+                          class="ma-1 pa-0 bg-dark-glass rounded"
+                          @click.stop
+                        ></v-checkbox>
+                      </div>
+
+                      <div class="video-thumbnail-wrapper position-relative bg-black">
+                        <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
+                          <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
+                          <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
+                            <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
+                          </div>
+                        </v-img>
+                        <div class="play-overlay">
+                          <div class="play-btn-circle shorts-play-btn">
+                            <v-icon icon="mdi-play" color="white" size="24"></v-icon>
                           </div>
                         </div>
                       </div>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </div>
+
+                      <v-card-text class="flex-grow-1 d-flex flex-column justify-space-between pa-2 pa-md-3">
+                        <div class="d-flex justify-space-between align-start gap-2">
+                          <div class="flex-grow-1 overflow-hidden">
+                            <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
+                            <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                          </div>
+                          <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
+                            <span class="text-grey-darken-1 text-caption mb-1">{{ formatRelativeTime(video.publishedAt) }}</span>
+                            <div class="d-flex align-center">
+                              <v-btn 
+                                icon="mdi-folder-plus" 
+                                size="x-small" 
+                                variant="text" 
+                                color="accent" 
+                                title="재생 목록에 추가"
+                                @click.stop="openSaveToPlaylistDialog(video)"
+                              ></v-btn>
+                              <v-btn 
+                                icon="mdi-heart" 
+                                size="x-small" 
+                                variant="text" 
+                                :color="video.isFavorite ? 'pink' : 'grey'" 
+                                title="영상 즐겨찾기"
+                                @click.stop="toggleVideoFavorite(video)"
+                              ></v-btn>
+                              <v-btn 
+                                icon="mdi-account-plus" 
+                                size="x-small" 
+                                variant="text" 
+                                :color="creators.some(c => c.id === video.creatorId) ? 'accent' : 'grey'" 
+                                :title="creators.some(c => c.id === video.creatorId) ? '구독 중 (누르면 구독 취소)' : '이 채널 구독하기'"
+                                @click.stop="toggleSubscribeFromCard(video)"
+                              ></v-btn>
+                            </div>
+                          </div>
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </div>
+            </template>
           </template>
         </template>
 
@@ -694,6 +957,7 @@
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playlistIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
 
+            <!-- 취침 예약 기능 -->
             <v-menu location="bottom end" :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -703,6 +967,7 @@
                   size="small"
                   :color="sleepTimerSecondsLeft > 0 ? 'accent' : 'white'"
                   class="mr-1"
+                  title="취침 예약 설정"
                 >
                   <v-badge v-if="sleepTimerSecondsLeft > 0" dot color="accent" offset-x="-2" offset-y="-2">
                     <v-icon icon="mdi-sleep" size="20"></v-icon>
@@ -748,7 +1013,20 @@
               </v-list>
             </v-menu>
 
-            <v-btn icon variant="text" size="small" color="accent" class="mr-2" @click="toggleLandscapeMode">
+            <!-- 라디오 모드 토글 버튼 (화면 숨김 / 오디오만 재생) -->
+            <v-btn 
+              icon 
+              variant="text" 
+              size="small" 
+              :color="isAudioOnlyMode ? 'deep-purple-accent-2' : 'white'" 
+              class="mr-1" 
+              :title="isAudioOnlyMode ? '라디오 모드 해제 (영상 표시)' : '라디오 모드 (영상 숨기고 오디오 재생)'"
+              @click="toggleAudioOnlyMode"
+            >
+              <v-icon :icon="isAudioOnlyMode ? 'mdi-radio-handheld' : 'mdi-radio-tower'" size="20"></v-icon>
+            </v-btn>
+
+            <v-btn icon variant="text" size="small" color="accent" class="mr-2" @click="toggleLandscapeMode" title="화면 크기 변경">
               <v-icon :icon="isLandscapeMode ? 'mdi-crop-portrait' : 'mdi-crop-landscape'" size="20"></v-icon>
             </v-btn>
             <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
@@ -756,8 +1034,19 @@
         </div>
 
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
-          <div class="video-container" :class="{ 'landscape-expanded': isLandscapeMode }">
+          <!-- 비디오 영역 (라디오 모드일 경우 화면을 숨김) -->
+          <div 
+            class="video-container" 
+            :class="{ 'landscape-expanded': isLandscapeMode, 'audio-only-hidden': isAudioOnlyMode }"
+          >
             <div id="youtube-player-div" class="youtube-iframe"></div>
+          </div>
+
+          <!-- 라디오 모드 시 표시되는 비주얼 플레이어 카드 -->
+          <div v-if="isAudioOnlyMode" class="radio-placeholder-card pa-6 text-center d-flex flex-column align-center justify-center">
+            <v-icon icon="mdi-radio-tower" size="56" color="accent" class="pulse-icon mb-3"></v-icon>
+            <h3 class="text-subtitle-1 font-weight-bold text-white mb-1">📻 라디오 전용 오디오 모드 재생 중</h3>
+            <p class="text-caption text-grey-lighten-1 mb-0">영상은 숨겨지고 오디오만 연속 재생 중입니다.</p>
           </div>
 
           <div class="pa-3 pa-md-4 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-2 border-bottom-glass">
@@ -776,7 +1065,29 @@
                   유튜브에서 직접 보기
                 </v-btn>
               </div>
-              <p class="text-grey-lighten-1 text-caption mb-0">{{ activeVideo?.creatorName }}</p>
+              <div class="d-flex align-center gap-2 mt-1">
+                <p class="text-grey-lighten-1 text-caption mb-0">{{ activeVideo?.creatorName }}</p>
+                <div class="d-flex align-center gap-1">
+                  <v-btn
+                    size="x-small"
+                    variant="outlined"
+                    color="accent"
+                    :prepend-icon="creators.some(c => c.id === activeVideo?.creatorId) ? 'mdi-check' : 'mdi-account-plus'"
+                    @click="toggleSubscribeFromPlayer"
+                  >
+                    {{ creators.some(c => c.id === activeVideo?.creatorId) ? '구독중' : '구독' }}
+                  </v-btn>
+                  <v-btn
+                    size="x-small"
+                    variant="text"
+                    color="red-lighten-2"
+                    icon="mdi-open-in-new"
+                    :href="`https://www.youtube.com/channel/${activeVideo?.creatorId}`"
+                    target="_blank"
+                    title="유튜브에서 채널 열기"
+                  ></v-btn>
+                </div>
+              </div>
               <p v-if="initialWatchedTime > 5" class="text-accent text-caption mt-1 mb-0">
                 ⚡ 이전 시청 기록({{ formatTime(initialWatchedTime) }})에서 이어서 재생됩니다.
               </p>
@@ -813,7 +1124,6 @@
               </span>
               
               <div class="d-flex align-center gap-3">
-                <!-- 대댓글 표시 여부 체크박스 -->
                 <v-checkbox
                   v-model="showReplies"
                   color="accent"
@@ -842,7 +1152,6 @@
             <div ref="commentsScrollRef" class="comments-scroll-area" @scroll="checkCommentsScroll">
               <div v-if="comments.length === 0 && !isLoadingComments" class="text-grey-darken-1 text-caption text-center py-4">표시할 댓글이 없습니다.</div>
               
-              <!-- 최상위 댓글 루프 -->
               <template v-for="(comment, index) in topLevelComments" :key="comment.id || index">
                 <div class="comment-item mb-3 pb-2 border-bottom-glass">
                   <div class="d-flex align-start">
@@ -863,7 +1172,6 @@
                           <span>{{ comment.likeCount > 0 ? comment.likeCount : '' }}</span>
                         </div>
 
-                        <!-- 대댓글 해제 상태일 때 나타나는 '답글 N개' 펼치기 버튼 -->
                         <v-btn
                           v-if="!showReplies && comment.replyCount > 0"
                           variant="text"
@@ -879,7 +1187,6 @@
                     </div>
                   </div>
 
-                  <!-- 대댓글 체크된 상태일 때 바로 하단에 렌더링되는 대댓글 목록 -->
                   <div v-if="showReplies && comment.replyCount > 0" class="ml-8 mt-2 pl-3 border-left-glass">
                     <div v-for="reply in getRepliesForComment(comment.id)" :key="reply.id" class="comment-item mb-2 pb-1">
                       <div class="d-flex align-start">
@@ -897,7 +1204,6 @@
                       </div>
                     </div>
 
-                    <!-- 대댓글이 아직 다 안 불러와졌거나 추가 답글이 있을 경우 버튼 -->
                     <v-btn
                       v-if="!comment.repliesLoaded && comment.replyCount > (getRepliesForComment(comment.id).length)"
                       variant="text"
@@ -912,7 +1218,6 @@
                 </div>
               </template>
 
-              <!-- 대댓글 해제 상태에서 '답글 N개' 버튼을 눌렀을 때 해당 댓글 아래에 펼쳐지는 인라인 대댓글 영역 -->
               <div v-if="!showReplies && activeExpandedCommentId" class="mb-3 pl-6 border-left-glass">
                 <div v-if="isLoadingReplies" class="text-center py-2">
                   <v-progress-circular indeterminate color="accent" size="18" width="2"></v-progress-circular>
@@ -971,6 +1276,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
 const drawer = ref(false)
 const searchQuery = ref('')
+const lastSearchQuery = ref('') // 유튜브 전체 검색 탭 전용 이전 검색어 저장
 const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
@@ -978,12 +1284,30 @@ const isTrendingMode = ref(false)
 const isFavoriteVideosMode = ref(false)
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
+const isMusicMode = ref(false)
 const isLoading = ref(false)
+
+const creatorFileInput = ref(null)
+const playlistFileInput = ref(null)
+const singlePlaylistFileInput = ref(null)
+const musicFileInput = ref(null)
+let targetUploadPlaylistObj = null
 
 const creators = ref([])
 const videos = ref([])
 const trendingVideos = ref([])
+const searchResultVideos = ref([])
+const musicVideos = ref([])
 const historyList = ref([])
+
+const musicCategory = ref('top')
+const musicCategories = [
+  { title: '인기 가요/팝', value: 'top' },
+  { title: '발라드 믹스', value: 'ballad' },
+  { title: '아이돌/댄스', value: 'dance' },
+  { title: 'Lo-Fi / 힙합', value: 'lofi' },
+  { title: '재즈 / 어쿠스틱', value: 'jazz' }
+]
 
 const playlists = ref([])
 const playlistItems = ref([])
@@ -1007,8 +1331,8 @@ const trendingNextPageToken = ref(null)
 const isPlayerOpen = ref(false)
 const activeVideo = ref(null)
 const showComments = ref(false)
-const showReplies = ref(true)               // 대댓글 표시 여부 체크박스 (기본 체크됨)
-const activeExpandedCommentId = ref(null)   // 대댓글 해제 상태일 때 펼쳐진 특정 댓글 ID
+const showReplies = ref(true)               
+const activeExpandedCommentId = ref(null)   
 const isLoadingReplies = ref(false)
 
 const comments = ref([])
@@ -1020,6 +1344,7 @@ const commentsOrder = ref('relevance')
 
 const initialWatchedTime = ref(0)
 const isLandscapeMode = ref(false)
+const isAudioOnlyMode = ref(false) // 라디오 모드 (영상 숨김 오디오 재생)
 
 const sleepTimerSecondsLeft = ref(0)
 const customSleepMinutes = ref(null)
@@ -1031,6 +1356,8 @@ let currentPlayingTime = 0
 
 let isPopStateTriggered = false
 const searchNextPageToken = ref(null)
+
+const draggedIndex = ref(null)
 
 const handlePopState = () => {
   if (isPlayerOpen.value) {
@@ -1094,6 +1421,10 @@ const scrollToTop = (el) => {
 
 const toggleLandscapeMode = () => {
   isLandscapeMode.value = !isLandscapeMode.value
+}
+
+const toggleAudioOnlyMode = () => {
+  isAudioOnlyMode.value = !isAudioOnlyMode.value
 }
 
 const setSleepTimer = (minutes) => {
@@ -1280,6 +1611,260 @@ const fetchAndUpdateVideoDurations = async (videoList) => {
   return videoList
 }
 
+// 구독 백업 및 불러오기
+const downloadCreatorsBackup = () => {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creators.value, null, 2))
+  const downloadAnchor = document.createElement('a')
+  downloadAnchor.setAttribute("href", dataStr)
+  downloadAnchor.setAttribute("download", `neontube_creators_backup_${getTodayString()}.json`)
+  document.body.appendChild(downloadAnchor)
+  downloadAnchor.click()
+  downloadAnchor.remove()
+}
+
+const triggerUploadCreators = () => {
+  if (creatorFileInput.value) creatorFileInput.value.click()
+}
+
+const handleUploadCreators = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const importedCreators = JSON.parse(e.target.result)
+      if (!Array.isArray(importedCreators)) {
+        alert('올바르지 않은 구독 백업 파일 형식입니다.')
+        return
+      }
+
+      const db = await openDB()
+      const tx = db.transaction(['creators'], 'readwrite')
+      const store = tx.objectStore('creators')
+
+      let addedCount = 0
+      importedCreators.forEach(imported => {
+        if (!creators.value.some(existing => existing.id === imported.id)) {
+          store.put(imported)
+          creators.value.push(imported)
+          addedCount++
+        }
+      })
+
+      tx.oncomplete = async () => {
+        alert(`구독 불러오기 완료! 새로운 크리에이터 ${addedCount}명이 추가되었습니다. (중복 채널은 패스됨)`)
+        await loadDataFromDB()
+        if (addedCount > 0) {
+          await fetchChannelVideosParallel(creators.value.filter(c => importedCreators.some(ic => ic.id === c.id)))
+        }
+      }
+    } catch (err) {
+      console.error(err)
+      alert('파일을 읽는 중 오류가 발생했습니다.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+  reader.readAsText(file)
+}
+
+// 전체 재생 목록 백업 및 불러오기
+const downloadPlaylistsBackup = () => {
+  const backupData = {
+    playlists: playlists.value,
+    playlistItems: playlistItems.value
+  }
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2))
+  const downloadAnchor = document.createElement('a')
+  downloadAnchor.setAttribute("href", dataStr)
+  downloadAnchor.setAttribute("download", `neontube_playlists_all_backup_${getTodayString()}.json`)
+  document.body.appendChild(downloadAnchor)
+  downloadAnchor.click()
+  downloadAnchor.remove()
+}
+
+const triggerUploadPlaylists = () => {
+  if (playlistFileInput.value) playlistFileInput.value.click()
+}
+
+const handleUploadPlaylists = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const imported = JSON.parse(e.target.result)
+      const db = await openDB()
+      const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
+      
+      let addedPlCount = 0
+      if (imported.playlists && Array.isArray(imported.playlists)) {
+        const plStore = tx.objectStore('playlists')
+        imported.playlists.forEach(pl => {
+          // 이름이나 ID 중복 검사
+          const isExist = playlists.value.some(p => p.id === pl.id || p.name === pl.name)
+          if (!isExist) {
+            plStore.put(pl)
+            addedPlCount++
+          }
+        })
+      }
+      if (imported.playlistItems && Array.isArray(imported.playlistItems)) {
+        const itemStore = tx.objectStore('playlistItems')
+        imported.playlistItems.forEach(item => {
+          if (!playlistItems.value.some(i => i.playlistId === item.playlistId && i.videoId === item.videoId)) {
+            const { ...rest } = item
+            itemStore.add(rest)
+          }
+        })
+      }
+
+      tx.oncomplete = async () => {
+        alert(`전체 재생 목록 불러오기 완료! (${addedPlCount}개 새로운 폴더 추가)`)
+        await loadDataFromDB()
+      }
+    } catch (err) {
+      console.error(err)
+      alert('재생 목록 파일을 읽는 중 오류가 발생했습니다.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+  reader.readAsText(file)
+}
+
+// 개별 재생 목록 백업 및 불러오기 (동일 타이틀 시 오류 알림 기능 추가)
+const downloadSinglePlaylistBackup = (playlist) => {
+  const items = playlistItems.value.filter(i => i.playlistId === playlist.id)
+  const backupData = {
+    playlist,
+    items
+  }
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2))
+  const downloadAnchor = document.createElement('a')
+  downloadAnchor.setAttribute("href", dataStr)
+  downloadAnchor.setAttribute("download", `neontube_playlist_${playlist.name.replace(/\s+/g, '_')}_backup.json`)
+  document.body.appendChild(downloadAnchor)
+  downloadAnchor.click()
+  downloadAnchor.remove()
+}
+
+const triggerUploadSinglePlaylist = (playlist) => {
+  targetUploadPlaylistObj = playlist
+  if (singlePlaylistFileInput.value) singlePlaylistFileInput.value.click()
+}
+
+const handleUploadSinglePlaylist = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const imported = JSON.parse(e.target.result)
+      
+      if (!imported.playlist || !imported.playlist.name) {
+        alert('올바르지 않은 개별 재생 목록 백업 파일 형식입니다.')
+        return
+      }
+
+      const importedName = imported.playlist.name
+
+      // 만약 대상 폴더를 지정하지 않고 업로드하거나 새 폴더로 들어오는 경우
+      if (!targetUploadPlaylistObj) {
+        // 동일한 타이틀 검사
+        const isDuplicateName = playlists.value.some(p => p.name === importedName)
+        if (isDuplicateName) {
+          alert(`오류: 이미 동일한 이름("${importedName}")의 재생 목록 폴더가 존재합니다!`)
+          return
+        }
+
+        const newPl = { id: 'pl_' + Date.now(), name: importedName, order: playlists.value.length }
+        const db = await openDB()
+        const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
+        tx.objectStore('playlists').put(newPl)
+
+        if (imported.items && Array.isArray(imported.items)) {
+          const itemStore = tx.objectStore('playlistItems')
+          imported.items.forEach(item => {
+            itemStore.add({ playlistId: newPl.id, videoId: item.videoId })
+          })
+        }
+
+        tx.oncomplete = async () => {
+          alert(`새로운 개별 재생 목록 "${importedName}"을(를) 정상적으로 불러왔습니다!`)
+          await loadDataFromDB()
+        }
+      } else {
+        // 기존 폴더에 덮어쓰거나 항목 추가하는 경우
+        const db = await openDB()
+        const tx = db.transaction(['playlistItems'], 'readwrite')
+        const itemStore = tx.objectStore('playlistItems')
+
+        let addedCount = 0
+        if (imported.items && Array.isArray(imported.items)) {
+          imported.items.forEach(item => {
+            if (!playlistItems.value.some(i => i.playlistId === targetUploadPlaylistObj.id && i.videoId === item.videoId)) {
+              itemStore.add({ playlistId: targetUploadPlaylistObj.id, videoId: item.videoId })
+              addedCount++
+            }
+          })
+        }
+
+        tx.oncomplete = async () => {
+          alert(`"${targetUploadPlaylistObj.name}" 폴더에 영상 ${addedCount}개가 새로 추가되었습니다.`)
+          await loadDataFromDB()
+        }
+      }
+    } catch (err) {
+      console.error(err)
+      alert('파일을 읽는 중 오류가 발생했습니다.')
+    } finally {
+      event.target.value = ''
+      targetUploadPlaylistObj = null
+    }
+  }
+  reader.readAsText(file)
+}
+
+const downloadMusicBackup = () => {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(musicVideos.value, null, 2))
+  const downloadAnchor = document.createElement('a')
+  downloadAnchor.setAttribute("href", dataStr)
+  downloadAnchor.setAttribute("download", `neontube_music_backup_${getTodayString()}.json`)
+  document.body.appendChild(downloadAnchor)
+  downloadAnchor.click()
+  downloadAnchor.remove()
+}
+
+const triggerUploadMusic = () => {
+  if (musicFileInput.value) musicFileInput.value.click()
+}
+
+const handleUploadMusic = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const imported = JSON.parse(e.target.result)
+      if (Array.isArray(imported)) {
+        musicVideos.value = imported
+        alert('음악 탭 데이터를 성공적으로 불러왔습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('음악 파일을 읽는 중 오류가 발생했습니다.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+  reader.readAsText(file)
+}
+
 const openCreatePlaylistDialog = () => {
   editingPlaylist.value = null
   playlistFormName.value = ''
@@ -1295,6 +1880,13 @@ const openEditPlaylistDialog = (playlist) => {
 const savePlaylistFolder = async () => {
   const name = playlistFormName.value.trim()
   if (!name) { alert('폴더 이름을 입력해 주세요.'); return }
+
+  // 중복 타이틀 체크
+  const isDuplicateName = playlists.value.some(p => p.name === name && p.id !== editingPlaylist.value?.id)
+  if (isDuplicateName) {
+    alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
+    return
+  }
 
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
@@ -1316,6 +1908,13 @@ const savePlaylistFolder = async () => {
 const quickCreateAndSelectPlaylist = async () => {
   const name = quickNewPlaylistName.value.trim()
   if (!name) { alert('새 폴더 이름을 입력해 주세요.'); return }
+
+  // 중복 타이틀 체크
+  const isDuplicateName = playlists.value.some(p => p.name === name)
+  if (isDuplicateName) {
+    alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
+    return
+  }
 
   const newId = 'pl_' + Date.now()
   const db = await openDB()
@@ -1363,6 +1962,75 @@ const movePlaylistOrder = async (index, direction) => {
   const tx = db.transaction('playlists', 'readwrite')
   const store = tx.objectStore('playlists')
   playlists.value.forEach(pl => store.put(pl))
+}
+
+const movePlaylistItemOrder = async (index, direction) => {
+  const targetIndex = index + direction
+  const currentList = displayedVideos.value
+  if (targetIndex < 0 || targetIndex >= currentList.length) return
+
+  const temp = currentList[index]
+  currentList[index] = currentList[targetIndex]
+  currentList[targetIndex] = temp
+
+  await saveActivePlaylistItemsOrder(currentList)
+}
+
+const onDragStart = (index) => {
+  draggedIndex.value = index
+}
+
+const onDrop = async (targetIndex) => {
+  if (draggedIndex.value === null || draggedIndex.value === targetIndex) return
+  const currentList = [...displayedVideos.value]
+  
+  const movedItem = currentList.splice(draggedIndex.value, 1)[0]
+  currentList.splice(targetIndex, 0, movedItem)
+
+  draggedIndex.value = null
+  await saveActivePlaylistItemsOrder(currentList)
+}
+
+const saveActivePlaylistItemsOrder = async (newList) => {
+  const db = await openDB()
+  const tx = db.transaction('playlistItems', 'readwrite')
+  const store = tx.objectStore('playlistItems')
+
+  const oldItems = playlistItems.value.filter(i => i.playlistId === activePlaylistId.value)
+  oldItems.forEach(item => {
+    if (item.id) store.delete(item.id)
+  })
+
+  newList.forEach(video => {
+    store.add({ playlistId: activePlaylistId.value, videoId: video.id })
+  })
+
+  tx.oncomplete = async () => {
+    await loadDataFromDB()
+  }
+}
+
+const removeVideoFromActivePlaylist = async (video) => {
+  const targetItem = playlistItems.value.find(i => i.playlistId === activePlaylistId.value && i.videoId === video.id)
+  if (!targetItem) return
+
+  const db = await openDB()
+  const tx = db.transaction('playlistItems', 'readwrite')
+  tx.objectStore('playlistItems').delete(targetItem.id)
+
+  tx.oncomplete = async () => {
+    await loadDataFromDB()
+  }
+}
+
+const deleteHistoryRecord = async (video) => {
+  const db = await openDB()
+  const tx = db.transaction('history', 'readwrite')
+  tx.objectStore('history').delete(video.id)
+
+  tx.oncomplete = async () => {
+    await loadDataFromDB()
+  }
 }
 
 const getPlaylistVideoCount = (playlistId) => playlistItems.value.filter(item => item.playlistId === playlistId).length
@@ -1428,6 +2096,18 @@ const playSelectedVideos = async () => {
   playlistIndex.value = 0
   selectedVideoIds.value = []
   await startPlayingActiveVideo(selectedList[0])
+}
+
+const playSelectedOrAllMusic = async () => {
+  const targetList = selectedVideoIds.value.length > 0 
+    ? displayedVideos.value.filter(v => selectedVideoIds.value.includes(v.id))
+    : displayedVideos.value
+  
+  if (targetList.length === 0) return
+  playlistQueue.value = targetList
+  playlistIndex.value = 0
+  selectedVideoIds.value = []
+  await startPlayingActiveVideo(targetList[0])
 }
 
 const clearSelectedVideos = () => { selectedVideoIds.value = [] }
@@ -1500,7 +2180,6 @@ const closePlayer = () => {
   if (!isPopStateTriggered) window.history.back()
   isPopStateTriggered = false
   window.removeEventListener('popstate', handlePopState)
-  loadDataFromDB()
 }
 
 const onDialogModelUpdate = (val) => { if (!val) closePlayer() }
@@ -1519,9 +2198,28 @@ const initYouTubePlayer = (youtubeId, startTime) => {
           if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
           startHistoryTracker()
         },
-        onStateChange: (event) => {
-          if (event.data === 0 && playlistIndex.value < playlistQueue.value.length - 1) {
-            playNextInQueue()
+        onStateChange: async (event) => {
+          if (event.data === 0) {
+            if (activeVideo.value) {
+              try {
+                const db = await openDB()
+                const tx = db.transaction('history', 'readwrite')
+                tx.objectStore('history').delete(activeVideo.value.id)
+                
+                const targetVideo = videos.value.find(v => v.id === activeVideo.value.id)
+                if (targetVideo) {
+                  targetVideo.currentTime = 0
+                  targetVideo.progressPercent = 0
+                  targetVideo.historyUpdatedAt = null
+                }
+              } catch (err) {
+                console.error('이어보기 기록 삭제 실패:', err)
+              }
+            }
+
+            if (playlistIndex.value < playlistQueue.value.length - 1) {
+              playNextInQueue()
+            }
           }
         }
       }
@@ -1550,13 +2248,30 @@ const destroyYouTubePlayer = () => {
 
 const startHistoryTracker = () => {
   stopHistoryTracker()
-  historyInterval = setInterval(() => {
-    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+  historyInterval = setInterval(async () => {
+    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
       try {
         const t = ytPlayer.getCurrentTime()
-        if (t && t > 0) {
-          currentPlayingTime = Math.floor(t)
-          saveCurrentHistoryToDB()
+        const dur = ytPlayer.getDuration()
+        if (t && t > 0 && dur && dur > 0) {
+          if (dur - t <= 5) {
+            currentPlayingTime = 0
+            if (activeVideo.value) {
+              const db = await openDB()
+              const tx = db.transaction('history', 'readwrite')
+              tx.objectStore('history').delete(activeVideo.value.id)
+              
+              const targetVideo = videos.value.find(v => v.id === activeVideo.value.id)
+              if (targetVideo) {
+                targetVideo.currentTime = 0
+                targetVideo.progressPercent = 0
+                targetVideo.historyUpdatedAt = null
+              }
+            }
+          } else {
+            currentPlayingTime = Math.floor(t)
+            saveCurrentHistoryToDB()
+          }
         }
       } catch (e) { console.debug(e) }
     }
@@ -1859,13 +2574,34 @@ const toggleCreatorFavorite = async (creator) => {
   db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(creator)))
 }
 
-const subscribeCreatorFromCard = async (video) => {
-  if (creators.value.some(c => c.id === video.creatorId)) return
-  const newCreator = { id: video.creatorId, name: video.creatorName, subCount: '구독중', avatar: video.thumbnail || 'https://cdn.vuetifyjs.com/images/lists/1.jpg', isFavorite: false }
-  creators.value.push(newCreator)
+const toggleSubscribeFromCard = async (video) => {
+  const existingIndex = creators.value.findIndex(c => c.id === video.creatorId)
   const db = await openDB()
-  db.transaction('creators', 'readwrite').objectStore('creators').put(newCreator)
-  await fetchChannelVideos(newCreator)
+
+  if (existingIndex !== -1) {
+    const targetCreator = creators.value[existingIndex]
+    if (!confirm(`'${targetCreator.name}' 채널 구독을 취소하시겠습니까?`)) return
+    creators.value.splice(existingIndex, 1)
+    db.transaction('creators', 'readwrite').objectStore('creators').delete(targetCreator.id)
+    if (selectedCreator.value?.id === targetCreator.id) selectDiscoverHeart()
+  } else {
+    const newCreator = { 
+      id: video.creatorId, 
+      name: video.creatorName, 
+      subCount: '구독중', 
+      avatar: video.thumbnail || 'https://cdn.vuetifyjs.com/images/lists/1.jpg', 
+      isFavorite: false 
+    }
+    creators.value.push(newCreator)
+    db.transaction('creators', 'readwrite').objectStore('creators').put(newCreator)
+    await fetchChannelVideosParallel([newCreator])
+    alert(`'${newCreator.name}' 채널을 구독했습니다!`)
+  }
+}
+
+const toggleSubscribeFromPlayer = async () => {
+  if (!activeVideo.value) return
+  await toggleSubscribeFromCard(activeVideo.value)
 }
 
 const unsubscribeCreator = async (creator) => {
@@ -1874,6 +2610,80 @@ const unsubscribeCreator = async (creator) => {
   const db = await openDB()
   db.transaction('creators', 'readwrite').objectStore('creators').delete(creator.id)
   if (selectedCreator.value?.id === creator.id) selectDiscoverHeart()
+}
+
+const fetchChannelVideosParallel = async (targetCreators) => {
+  if (!targetCreators || targetCreators.length === 0 || API_KEYS.length === 0) return
+  
+  const promises = targetCreators.map(async (creator) => {
+    try {
+      const channelData = await fetchWithKeyRotation((key) => 
+        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${creator.id}&key=${key}`
+      )
+      if (channelData.error || !channelData.items || channelData.items.length === 0) return
+      const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+
+      const data = await fetchWithKeyRotation((key) => 
+        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&key=${key}`
+      )
+
+      if (!data.error && data.items) {
+        if (data.nextPageToken) {
+          channelNextPageTokens.value.set(creator.id, data.nextPageToken)
+        }
+
+        const db = await openDB()
+        const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt }]))
+
+        const channelVideos = data.items.map(item => {
+          const snippet = item.snippet
+          const videoId = snippet.resourceId?.videoId || snippet.resourceId
+          const title = snippet.title.toLowerCase()
+          const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+          const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+          const parsed = {
+            id: videoId,
+            youtubeId: videoId,
+            creatorId: snippet.channelId,
+            creatorName: snippet.channelTitle,
+            title: snippet.title,
+            thumbnail: thumbUrl,
+            isShorts: isShorts,
+            isFavorite: false,
+            views: snippet.publishedAt.substring(0, 10),
+            publishedAt: snippet.publishedAt,
+            duration: 0,
+            progressPercent: 0,
+            currentTime: 0,
+            historyUpdatedAt: null
+          }
+
+          if (existingMap.has(parsed.id)) {
+            Object.assign(parsed, existingMap.get(parsed.id))
+          }
+          return parsed
+        })
+
+        await fetchAndUpdateVideoDurations(channelVideos)
+
+        const tx = db.transaction('videos', 'readwrite')
+        const store = tx.objectStore('videos')
+        channelVideos.forEach(v => store.put(v))
+        
+        channelVideos.forEach(cv => {
+          if (!videos.value.some(v => v.id === cv.id)) {
+            videos.value.push(cv)
+          }
+        })
+      }
+    } catch (err) {
+      console.error(`채널(${creator.name}) 영상 로드 실패:`, err)
+    }
+  })
+
+  await Promise.all(promises)
+  videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 }
 
 const fetchTrendingVideos = async () => {
@@ -1939,10 +2749,85 @@ const fetchTrendingVideos = async () => {
     const store = tx.objectStore('videos')
     parsedTrending.forEach(v => store.put(v))
   } catch (error) {
-    console.error('인기 급상승 영상 불러오기 실패:', error)
+    console.error('실시간 급상승 영상 불러오기 실패:', error)
   } finally {
     isLoading.value = false
   }
+}
+
+const fetchMusicVideos = async (query = '인기 가요 믹스') => {
+  if (API_KEYS.length === 0) return
+  isLoading.value = true
+
+  try {
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&key=${key}`
+    )
+    if (data.error || !data.items) return
+
+    const db = await openDB()
+    const dbHistory = await new Promise((resolve) => {
+      db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
+    })
+    const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
+    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+    const parsedMusic = data.items.filter(item => item.id?.videoId).map(item => {
+      const snippet = item.snippet
+      const videoId = item.id.videoId
+      const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+
+      const parsed = {
+        id: videoId,
+        youtubeId: videoId,
+        creatorId: snippet.channelId,
+        creatorName: snippet.channelTitle,
+        title: snippet.title,
+        thumbnail: thumbUrl,
+        isShorts: false,
+        isFavorite: existingMap.get(videoId) || false,
+        views: snippet.publishedAt.substring(0, 10),
+        publishedAt: snippet.publishedAt,
+        duration: 0,
+        progressPercent: 0,
+        currentTime: 0,
+        historyUpdatedAt: null
+      }
+
+      const h = historyMap.get(parsed.id)
+      if (h) {
+        parsed.currentTime = h.currentTime || 0
+        parsed.duration = h.duration || 0
+        parsed.historyUpdatedAt = h.updatedAt || null
+        if (parsed.currentTime > 0 && parsed.duration > 0) {
+          parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
+        }
+      }
+      return parsed
+    })
+
+    await fetchAndUpdateVideoDurations(parsedMusic)
+    musicVideos.value = parsedMusic
+
+    const tx = db.transaction('videos', 'readwrite')
+    const store = tx.objectStore('videos')
+    parsedMusic.forEach(v => store.put(v))
+  } catch (error) {
+    console.error('음악 데이터 로드 실패:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const selectMusicCategory = async (catValue) => {
+  musicCategory.value = catValue
+  let query = '인기 가요 믹스'
+  if (catValue === 'ballad') query = '한국 발라드 명곡 믹스'
+  else if (catValue === 'dance') query = '아이돌 댄스 노래 믹스'
+  else if (catValue === 'lofi') query = 'Lo-Fi 힙합 플레이리스트'
+  else if (catValue === 'jazz') query = '재즈 어쿠스틱 음악'
+
+  await fetchMusicVideos(query)
 }
 
 const loadMoreTrendingVideos = async () => {
@@ -2007,75 +2892,9 @@ const loadMoreTrendingVideos = async () => {
     const store = tx.objectStore('videos')
     moreTrending.forEach(v => store.put(v))
   } catch (error) {
-    console.error('인기 급상승 추가 영상 로드 실패:', error)
+    console.error('실시간 급상승 추가 영상 로드 실패:', error)
   } finally {
     isLoading.value = false
-  }
-}
-
-const fetchChannelVideos = async (creator) => {
-  if (API_KEYS.length === 0) return
-
-  try {
-    channelNextPageTokens.value.delete(creator.id)
-
-    const channelData = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${creator.id}&key=${key}`
-    )
-
-    if (channelData.error || !channelData.items || channelData.items.length === 0) return
-    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
-
-    const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&key=${key}`
-    )
-
-    if (!data.error && data.items) {
-      if (data.nextPageToken) {
-        channelNextPageTokens.value.set(creator.id, data.nextPageToken)
-      }
-
-      const db = await openDB()
-      const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt }]))
-
-      const channelVideos = data.items.map(item => {
-        const snippet = item.snippet
-        const videoId = snippet.resourceId?.videoId || snippet.resourceId
-        const title = snippet.title.toLowerCase()
-        const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-        const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
-
-        const parsed = {
-          id: videoId,
-          youtubeId: videoId,
-          creatorId: snippet.channelId,
-          creatorName: snippet.channelTitle,
-          title: snippet.title,
-          thumbnail: thumbUrl,
-          isShorts: isShorts,
-          isFavorite: false,
-          views: snippet.publishedAt.substring(0, 10),
-          publishedAt: snippet.publishedAt,
-          duration: 0,
-          progressPercent: 0,
-          currentTime: 0,
-          historyUpdatedAt: null
-        }
-
-        if (existingMap.has(parsed.id)) {
-          Object.assign(parsed, existingMap.get(parsed.id))
-        }
-        return parsed
-      })
-
-      await fetchAndUpdateVideoDurations(channelVideos)
-
-      const tx = db.transaction('videos', 'readwrite')
-      const store = tx.objectStore('videos')
-      channelVideos.forEach(v => store.put(v))
-    }
-  } catch (error) {
-    console.error('채널 업로드 영상 불러오기 실패:', error)
   }
 }
 
@@ -2142,49 +2961,76 @@ const loadMoreChannelVideos = async (creator) => {
     })
 
     await fetchAndUpdateVideoDurations(moreVideos)
-    videos.value.push(...moreVideos)
+    moreVideos.forEach(mv => {
+      if (!videos.value.some(v => v.id === mv.id)) {
+        videos.value.push(mv)
+      }
+    })
+    videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
     moreVideos.forEach(v => store.put(v))
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
-const handleSearch = () => {
-  if (selectedCreator.value || isFavoriteVideosMode.value || isHistoryMode.value || isPlaylistMode.value || isTrendingMode.value) return
-  if (isSearchMode.value) searchYouTubeVideos()
-}
+const triggerTabSearchOrUpdate = async () => {
+  const query = searchQuery.value.trim()
 
-const triggerLiveSearch = async () => {
-  if (!searchQuery.value.trim()) {
-    await fetchAllSubscribedCreatorsVideos()
-  } else {
-    await searchYouTubeVideos()
-  }
-}
+  if (isPlaylistMode.value || isHistoryMode.value) return
 
-const fetchAllSubscribedCreatorsVideos = async () => {
-  if (creators.value.length === 0) {
-    alert('등록된 구독 크리에이터가 없습니다. 채널을 먼저 추가해 주세요.')
-    return
-  }
   isLoading.value = true
   try {
-    const promises = creators.value.map(creator => fetchChannelVideos(creator))
-    await Promise.all(promises)
+    if (isMusicMode.value) {
+      await fetchMusicVideos(query || '인기 가요 믹스')
+      return
+    }
 
-    await loadDataFromDB()
-    selectDiscoverAll()
-  } catch (err) {
-    console.error('구독자 전체 영상 로드 실패:', err)
+    if (isTrendingMode.value) {
+      await fetchTrendingVideos()
+      return
+    }
+
+    if (isSearchMode.value) {
+      if (query) {
+        lastSearchQuery.value = query // 유튜브 검색 시 이전 검색어로 보존
+        await searchYouTubeVideos()
+      }
+      return
+    }
+
+    if (currentTab.value === 'discoverAll' && !selectedCreator.value) {
+      if (!query && creators.value.length > 0) {
+        await fetchChannelVideosParallel(creators.value)
+        await loadDataFromDB()
+      }
+      return
+    }
+
+    if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
+      const favoriteCreators = creators.value.filter(c => c.isFavorite)
+      if (!query && favoriteCreators.length > 0) {
+        await fetchChannelVideosParallel(favoriteCreators)
+        await loadDataFromDB()
+      }
+      return
+    }
   } finally {
     isLoading.value = false
+  }
+}
+
+const handleSearch = async () => {
+  if (isSearchMode.value || isMusicMode.value) {
+    await triggerTabSearchOrUpdate()
+  } else {
+    triggerTabSearchOrUpdate()
   }
 }
 
 const searchYouTubeVideos = async () => {
   if (!searchQuery.value.trim() || API_KEYS.length === 0) return
   const query = searchQuery.value.trim()
-  isLoading.value = true
   searchNextPageToken.value = null
   
   try {
@@ -2235,13 +3081,21 @@ const searchYouTubeVideos = async () => {
     })
 
     await fetchAndUpdateVideoDurations(apiVideos)
-    apiVideos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-    videos.value = apiVideos
+    
+    apiVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    searchResultVideos.value = apiVideos
+
+    apiVideos.forEach(av => {
+      if (!videos.value.some(v => v.id === av.id)) {
+        videos.value.push(av)
+      }
+    })
+    videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
     apiVideos.forEach(v => store.put(v))
-  } catch (error) { console.error(error) } finally { isLoading.value = false }
+  } catch (error) { console.error(error) }
 }
 
 const loadMoreSearchVideos = async () => {
@@ -2276,7 +3130,17 @@ const loadMoreSearchVideos = async () => {
       }
     })
     await fetchAndUpdateVideoDurations(moreVideos)
-    videos.value.push(...moreVideos)
+    
+    moreVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    searchResultVideos.value.push(...moreVideos)
+    searchResultVideos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+
+    moreVideos.forEach(mv => {
+      if (!videos.value.some(v => v.id === mv.id)) {
+        videos.value.push(mv)
+      }
+    })
+    videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
@@ -2284,7 +3148,8 @@ const loadMoreSearchVideos = async () => {
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
-const selectDiscoverAll = () => {
+const selectDiscoverAll = async () => {
+  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = 'discoverAll'
   isSearchMode.value = false
@@ -2292,12 +3157,16 @@ const selectDiscoverAll = () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
-  searchQuery.value = ''
+  isMusicMode.value = false
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
   if (window.innerWidth < 960) drawer.value = false
+  await new Promise(r => setTimeout(r, 200))
+  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const selectDiscoverHeart = () => {
+const selectDiscoverHeart = async () => {
+  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = 'discoverHeart'
   isSearchMode.value = false
@@ -2305,12 +3174,16 @@ const selectDiscoverHeart = () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
-  searchQuery.value = ''
+  isMusicMode.value = false
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
   if (window.innerWidth < 960) drawer.value = false
+  await new Promise(r => setTimeout(r, 200))
+  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
 const enableTrendingMode = async () => {
+  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -2318,13 +3191,15 @@ const enableTrendingMode = async () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
-  searchQuery.value = ''
+  isMusicMode.value = false
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
   if (window.innerWidth < 960) drawer.value = false
   await fetchTrendingVideos()
   scrollToTop(mainScrollRef.value)
 }
 
-const enableFavoriteVideosMode = () => {
+const enableFavoriteVideosMode = async () => {
+  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -2332,12 +3207,16 @@ const enableFavoriteVideosMode = () => {
   isFavoriteVideosMode.value = true
   isHistoryMode.value = false
   isPlaylistMode.value = false
-  searchQuery.value = ''
+  isMusicMode.value = false
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
   if (window.innerWidth < 960) drawer.value = false
+  await new Promise(r => setTimeout(r, 200))
+  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const enableHistoryMode = () => {
+const enableHistoryMode = async () => {
+  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -2345,12 +3224,16 @@ const enableHistoryMode = () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = true
   isPlaylistMode.value = false
-  searchQuery.value = ''
+  isMusicMode.value = false
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
   if (window.innerWidth < 960) drawer.value = false
+  await new Promise(r => setTimeout(r, 200))
+  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const enablePlaylistMode = () => {
+const enablePlaylistMode = async () => {
+  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -2358,13 +3241,18 @@ const enablePlaylistMode = () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = true
+  isMusicMode.value = false
   activePlaylistId.value = null
-  searchQuery.value = ''
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
   if (window.innerWidth < 960) drawer.value = false
+  await new Promise(r => setTimeout(r, 200))
+  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const enableSearchMode = () => {
+// 유튜브 전체 검색 탭으로 진입 시 이전 검색어 복원
+const enableSearchMode = async () => {
+  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = true
@@ -2372,11 +3260,37 @@ const enableSearchMode = () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
+  isMusicMode.value = false
+  
+  // 이전 유튜브 검색어가 존재하는 경우 복원
+  if (lastSearchQuery.value) {
+    searchQuery.value = lastSearchQuery.value
+  }
+
   if (window.innerWidth < 960) drawer.value = false
+  await new Promise(r => setTimeout(r, 200))
+  isLoading.value = false
+  scrollToTop(mainScrollRef.value)
+}
+
+const enableMusicMode = async () => {
+  isLoading.value = true
+  selectedCreator.value = null
+  currentTab.value = ''
+  isSearchMode.value = false
+  isTrendingMode.value = false
+  isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
+  isPlaylistMode.value = false
+  isMusicMode.value = true
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
+  if (window.innerWidth < 960) drawer.value = false
+  await fetchMusicVideos('인기 가요 믹스')
   scrollToTop(mainScrollRef.value)
 }
 
 const selectCreatorFilter = async (creator) => {
+  isLoading.value = true
   selectedCreator.value = creator
   currentTab.value = ''
   isSearchMode.value = false
@@ -2384,9 +3298,10 @@ const selectCreatorFilter = async (creator) => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
-  searchQuery.value = ''
+  isMusicMode.value = false
+  searchQuery.value = '' // 일반 탭 이동 시 검색어 초기화
   if (window.innerWidth < 960) drawer.value = false
-  await fetchChannelVideos(creator)
+  await fetchChannelVideosParallel([creator])
   scrollToTop(mainScrollRef.value)
 }
 
@@ -2413,7 +3328,8 @@ const getHeaderTitle = computed(() => {
     return '재생 목록'
   }
   if (isSearchMode.value) return '유튜브 검색'
-  if (isTrendingMode.value) return '인기 급상승 영상'
+  if (isTrendingMode.value) return '실시간 급상승 영상'
+  if (isMusicMode.value) return '유튜브 음악 탭'
   if (currentTab.value === 'discoverAll') return '전체 구독 피드'
   return '구독 피드 모음'
 })
@@ -2421,8 +3337,12 @@ const getHeaderTitle = computed(() => {
 const displayedVideos = computed(() => {
   let result = videos.value
 
-  if (isTrendingMode.value) {
-    result = trendingVideos.value
+  if (isMusicMode.value) {
+    result = musicVideos.value
+  } else if (isTrendingMode.value) {
+    return trendingVideos.value
+  } else if (isSearchMode.value) {
+    result = searchResultVideos.value
   } else if (selectedCreator.value) {
     result = result.filter(v => v.creatorId === selectedCreator.value.id)
   } else if (isFavoriteVideosMode.value) {
@@ -2431,10 +3351,13 @@ const displayedVideos = computed(() => {
     const historyMap = new Map(historyList.value.map(h => [h.videoId, h.updatedAt]))
     result = result.filter(v => historyMap.has(v.id))
     result.sort((a, b) => new Date(historyMap.get(b.id) || '') - new Date(historyMap.get(a.id) || ''))
+    return result
   } else if (isPlaylistMode.value && activePlaylistId.value) {
-    const targetVideoIds = playlistItems.value.filter(item => item.playlistId === activePlaylistId.value).map(item => item.videoId)
-    result = result.filter(v => targetVideoIds.includes(v.id))
-  } else if (isSearchMode.value) {
+    const itemsInPlaylist = playlistItems.value.filter(item => item.playlistId === activePlaylistId.value)
+    const videoIdOrderMap = new Map(itemsInPlaylist.map((item, index) => [item.videoId, index]))
+    
+    result = result.filter(v => videoIdOrderMap.has(v.id))
+    result.sort((a, b) => videoIdOrderMap.get(a.id) - videoIdOrderMap.get(b.id))
     return result
   } else if (currentTab.value === 'discoverAll') {
     const subscribedIds = creators.value.map(c => c.id)
@@ -2444,10 +3367,15 @@ const displayedVideos = computed(() => {
     result = result.filter(v => favoriteCreatorIds.includes(v.creatorId))
   }
 
-  if (searchQuery.value.trim() && !isSearchMode.value) {
+  if (searchQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
     const query = searchQuery.value.trim().toLowerCase()
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
   }
+
+  if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value) {
+    result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+  }
+
   return result
 })
 
@@ -2540,6 +3468,10 @@ html, body {
 .glass-card { transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
 .glass-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(121, 40, 202, 0.3) !important; border-color: rgba(167, 139, 250, 0.4) !important; }
 
+.playlist-list-item { transition: background 0.2s ease; cursor: pointer; }
+.playlist-list-item:hover { background: rgba(255, 255, 255, 0.07) !important; }
+.video-duration-badge-small { position: absolute; bottom: 2px; right: 2px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 1px 3px; border-radius: 3px; font-size: 9px; font-weight: bold; z-index: 2; }
+
 .video-thumb-img { height: 110px !important; }
 @media (min-width: 600px) { .video-thumb-img { height: 150px !important; } }
 
@@ -2569,8 +3501,18 @@ html, body {
 .modal-vertical-container::-webkit-scrollbar { width: 6px; }
 .modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
 
-.video-container { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 160px; background: #000000; overflow: hidden; flex-shrink: 0; transition: aspect-ratio 0.3s ease; }
+.video-container { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 160px; background: #000000; overflow: hidden; flex-shrink: 0; transition: all 0.3s ease; }
 .video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 280px; }
+.video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
+
+.radio-placeholder-card { background: rgba(121, 40, 202, 0.15); border-bottom: 1px solid rgba(167, 139, 250, 0.3); }
+.pulse-icon { animation: pulse 2s infinite; }
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .youtube-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; display: block; }
 
 .comments-scroll-area, .related-scroll-area-long { max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; padding-right: 24px; }
