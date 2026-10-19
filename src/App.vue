@@ -2361,13 +2361,11 @@ const destroyYouTubePlayer = () => {
 const startHistoryTracker = () => {
   stopHistoryTracker()
   historyInterval = setInterval(async () => {
-    // 백그라운드 전환 시 브라우저 최적화로 인해 Iframe 상태 체크가 누락되는 것을 보완하기 위한 fallback 처리 추가
     if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
       try {
         const t = ytPlayer.getCurrentTime()
         const dur = ytPlayer.getDuration()
         if (t && t > 0 && dur && dur > 0) {
-          // 백그라운드 환경에서 비디오가 끝났거나 거의 끝에 도달했을 때(5초 이내) 다음 곡으로 안전하게 넘김
           if (dur - t <= 1 && playlistIndex.value < playlistQueue.value.length - 1) {
             playNextInQueue()
             return
@@ -3406,6 +3404,7 @@ const enableMusicMode = async () => {
   scrollToTop(mainScrollRef.value)
 }
 
+// [수정된 부분]: 크리에이터 선택 시 로딩 상태가 해제되지 않던 버그 수정 (try...finally 추가)
 const selectCreatorFilter = async (creator) => {
   isLoading.value = true
   selectedCreator.value = creator
@@ -3418,8 +3417,15 @@ const selectCreatorFilter = async (creator) => {
   isMusicMode.value = false
   searchQuery.value = '' 
   if (window.innerWidth < 960) drawer.value = false
-  await fetchChannelVideosParallel([creator])
-  scrollToTop(mainScrollRef.value)
+
+  try {
+    await fetchChannelVideosParallel([creator])
+  } catch (err) {
+    console.error('크리에이터 영상 조회 실패:', err)
+  } finally {
+    isLoading.value = false
+    scrollToTop(mainScrollRef.value)
+  }
 }
 
 const handleVisibilityChange = () => {
@@ -3427,7 +3433,6 @@ const handleVisibilityChange = () => {
     if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
       try {
         const state = ytPlayer.getPlayerState()
-        // 백그라운드 해제 시 재생이 끊겼다면 플레이어 강제 동기화
         if (state === 2 && isPlayerOpen.value) {
           ytPlayer.playVideo()
         }
