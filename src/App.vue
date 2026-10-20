@@ -515,7 +515,21 @@
                   <h3 class="text-white font-weight-bold text-subtitle-1 mb-1 text-truncate">{{ playlist.name }}</h3>
                   <p class="text-grey-lighten-1 text-caption mb-0">동영상 {{ getPlaylistVideoCount(playlist.id) }}개</p>
                 </div>
-                <div class="d-flex justify-end mt-4">
+                
+                <!-- 각 재생목록별 이어보기 체크박스 -->
+                <div class="mt-2" @click.stop>
+                  <v-checkbox
+                    v-model="playlistResumeStates[playlist.id]"
+                    color="accent"
+                    label="이 폴더 이어보기"
+                    density="compact"
+                    hide-details
+                    class="text-caption ma-0 pa-0 text-white"
+                    @change="savePlaylistResumeState(playlist.id)"
+                  ></v-checkbox>
+                </div>
+
+                <div class="d-flex justify-end mt-3">
                   <v-btn
                     size="small"
                     variant="flat"
@@ -545,17 +559,29 @@
               재생 목록 폴더 목록으로 돌아가기
             </v-btn>
 
-            <v-btn
-              color="deep-purple-darken-2"
-              variant="flat"
-              size="small"
-              prepend-icon="mdi-play"
-              class="text-white font-weight-bold"
-              :disabled="displayedVideos.length === 0"
-              @click="playPlaylistFolder({ id: activePlaylistId })"
-            >
-              재생 목록 전체 재생
-            </v-btn>
+            <div class="d-flex align-center gap-3">
+              <v-checkbox
+                v-model="playlistResumeStates[activePlaylistId]"
+                color="accent"
+                label="이어보기 사용"
+                density="compact"
+                hide-details
+                class="text-caption ma-0 pa-0 text-white"
+                @change="savePlaylistResumeState(activePlaylistId)"
+              ></v-checkbox>
+
+              <v-btn
+                color="deep-purple-darken-2"
+                variant="flat"
+                size="small"
+                prepend-icon="mdi-play"
+                class="text-white font-weight-bold"
+                :disabled="displayedVideos.length === 0"
+                @click="playPlaylistFolder({ id: activePlaylistId })"
+              >
+                재생 목록 전체 재생
+              </v-btn>
+            </div>
           </div>
 
           <v-row v-if="displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
@@ -943,6 +969,46 @@
       </v-card>
     </v-dialog>
 
+    <!-- 현재 재생 리스트 보기 모달 -->
+    <v-dialog v-model="isQueueModalOpen" max-width="500px">
+      <v-card class="glass-modal rounded-xl pa-4 text-white">
+        <div class="d-flex justify-space-between align-center mb-3">
+          <h3 class="text-subtitle-1 font-weight-bold">📋 현재 재생 리스트 ({{ playlistQueue.length }}개)</h3>
+          <div class="d-flex align-center gap-2">
+            <v-btn
+              icon="mdi-shuffle"
+              size="small"
+              variant="flat"
+              color="deep-purple-darken-2"
+              title="리스트 무작위 섞기 (랜덤 재생)"
+              @click="shufflePlaylistQueue"
+            ></v-btn>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="isQueueModalOpen = false"></v-btn>
+          </div>
+        </div>
+
+        <div style="max-height: 350px; overflow-y: auto;" class="d-flex flex-column gap-2">
+          <div
+            v-for="(item, idx) in playlistQueue"
+            :key="item.id + '_' + idx"
+            class="d-flex align-center justify-space-between pa-2 rounded-lg cursor-pointer"
+            :class="{ 'neon-active': idx === playlistIndex }"
+            @click="playQueueIndex(idx)"
+          >
+            <div class="d-flex align-center gap-2 overflow-hidden">
+              <span class="text-accent text-caption font-weight-bold">{{ idx + 1 }}</span>
+              <v-img :src="item.thumbnail" width="60" height="34" cover class="rounded flex-shrink-0 bg-black"></v-img>
+              <div class="overflow-hidden">
+                <p class="text-caption text-white font-weight-bold text-truncate mb-0">{{ item.title }}</p>
+                <p class="text-grey-lighten-1 text-caption mb-0">{{ item.creatorName }}</p>
+              </div>
+            </div>
+            <v-icon v-if="idx === playlistIndex" icon="mdi-play-circle" color="accent" size="20"></v-icon>
+          </div>
+        </div>
+      </v-card>
+    </v-dialog>
+
     <!-- 시네마틱 영상 재생 모달 -->
     <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
@@ -954,6 +1020,12 @@
             <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
           </div>
           <div class="d-flex align-center flex-shrink-0">
+            <!-- 랜덤 재생 버튼 -->
+            <v-btn icon="mdi-shuffle" variant="text" size="small" color="accent" class="mr-1" title="재생 리스트 무작위 섞기" @click="shufflePlaylistQueue"></v-btn>
+            
+            <!-- 리스트 보기 버튼 -->
+            <v-btn icon="mdi-playlist-music-outline" variant="text" size="small" color="white" class="mr-1" title="현재 재생 리스트 보기" @click="isQueueModalOpen = true"></v-btn>
+
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playlistIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
 
@@ -1088,9 +1160,22 @@
                   ></v-btn>
                 </div>
               </div>
-              <p v-if="initialWatchedTime > 5" class="text-accent text-caption mt-1 mb-0">
-                ⚡ 이전 시청 기록({{ formatTime(initialWatchedTime) }})에서 이어서 재생됩니다.
-              </p>
+
+              <!-- 이어보기 체크박스 -->
+              <div class="d-flex align-center gap-2 mt-2">
+                <v-checkbox
+                  v-model="enableResume"
+                  color="accent"
+                  label="이어보기"
+                  density="compact"
+                  hide-details
+                  class="text-caption ma-0 pa-0 text-white"
+                  @change="saveResumeSetting"
+                ></v-checkbox>
+                <p v-if="initialWatchedTime > 5 && enableResume" class="text-accent text-caption mt-0 mb-0">
+                  ⚡ 이전 시청 기록({{ formatTime(initialWatchedTime) }})에서 이어서 재생됩니다.
+                </p>
+              </div>
             </div>
             
             <div class="d-flex align-center jump-box-container pa-1 px-2 rounded-lg">
@@ -1272,7 +1357,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue'
 
 const drawer = ref(false)
 const searchQuery = ref('')
@@ -1313,6 +1398,20 @@ const playlists = ref([])
 const playlistItems = ref([])
 const activePlaylistId = ref(null)
 
+const playlistResumeStates = reactive({})
+
+const loadPlaylistResumeStates = () => {
+  playlists.value.forEach(pl => {
+    const saved = localStorage.getItem(`neontube_playlist_resume_${pl.id}`)
+    playlistResumeStates[pl.id] = saved !== null ? saved === 'true' : true
+  })
+}
+
+const savePlaylistResumeState = (playlistId) => {
+  const val = playlistResumeStates[playlistId] ?? true
+  localStorage.setItem(`neontube_playlist_resume_${playlistId}`, val)
+}
+
 const isPlaylistDialogVisible = ref(false)
 const playlistFormName = ref('')
 const editingPlaylist = ref(null)
@@ -1324,6 +1423,7 @@ const quickNewPlaylistName = ref('')
 const selectedVideoIds = ref([])
 const playlistQueue = ref([])
 const playlistIndex = ref(0)
+const isQueueModalOpen = ref(false)
 
 const channelNextPageTokens = ref(new Map())
 const trendingNextPageToken = ref(null)
@@ -1343,6 +1443,13 @@ const totalCommentCount = ref(0)
 const commentsOrder = ref('relevance')
 
 const initialWatchedTime = ref(0)
+const savedResumeSetting = localStorage.getItem('neontube_enable_resume')
+const enableResume = ref(savedResumeSetting !== null ? savedResumeSetting === 'true' : true)
+
+const saveResumeSetting = () => {
+  localStorage.setItem('neontube_enable_resume', enableResume.value)
+}
+
 const isLandscapeMode = ref(false)
 const isAudioOnlyMode = ref(false) 
 
@@ -2016,6 +2123,7 @@ const deletePlaylist = async (playlist) => {
 
   tx.oncomplete = async () => {
     if (activePlaylistId.value === playlist.id) activePlaylistId.value = null
+    localStorage.removeItem(`neontube_playlist_resume_${playlist.id}`)
     await loadDataFromDB()
   }
 }
@@ -2143,19 +2251,28 @@ const confirmSaveToPlaylists = async () => {
 const selectPlaylistFolder = (playlist) => { activePlaylistId.value = playlist.id }
 
 const playPlaylistFolder = async (playlist) => {
-  const itemVideoIds = playlistItems.value.filter(i => i.playlistId === playlist.id).map(i => i.videoId)
-  const targetVideos = displayedVideos.value.filter(v => itemVideoIds.includes(v.id))
+  const itemsInPlaylist = playlistItems.value.filter(i => i.playlistId === playlist.id)
+  const targetVideos = []
+  itemsInPlaylist.forEach(item => {
+    const v = videos.value.find(video => video.id === item.videoId)
+    if (v && !targetVideos.some(tv => tv.id === v.id)) targetVideos.push(v)
+  })
+
   if (targetVideos.length === 0) return
+
+  if (playlist.id in playlistResumeStates) {
+    enableResume.value = playlistResumeStates[playlist.id]
+  }
 
   playlistQueue.value = targetVideos
   playlistIndex.value = 0
-  await startPlayingActiveVideo(targetVideos[0])
+  await playQueueIndex(0)
 }
 
 const playVideo = async (video) => {
   playlistQueue.value = [video]
   playlistIndex.value = 0
-  await startPlayingActiveVideo(video)
+  await playQueueIndex(0)
 }
 
 const playSelectedVideos = async () => {
@@ -2163,10 +2280,14 @@ const playSelectedVideos = async () => {
   const selectedList = displayedVideos.value.filter(v => selectedVideoIds.value.includes(v.id))
   if (selectedList.length === 0) return
 
-  playlistQueue.value = selectedList
+  const orderedList = selectedVideoIds.value
+    .map(id => selectedList.find(v => v.id === id))
+    .filter(Boolean)
+
+  playlistQueue.value = orderedList
   playlistIndex.value = 0
   selectedVideoIds.value = []
-  await startPlayingActiveVideo(selectedList[0])
+  await playQueueIndex(0)
 }
 
 const playSelectedOrAllMusic = async () => {
@@ -2178,12 +2299,31 @@ const playSelectedOrAllMusic = async () => {
   playlistQueue.value = targetList
   playlistIndex.value = 0
   selectedVideoIds.value = []
-  await startPlayingActiveVideo(targetList[0])
+  await playQueueIndex(0)
 }
 
 const clearSelectedVideos = () => { selectedVideoIds.value = [] }
 
-const startPlayingActiveVideo = async (video) => {
+const shufflePlaylistQueue = () => {
+  if (playlistQueue.value.length <= 1) return
+  const currentActive = playlistQueue.value[playlistIndex.value]
+  const rest = playlistQueue.value.filter((_, idx) => idx !== playlistIndex.value)
+  
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[rest[i], rest[j]] = [rest[j], rest[i]]
+  }
+
+  playlistQueue.value = [currentActive, ...rest]
+  playlistIndex.value = 0
+}
+
+const playQueueIndex = async (idx) => {
+  if (idx < 0 || idx >= playlistQueue.value.length) return
+  playlistIndex.value = idx
+  isQueueModalOpen.value = false
+
+  const video = playlistQueue.value[idx]
   activeVideo.value = video
   showComments.value = false
   activeExpandedCommentId.value = null
@@ -2195,11 +2335,6 @@ const startPlayingActiveVideo = async (video) => {
   currentPlayingTime = 0
   jumpMinutes.value = 0
   jumpSeconds.value = 0
-  isLandscapeMode.value = false
-
-  isPopStateTriggered = false
-  window.history.pushState({ playerOpen: true }, '')
-  window.addEventListener('popstate', handlePopState)
 
   try {
     const db = await openDB()
@@ -2216,24 +2351,40 @@ const startPlayingActiveVideo = async (video) => {
     currentPlayingTime = watchedTime
   } catch (err) { console.error(err) }
 
-  isPlayerOpen.value = true
+  if (!isPlayerOpen.value) {
+    isPopStateTriggered = false
+    window.history.pushState({ playerOpen: true }, '')
+    window.addEventListener('popstate', handlePopState)
+    isPlayerOpen.value = true
+  }
+
   fetchComments(video.youtubeId)
   await nextTick()
-  initYouTubePlayer(video.youtubeId, initialWatchedTime.value)
+
+  const startSec = enableResume.value ? initialWatchedTime.value : 0
+  
+  if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+    try {
+      ytPlayer.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
+    } catch (e) {
+      initYouTubePlayer(video.youtubeId, startSec)
+    }
+  } else {
+    initYouTubePlayer(video.youtubeId, startSec)
+  }
+
   setupMediaSession(video)
 }
 
 const playNextInQueue = async () => {
   if (playlistIndex.value < playlistQueue.value.length - 1) {
-    playlistIndex.value++
-    await startPlayingActiveVideo(playlistQueue.value[playlistIndex.value])
+    await playQueueIndex(playlistIndex.value + 1)
   }
 }
 
 const playPreviousInQueue = async () => {
   if (playlistIndex.value > 0) {
-    playlistIndex.value--
-    await startPlayingActiveVideo(playlistQueue.value[playlistIndex.value])
+    await playQueueIndex(playlistIndex.value - 1)
   }
 }
 
@@ -2246,7 +2397,10 @@ const toggleCommentsView = () => {
 
 const closePlayer = () => {
   saveCurrentHistoryToDB()
-  destroyYouTubePlayer()
+  stopHistoryTracker()
+  if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+    try { ytPlayer.stopVideo() } catch (e) { console.debug(e) }
+  }
   isPlayerOpen.value = false
 
   if (!isPopStateTriggered) window.history.back()
@@ -2289,8 +2443,17 @@ const setupMediaSession = (video) => {
 }
 
 const initYouTubePlayer = (youtubeId, startTime) => {
-  destroyYouTubePlayer()
   const startPos = startTime > 5 ? startTime : 0
+
+  if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+    try {
+      ytPlayer.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
+      startHistoryTracker()
+      return
+    } catch (e) {
+      console.debug(e)
+    }
+  }
 
   const createPlayerInstance = () => {
     if (!document.getElementById('youtube-player-div')) return
@@ -2330,7 +2493,7 @@ const initYouTubePlayer = (youtubeId, startTime) => {
             }
 
             if (playlistIndex.value < playlistQueue.value.length - 1) {
-              playNextInQueue()
+              await playNextInQueue()
             }
           }
         }
@@ -2350,14 +2513,6 @@ const initYouTubePlayer = (youtubeId, startTime) => {
   }
 }
 
-const destroyYouTubePlayer = () => {
-  stopHistoryTracker()
-  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-    try { ytPlayer.destroy() } catch (e) { console.debug(e) }
-  }
-  ytPlayer = null
-}
-
 const startHistoryTracker = () => {
   stopHistoryTracker()
   historyInterval = setInterval(async () => {
@@ -2367,7 +2522,7 @@ const startHistoryTracker = () => {
         const dur = ytPlayer.getDuration()
         if (t && t > 0 && dur && dur > 0) {
           if (dur - t <= 1 && playlistIndex.value < playlistQueue.value.length - 1) {
-            playNextInQueue()
+            await playNextInQueue()
             return
           }
 
@@ -2677,6 +2832,8 @@ const loadDataFromDB = async () => {
   playlistItems.value = await new Promise((resolve) => {
     db.transaction('playlistItems', 'readonly').objectStore('playlistItems').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []
+
+  loadPlaylistResumeStates()
 }
 
 const toggleVideoFavorite = async (video) => {
@@ -3200,9 +3357,14 @@ const searchYouTubeVideos = async () => {
     await fetchAndUpdateVideoDurations(apiVideos)
     
     apiVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
-    searchResultVideos.value = apiVideos
+    
+    const uniqueMap = new Map()
+    apiVideos.forEach(v => {
+      if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v)
+    })
+    searchResultVideos.value = Array.from(uniqueMap.values())
 
-    apiVideos.forEach(av => {
+    searchResultVideos.value.forEach(av => {
       if (!videos.value.some(v => v.id === av.id)) {
         videos.value.push(av)
       }
@@ -3211,18 +3373,21 @@ const searchYouTubeVideos = async () => {
 
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
-    apiVideos.forEach(v => store.put(v))
+    searchResultVideos.value.forEach(v => store.put(v))
   } catch (error) { console.error(error) }
 }
 
 const loadMoreSearchVideos = async () => {
-  if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0) return
+  if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0 || isLoading.value) return
   isLoading.value = true
   try {
     const data = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(searchQuery.value.trim())}&type=video&pageToken=${searchNextPageToken.value}&key=${key}`
     )
-    if (data.error || !data.items) return
+    if (data.error || !data.items) {
+      searchNextPageToken.value = null
+      return
+    }
 
     searchNextPageToken.value = data.nextPageToken || null
     const db = await openDB()
@@ -3249,7 +3414,14 @@ const loadMoreSearchVideos = async () => {
     await fetchAndUpdateVideoDurations(moreVideos)
     
     moreVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
-    searchResultVideos.value.push(...moreVideos)
+    
+    const existingIds = new Set(searchResultVideos.value.map(v => v.id))
+    moreVideos.forEach(mv => {
+      if (!existingIds.has(mv.id)) {
+        searchResultVideos.value.push(mv)
+        existingIds.add(mv.id)
+      }
+    })
     searchResultVideos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
     moreVideos.forEach(mv => {
@@ -3404,7 +3576,6 @@ const enableMusicMode = async () => {
   scrollToTop(mainScrollRef.value)
 }
 
-// [수정된 부분]: 크리에이터 선택 시 로딩 상태가 해제되지 않던 버그 수정 (try...finally 추가)
 const selectCreatorFilter = async (creator) => {
   isLoading.value = true
   selectedCreator.value = creator
@@ -3450,7 +3621,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  destroyYouTubePlayer()
+  stopHistoryTracker()
   clearSleepTimer()
   window.removeEventListener('popstate', handlePopState)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -3494,11 +3665,12 @@ const displayedVideos = computed(() => {
     return result
   } else if (isPlaylistMode.value && activePlaylistId.value) {
     const itemsInPlaylist = playlistItems.value.filter(item => item.playlistId === activePlaylistId.value)
-    const videoIdOrderMap = new Map(itemsInPlaylist.map((item, index) => [item.videoId, index]))
-    
-    result = result.filter(v => videoIdOrderMap.has(v.id))
-    result.sort((a, b) => videoIdOrderMap.get(a.id) - videoIdOrderMap.get(b.id))
-    return result
+    const orderedVideos = []
+    itemsInPlaylist.forEach(item => {
+      const v = result.find(video => video.id === item.videoId)
+      if (v && !orderedVideos.some(ov => ov.id === v.id)) orderedVideos.push(v)
+    })
+    return orderedVideos
   } else if (currentTab.value === 'discoverAll') {
     const subscribedIds = creators.value.map(c => c.id)
     result = result.filter(v => subscribedIds.includes(v.creatorId))
