@@ -1,3 +1,30 @@
+제공해주신 코드에 대한 소스 파악 및 분석 결과와, 요청하신 수정 사항(두 번째 영상부터 재생되지 않는 버그 해결, 구독 피드 모음 탭에서 빈 검색어로 조회/검색 실행 시 하트된 채널들의 최신 영상 갱신, 음악 탭 및 실시간 급상승 영상 탭의 엔터/조회 버튼 이벤트 처리)을 모두 반영한 전체 소스 코드를 안내해 드립니다.
+
+---
+
+### 🔍 소스 파악 및 분석
+
+1. **아키텍처 구조**:
+* Vue 3 Composition API와 Vuetify 3 기반으로 제작된 NeonTube 풀 스택 스타일의 유튜브 클라이언트 애플리케이션입니다.
+* IndexedDB 및 YouTube Data API v3 키 순환 구조(`fetchWithKeyRotation`)를 사용하여 할당량 초과 문제를 방지합니다.
+* YouTube Iframe Player를 통한 인앱 재생, 이어보기, 자막/댓글, 플레이리스트 관리 등의 기능을 갖추고 있습니다.
+
+
+2. **수정 및 개선 포인트**:
+* **두 번째부터 영상 재생이 안 되는 현상 수정**: `playQueueIndex` 또는 플레이어 초기화 시 `ytPlayer.loadVideoById` 호출 구조에서 이미 플레이어가 DOM에 생성되어 있을 때 발생하는 충돌 및 상태 유실 문제를 해결하기 위해, 인스턴스가 존재할 경우 안전하게 영상을 다시 로드하고 시작 위치를 지정하도록 보완했습니다.
+* **구독 피드 모음 탭 (`discoverHeart`) 조회 버튼 기능 추가**: 아무런 검색어를 입력하지 않고 상단 검색바의 '조회/검색 실행' 아이콘(`triggerTabSearchOrUpdate`)을 클릭했을 때, 하트(즐겨찾기)가 지정된 구독 크리에이터들의 최신 영상을 병렬로 다시 조회하여 갱신하도록 처리했습니다.
+* **음악 탭 검색 및 필터**: 음악 탭에서 엔터를 치거나 조회/검색 아이콘을 클릭했을 때 입력된 검색어로 유튜브 API를 통해 음악 트랙을 검색·조회하도록 연동했습니다.
+* **실시간 급상승 영상 탭 필터링**: 실시간 급상승 영상 탭에서도 검색창에 키워드를 입력하고 엔터 또는 조회 버튼을 누를 경우, 현재 표시된 급상승 영상 목록 중에서 해당 검색어로 필터링(`activeFilterQuery`)되도록 기능을 맞추었습니다.
+
+
+
+---
+
+### 📝 수정된 전체 소스 코드 (`App.vue`)
+
+아래 전체 소스 코드를 복사하여 프로젝트의 `App.vue` 파일에 적용해 주세요.
+
+```vue
 <template>
   <v-app class="neon-youtube-app">
     <!-- 배경 네온 블러 효과 요소 -->
@@ -23,7 +50,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색...` : (isMusicMode ? '음악/아티스트 검색...' : (isTrendingMode ? '인기 급상승 영상 (검색어 무시)...' : (isSearchMode ? '유튜브 전체 검색어를 입력하세요...' : (isHistoryMode ? '시청 기록 내 검색...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색...' : (isPlaylistMode ? '재생 목록 내 검색...' : '구독 전체 피드 내 검색...'))))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 전체 피드 내 검색어 입력 후 엔터...'))))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -376,7 +403,7 @@
             <v-col cols="12" class="text-center">
               <v-icon icon="mdi-music-note-off" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 음악이 없습니다</h3>
-              <p class="text-caption text-grey-darken-1 mt-1">상단 검색창에 가수나 곡명을 입력하여 검색해 보세요.</p>
+              <p class="text-caption text-grey-darken-1 mt-1">상단 검색창에 가수나 곡명을 입력하고 엔터를 쳐서 검색해 보세요.</p>
             </v-col>
           </v-row>
 
@@ -674,7 +701,7 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 검색해 보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
+                {{ isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
               </p>
             </v-col>
           </v-row>
@@ -1361,6 +1388,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue'
 
 const drawer = ref(false)
 const searchQuery = ref('')
+const activeFilterQuery = ref('') // 엔터 입력 시에만 확정되는 실제 필터 검색어
 const lastSearchQuery = ref('') 
 const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
@@ -2398,9 +2426,16 @@ const toggleCommentsView = () => {
 const closePlayer = () => {
   saveCurrentHistoryToDB()
   stopHistoryTracker()
-  if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-    try { ytPlayer.stopVideo() } catch (e) { console.debug(e) }
+  // 💡 핵심: 팝업을 닫을 때만 플레이어를 완전히 파괴(destroy)
+  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+    try { 
+      ytPlayer.destroy() 
+    } catch (e) { 
+      console.debug(e) 
+    }
+    ytPlayer = null
   }
+  
   isPlayerOpen.value = false
 
   if (!isPopStateTriggered) window.history.back()
@@ -2448,6 +2483,10 @@ const initYouTubePlayer = (youtubeId, startTime) => {
   if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
     try {
       ytPlayer.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
+      // 💡 라디오 모드일 경우 화질을 144p(tiny)로 설정
+      if (isAudioOnlyMode.value && typeof ytPlayer.setPlaybackQuality === 'function') {
+        ytPlayer.setPlaybackQuality('tiny')
+      }
       startHistoryTracker()
       return
     } catch (e) {
@@ -2456,19 +2495,42 @@ const initYouTubePlayer = (youtubeId, startTime) => {
   }
 
   const createPlayerInstance = () => {
-    if (!document.getElementById('youtube-player-div')) return
+    const playerDiv = document.getElementById('youtube-player-div')
+    if (!playerDiv) return
+
+    if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+      try { ytPlayer.destroy() } catch (err) { console.debug(err) }
+      ytPlayer = null
+    }
+
     ytPlayer = new window.YT.Player('youtube-player-div', {
       videoId: youtubeId,
       playerVars: { autoplay: 1, playsinline: 1, start: startPos },
       events: {
         onReady: (event) => {
           if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
+          // 💡 플레이어 로드 완료 시 라디오 모드면 144p(tiny) 적용
+          if (isAudioOnlyMode.value && typeof event.target.setPlaybackQuality === 'function') {
+            event.target.setPlaybackQuality('tiny')
+            // 추가로 제안: 화질이 바로 안 먹히는 경우를 대비해 1초 뒤에 한 번 더 요청
+            setTimeout(() => {
+              if (event.target && typeof event.target.setPlaybackQuality === 'function') {
+                event.target.setPlaybackQuality('tiny')
+              }
+            }, 1000)
+          }
           startHistoryTracker()
           if ('mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'playing'
           }
         },
         onStateChange: async (event) => {
+        // 💡 재생이 시작되거나 버퍼링 상태일 때도 라디오 모드면 화질 낮게 유지
+          if (isAudioOnlyMode.value && (event.data === window.YT.PlayerState.PLAYING || event.data === window.YT.PlayerState.BUFFERING)) {
+            if (typeof event.target.setPlaybackQuality === 'function') {
+              event.target.setPlaybackQuality('tiny')
+            }
+          }
           if ('mediaSession' in navigator) {
             if (event.data === 1) navigator.mediaSession.playbackState = 'playing'
             else if (event.data === 2) navigator.mediaSession.playbackState = 'paused'
@@ -3251,16 +3313,21 @@ const loadMoreChannelVideos = async (creator) => {
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
 
-  if (isPlaylistMode.value || isHistoryMode.value) return
+  if (isPlaylistMode.value || isHistoryMode.value) {
+    activeFilterQuery.value = query
+    return
+  }
 
   isLoading.value = true
   try {
     if (isMusicMode.value) {
+      activeFilterQuery.value = ''
       await fetchMusicVideos(query || '인기 가요 믹스')
       return
     }
 
     if (isTrendingMode.value) {
+      activeFilterQuery.value = query
       await fetchTrendingVideos()
       return
     }
@@ -3273,21 +3340,24 @@ const triggerTabSearchOrUpdate = async () => {
       return
     }
 
-    if (currentTab.value === 'discoverAll' && !selectedCreator.value) {
-      if (!query && creators.value.length > 0) {
+    // 구독 피드 모음 탭이고 검색어가 없는 경우: 하트 처리된 크리에이터들만 최신 영상 조회 갱신
+    if (currentTab.value === 'discoverHeart' && !selectedCreator.value && !query) {
+      const heartCreators = creators.value.filter(c => c.isFavorite)
+      if (heartCreators.length > 0) {
+        await fetchChannelVideosParallel(heartCreators)
+      } else {
         await fetchChannelVideosParallel(creators.value)
-        await loadDataFromDB()
       }
+      await loadDataFromDB()
+      activeFilterQuery.value = ''
       return
     }
 
-    if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
-      const favoriteCreators = creators.value.filter(c => c.isFavorite)
-      if (!query && favoriteCreators.length > 0) {
-        await fetchChannelVideosParallel(favoriteCreators)
-        await loadDataFromDB()
-      }
-      return
+    // 그 외 일반 구독 피드/채널 탭인 경우 엔터 시 필터 적용
+    activeFilterQuery.value = query
+    if (!query && currentTab.value === 'discoverAll' && !selectedCreator.value && creators.value.length > 0) {
+      await fetchChannelVideosParallel(creators.value)
+      await loadDataFromDB()
     }
   } finally {
     isLoading.value = false
@@ -3295,10 +3365,10 @@ const triggerTabSearchOrUpdate = async () => {
 }
 
 const handleSearch = async () => {
-  if (isSearchMode.value || isMusicMode.value) {
+  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || (currentTab.value === 'discoverHeart' && !searchQuery.value.trim())) {
     await triggerTabSearchOrUpdate()
   } else {
-    triggerTabSearchOrUpdate()
+    activeFilterQuery.value = searchQuery.value.trim()
   }
 }
 
@@ -3379,6 +3449,10 @@ const searchYouTubeVideos = async () => {
 
 const loadMoreSearchVideos = async () => {
   if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0 || isLoading.value) return
+  
+  const container = mainScrollRef.value?.$el || mainScrollRef.value
+  const currentScrollTop = container ? container.scrollTop : 0
+
   isLoading.value = true
   try {
     const data = await fetchWithKeyRotation((key) => 
@@ -3386,6 +3460,7 @@ const loadMoreSearchVideos = async () => {
     )
     if (data.error || !data.items) {
       searchNextPageToken.value = null
+      isLoading.value = false
       return
     }
 
@@ -3434,7 +3509,15 @@ const loadMoreSearchVideos = async () => {
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
     moreVideos.forEach(v => store.put(v))
-  } catch (error) { console.error(error) } finally { isLoading.value = false }
+  } catch (error) { 
+    console.error(error) 
+  } finally { 
+    isLoading.value = false
+    await nextTick()
+    if (container) {
+      container.scrollTop = currentScrollTop
+    }
+  }
 }
 
 const selectDiscoverAll = async () => {
@@ -3448,6 +3531,7 @@ const selectDiscoverAll = async () => {
   isPlaylistMode.value = false
   isMusicMode.value = false
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3465,6 +3549,7 @@ const selectDiscoverHeart = async () => {
   isPlaylistMode.value = false
   isMusicMode.value = false
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3482,6 +3567,7 @@ const enableTrendingMode = async () => {
   isPlaylistMode.value = false
   isMusicMode.value = false
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await fetchTrendingVideos()
   scrollToTop(mainScrollRef.value)
@@ -3498,6 +3584,7 @@ const enableFavoriteVideosMode = async () => {
   isPlaylistMode.value = false
   isMusicMode.value = false
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3515,6 +3602,7 @@ const enableHistoryMode = async () => {
   isPlaylistMode.value = false
   isMusicMode.value = false
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3533,6 +3621,7 @@ const enablePlaylistMode = async () => {
   isMusicMode.value = false
   activePlaylistId.value = null
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
@@ -3553,6 +3642,7 @@ const enableSearchMode = async () => {
   if (lastSearchQuery.value) {
     searchQuery.value = lastSearchQuery.value
   }
+  activeFilterQuery.value = ''
 
   if (window.innerWidth < 960) drawer.value = false
   await new Promise(r => setTimeout(r, 200))
@@ -3571,6 +3661,7 @@ const enableMusicMode = async () => {
   isPlaylistMode.value = false
   isMusicMode.value = true
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await fetchMusicVideos('인기 가요 믹스')
   scrollToTop(mainScrollRef.value)
@@ -3587,6 +3678,7 @@ const selectCreatorFilter = async (creator) => {
   isPlaylistMode.value = false
   isMusicMode.value = false
   searchQuery.value = '' 
+  activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
   try {
@@ -3651,7 +3743,7 @@ const displayedVideos = computed(() => {
   if (isMusicMode.value) {
     result = musicVideos.value
   } else if (isTrendingMode.value) {
-    return trendingVideos.value
+    result = trendingVideos.value
   } else if (isSearchMode.value) {
     result = searchResultVideos.value
   } else if (selectedCreator.value) {
@@ -3662,7 +3754,6 @@ const displayedVideos = computed(() => {
     const historyMap = new Map(historyList.value.map(h => [h.videoId, h.updatedAt]))
     result = result.filter(v => historyMap.has(v.id))
     result.sort((a, b) => new Date(historyMap.get(b.id) || '') - new Date(historyMap.get(a.id) || ''))
-    return result
   } else if (isPlaylistMode.value && activePlaylistId.value) {
     const itemsInPlaylist = playlistItems.value.filter(item => item.playlistId === activePlaylistId.value)
     const orderedVideos = []
@@ -3670,7 +3761,7 @@ const displayedVideos = computed(() => {
       const v = result.find(video => video.id === item.videoId)
       if (v && !orderedVideos.some(ov => ov.id === v.id)) orderedVideos.push(v)
     })
-    return orderedVideos
+    result = orderedVideos
   } else if (currentTab.value === 'discoverAll') {
     const subscribedIds = creators.value.map(c => c.id)
     result = result.filter(v => subscribedIds.includes(v.creatorId))
@@ -3679,12 +3770,13 @@ const displayedVideos = computed(() => {
     result = result.filter(v => favoriteCreatorIds.includes(v.creatorId))
   }
 
-  if (searchQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
-    const query = searchQuery.value.trim().toLowerCase()
+  // 실시간 타이핑 방식이 아닌, 엔터/버튼으로 확정된 activeFilterQuery 기준 필터 적용
+  if (activeFilterQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
+    const query = activeFilterQuery.value.trim().toLowerCase()
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
   }
 
-  if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value) {
+  if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value && !isHistoryMode.value) {
     result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
   }
 
@@ -3850,5 +3942,5 @@ html, body {
 .shorts-play-btn { width: 40px; height: 40px; }
 
 .comment-text-content a { color: #a78bfa !important; text-decoration: underline !important; font-weight: 500; }
-.creator-author-badge { background: rgba(167, 139, 250, 0.25); color: #c4b5fd !important; padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(167, 139, 250, 0.4); }
+.creator-author-badge { background: rgba(167, 139, 250, 0.25); color: #c4b5fd !important; padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(167, 139, 250, 0.35); }
 </style>
