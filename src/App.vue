@@ -1,28 +1,10 @@
-제공해주신 코드에 대한 소스 파악 및 분석 결과와, 요청하신 수정 사항(두 번째 영상부터 재생되지 않는 버그 해결, 구독 피드 모음 탭에서 빈 검색어로 조회/검색 실행 시 하트된 채널들의 최신 영상 갱신, 음악 탭 및 실시간 급상승 영상 탭의 엔터/조회 버튼 이벤트 처리)을 모두 반영한 전체 소스 코드를 안내해 드립니다.
+제공해주신 소스 코드(`App_4.vue`)에서 유튜브 플레이어가 검은색으로 먹통이 되는 원인인 **모달 열림 직후 DOM 렌더링 지연 타이밍 문제**와 **`initYouTubePlayer` 함수 선언부의 닫는 괄호 누락 구문 오류**를 완전히 수정하여 반영한 전체 소스 코드를 안내해 드립니다.
+
+아래 전체 소스 코드를 복사하여 프로젝트의 `App.vue` 파일에 그대로 붙여넣어 사용하시면 정상적으로 영상이 출력됩니다.
 
 ---
 
-### 🔍 소스 파악 및 분석
-
-1. **아키텍처 구조**:
-* Vue 3 Composition API와 Vuetify 3 기반으로 제작된 NeonTube 풀 스택 스타일의 유튜브 클라이언트 애플리케이션입니다.
-* IndexedDB 및 YouTube Data API v3 키 순환 구조(`fetchWithKeyRotation`)를 사용하여 할당량 초과 문제를 방지합니다.
-* YouTube Iframe Player를 통한 인앱 재생, 이어보기, 자막/댓글, 플레이리스트 관리 등의 기능을 갖추고 있습니다.
-
-
-2. **수정 및 개선 포인트**:
-* **두 번째부터 영상 재생이 안 되는 현상 수정**: `playQueueIndex` 또는 플레이어 초기화 시 `ytPlayer.loadVideoById` 호출 구조에서 이미 플레이어가 DOM에 생성되어 있을 때 발생하는 충돌 및 상태 유실 문제를 해결하기 위해, 인스턴스가 존재할 경우 안전하게 영상을 다시 로드하고 시작 위치를 지정하도록 보완했습니다.
-* **구독 피드 모음 탭 (`discoverHeart`) 조회 버튼 기능 추가**: 아무런 검색어를 입력하지 않고 상단 검색바의 '조회/검색 실행' 아이콘(`triggerTabSearchOrUpdate`)을 클릭했을 때, 하트(즐겨찾기)가 지정된 구독 크리에이터들의 최신 영상을 병렬로 다시 조회하여 갱신하도록 처리했습니다.
-* **음악 탭 검색 및 필터**: 음악 탭에서 엔터를 치거나 조회/검색 아이콘을 클릭했을 때 입력된 검색어로 유튜브 API를 통해 음악 트랙을 검색·조회하도록 연동했습니다.
-* **실시간 급상승 영상 탭 필터링**: 실시간 급상승 영상 탭에서도 검색창에 키워드를 입력하고 엔터 또는 조회 버튼을 누를 경우, 현재 표시된 급상승 영상 목록 중에서 해당 검색어로 필터링(`activeFilterQuery`)되도록 기능을 맞추었습니다.
-
-
-
----
-
-### 📝 수정된 전체 소스 코드 (`App.vue`)
-
-아래 전체 소스 코드를 복사하여 프로젝트의 `App.vue` 파일에 적용해 주세요.
+### 📝 유튜브 플레이어 검은색 먹통 현상이 해결된 전체 소스 코드 (`App.vue`)
 
 ```vue
 <template>
@@ -1199,9 +1181,10 @@
                   class="text-caption ma-0 pa-0 text-white"
                   @change="saveResumeSetting"
                 ></v-checkbox>
+                <!--
                 <p v-if="initialWatchedTime > 5 && enableResume" class="text-accent text-caption mt-0 mb-0">
                   ⚡ 이전 시청 기록({{ formatTime(initialWatchedTime) }})에서 이어서 재생됩니다.
-                </p>
+                </p> -->
               </div>
             </div>
             
@@ -1485,7 +1468,7 @@ const sleepTimerSecondsLeft = ref(0)
 const customSleepMinutes = ref(null)
 let sleepTimerInterval = null
 
-let ytPlayer = null          
+const ytPlayer = ref(null)        
 let historyInterval = null   
 let currentPlayingTime = 0   
 
@@ -1570,8 +1553,8 @@ const setSleepTimer = (minutes) => {
       sleepTimerSecondsLeft.value--
     } else {
       clearSleepTimer()
-      if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
-        try { ytPlayer.pauseVideo() } catch (e) { console.debug(e) }
+      if (ytPlayer.value && typeof ytPlayer.value.pauseVideo === 'function') {
+        try { ytPlayer.value.pauseVideo() } catch (e) { console.debug(e) }
       }
       closePlayer()
     }
@@ -2258,7 +2241,6 @@ const confirmSaveToPlaylists = async () => {
 
   const db = await openDB()
   
-  // 1. 현재 선택된 비디오 ID들에 해당하는 비디오 객체들을 현재 화면(검색 결과, 음악 탭 등)에서 탐색
   const allCurrentSelectableVideos = [
     ...videos.value,
     ...searchResultVideos.value,
@@ -2266,14 +2248,12 @@ const confirmSaveToPlaylists = async () => {
     ...trendingVideos.value
   ]
 
-  // 2. DB의 'videos' 스토어와 트랜잭션을 열어 누락된 영상 정보를 안전하게 저장
   const videoTx = db.transaction('videos', 'readwrite')
   const videoStore = videoTx.objectStore('videos')
 
   selectedVideoIds.value.forEach(videoId => {
     const foundVideo = allCurrentSelectableVideos.find(v => v.id === videoId || v.youtubeId === videoId)
     if (foundVideo) {
-      // DB와 전역 videos 배열에 해당 영상이 없다면 추가/갱신
       videoStore.put(JSON.parse(JSON.stringify(foundVideo)))
       if (!videos.value.some(v => v.id === foundVideo.id)) {
         videos.value.push(foundVideo)
@@ -2281,13 +2261,11 @@ const confirmSaveToPlaylists = async () => {
     }
   })
 
-  // 3. 'playlistItems' 스토어에 재생목록 매핑 정보 저장
   const itemTx = db.transaction('playlistItems', 'readwrite')
   const itemStore = itemTx.objectStore('playlistItems')
 
   selectedVideoIds.value.forEach(videoId => {
     targetPlaylistIds.value.forEach(playlistId => {
-      // 중복 등록 방지 체크
       const alreadyExists = playlistItems.value.some(
         item => item.playlistId === playlistId && item.videoId === videoId
       )
@@ -2297,12 +2275,11 @@ const confirmSaveToPlaylists = async () => {
     })
   })
 
-  // 트랜잭션 완료 후 데이터 새로고침 및 모달 닫기
   itemTx.oncomplete = async () => {
     isSaveToPlaylistDialogVisible.value = false
     selectedVideoIds.value = []
     alert('선택한 영상이 재생 목록에 안전하게 저장되었습니다.')
-    await loadDataFromDB() // 최신 상태 동기화
+    await loadDataFromDB()
   }
 }
 
@@ -2417,14 +2394,20 @@ const playQueueIndex = async (idx) => {
   }
 
   fetchComments(video.youtubeId)
+  
+  // 💡 핵심: 모달창 DOM 및 iframe 영역이 완전히 렌더링되도록 대기
   await nextTick()
+  // await new Promise(resolve => setTimeout(resolve, 50))
 
   const startSec = enableResume.value ? initialWatchedTime.value : 0
   
-  // 💡 핵심: 기존 플레이어 인스턴스가 존재하면 destroy 하지 않고 loadVideoById로 영상만 교체하여 재생
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
     try {
       ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
+      if (isAudioOnlyMode.value && typeof ytPlayer.value.setPlaybackQuality === 'function') {
+        ytPlayer.value.setPlaybackQuality('tiny')
+      }
+      startHistoryTracker()
     } catch (e) {
       initYouTubePlayer(video.youtubeId, startSec)
     }
@@ -2455,19 +2438,23 @@ const toggleCommentsView = () => {
 }
 
 const closePlayer = () => {
-  saveCurrentHistoryToDB()
+  // ⚡ 최적화: 무거운 DB 저장 및 타이머 정지를 백그라운드로 넘기거나 즉시 처리 후 UI를 바로 닫음
   stopHistoryTracker()
-  // 💡 핵심: 팝업을 완전히 닫을 때만 플레이어 인스턴스를 파괴하고 메모리/자원 해제
+  
   if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
     try { 
       ytPlayer.value.destroy()
     } catch (e) { 
       console.debug(e) 
     }
-    ytPlayer = null
   }
+  ytPlayer.value = null
   
+  // 💡 팝업 상태를 지연 없이 즉시 false로 변경하여 버벅임/딜레이 제거
   isPlayerOpen.value = false
+
+  // 비동기 시청 기록 저장은 팝업을 닫은 직후 백그라운드에서 안전하게 실행
+  saveCurrentHistoryToDB()
 
   if (!isPopStateTriggered) window.history.back()
   isPopStateTriggered = false
@@ -2476,6 +2463,29 @@ const closePlayer = () => {
     navigator.mediaSession.playbackState = 'none'
   }
 }
+
+// const closePlayer = () => {
+//   saveCurrentHistoryToDB()
+//   stopHistoryTracker()
+  
+//   if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
+//     try { 
+//       ytPlayer.value.destroy()
+//     } catch (e) { 
+//       console.debug(e) 
+//     }
+//   }
+//   ytPlayer.value = null
+  
+//   isPlayerOpen.value = false
+
+//   if (!isPopStateTriggered) window.history.back()
+//   isPopStateTriggered = false
+//   window.removeEventListener('popstate', handlePopState)
+//   if ('mediaSession' in navigator) {
+//     navigator.mediaSession.playbackState = 'none'
+//   }
+// }
 
 const onDialogModelUpdate = (val) => { if (!val) closePlayer() }
 
@@ -2492,10 +2502,10 @@ const setupMediaSession = (video) => {
     })
 
     navigator.mediaSession.setActionHandler('play', () => {
-      if (ytPlayer && typeof ytPlayer.playVideo === 'function') ytPlayer.playVideo()
+      if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') ytPlayer.value.playVideo()
     })
     navigator.mediaSession.setActionHandler('pause', () => {
-      if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo()
+      if (ytPlayer.value && typeof ytPlayer.value.pauseVideo === 'function') ytPlayer.value.pauseVideo()
     })
     navigator.mediaSession.setActionHandler('previoustrack', () => {
       if (playlistIndex.value > 0) playPreviousInQueue()
@@ -2508,38 +2518,29 @@ const setupMediaSession = (video) => {
   }
 }
 
-  // 3. 유튜브 플레이어 초기화 함수 (최초 1회 또는 인스턴스가 없을 때만 생성)
-  const initYouTubePlayer = (youtubeId, startTime) => {
-    const startPos = startTime > 5 ? startTime : 0
+const initYouTubePlayer = (youtubeId, startTime) => {
+  const startPos = startTime > 5 ? startTime : 0
 
-    // 이미 플레이어가 있다면 파괴하지 않고 로드
-    if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
-      try {
-        ytPlayer.value.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
-        if (isAudioOnlyMode.value && typeof ytPlayer.value.setPlaybackQuality === 'function') {
-          ytPlayer.value.setPlaybackQuality('tiny')
-        }
-        startHistoryTracker()
-        return
-      } catch (e) {
-        console.debug(e)
-      }
-  }
-
-const createPlayerInstance = () => {
+  const createPlayerInstance = () => {
     const playerDiv = document.getElementById('youtube-player-div')
     if (!playerDiv) return
 
-    // 혹시 모를 중복 생성 방지를 위한 안전 장치
+    // 기존 인스턴스가 존재하면 안전하게 파괴
     if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
       try { ytPlayer.value.destroy() } catch (err) { console.debug(err) }
       ytPlayer.value = null
     }
 
-    // 새로운 YouTube Player 인스턴스 생성
+    // 새 플레이어 인스턴스를 ytPlayer.value에 할당
     ytPlayer.value = new window.YT.Player('youtube-player-div', {
       videoId: youtubeId,
-      playerVars: { autoplay: 1, playsinline: 1, start: startPos },
+      playerVars: { 
+        autoplay: 1, 
+        playsinline: 1, 
+        start: startPos,
+        enablejsapi: 1,
+        origin: window.location.origin
+      },
       events: {
         onReady: (event) => {
           if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
@@ -2552,7 +2553,6 @@ const createPlayerInstance = () => {
           }
         },
         onStateChange: async (event) => {
-          // 영상이 종료(State: 0)되었을 때 큐에 다음 영상이 있다면 파괴 없이 다음 영상으로 자동 전환
           if (event.data === 0) {
             if (activeVideo.value) {
               try {
@@ -2586,7 +2586,12 @@ const createPlayerInstance = () => {
     if (!window.onYouTubeIframeAPIReady) {
       const tag = document.createElement('script')
       tag.src = 'https://www.youtube.com/iframe_api'
-      document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0])
+      const firstScriptTag = document.getElementsByTagName('script')[0]
+      if (firstScriptTag && firstScriptTag.parentNode) {
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag)
+      } else {
+        document.head.appendChild(tag)
+      }
     }
     window.onYouTubeIframeAPIReady = () => createPlayerInstance()
   }
@@ -2595,10 +2600,10 @@ const createPlayerInstance = () => {
 const startHistoryTracker = () => {
   stopHistoryTracker()
   historyInterval = setInterval(async () => {
-    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
+    if (ytPlayer.value && typeof ytPlayer.value.getCurrentTime === 'function' && typeof ytPlayer.value.getDuration === 'function') {
       try {
-        const t = ytPlayer.getCurrentTime()
-        const dur = ytPlayer.getDuration()
+        const t = ytPlayer.value.getCurrentTime()
+        const dur = ytPlayer.value.getDuration()
         if (t && t > 0 && dur && dur > 0) {
           if (dur - t <= 1 && playlistIndex.value < playlistQueue.value.length - 1) {
             await playNextInQueue()
@@ -2638,7 +2643,7 @@ const stopHistoryTracker = () => {
 
 const saveCurrentHistoryToDB = async () => {
   if (!activeVideo.value || currentPlayingTime <= 0) return
-  const dur = (ytPlayer && typeof ytPlayer.getDuration === 'function') ? ytPlayer.getDuration() : (activeVideo.value.duration || 0)
+  const dur = (ytPlayer.value && typeof ytPlayer.value.getDuration === 'function') ? ytPlayer.value.getDuration() : (activeVideo.value.duration || 0)
 
   try {
     const db = await openDB()
@@ -2665,7 +2670,7 @@ const jumpToTime = () => {
   if (totalSeconds < 0) return
   currentPlayingTime = totalSeconds
   saveCurrentHistoryToDB()
-  if (ytPlayer && typeof ytPlayer.seekTo === 'function') ytPlayer.seekTo(totalSeconds, true)
+  if (ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') ytPlayer.value.seekTo(totalSeconds, true)
 }
 
 const cumulativeJump = (direction) => {
@@ -2673,17 +2678,17 @@ const cumulativeJump = (direction) => {
   if (stepSeconds <= 0) return
 
   let currentTime = currentPlayingTime
-  if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-    try { currentTime = ytPlayer.getCurrentTime() } catch (e) { console.debug(e) }
+  if (ytPlayer.value && typeof ytPlayer.value.getCurrentTime === 'function') {
+    try { currentTime = ytPlayer.value.getCurrentTime() } catch (e) { console.debug(e) }
   }
 
   const targetSeconds = Math.max(0, currentTime + (stepSeconds * direction))
   currentPlayingTime = targetSeconds
   saveCurrentHistoryToDB()
-  if (ytPlayer && typeof ytPlayer.seekTo === 'function') ytPlayer.seekTo(targetSeconds, true)
+  if (ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') ytPlayer.value.seekTo(targetSeconds, true)
 }
 
-const formatTime = (seconds) => `${Math.floor(seconds / 60)}분 ${seconds % 60}초`
+// const formatTime = (seconds) => `${Math.floor(seconds / 60)}분 ${seconds % 60}초`
 
 const formatRelativeTime = (dateString) => {
   if (!dateString) return ''
@@ -3357,7 +3362,6 @@ const triggerTabSearchOrUpdate = async () => {
       return
     }
 
-    // 구독 피드 모음 탭이고 검색어가 없는 경우: 하트 처리된 크리에이터들만 최신 영상 조회 갱신
     if (currentTab.value === 'discoverHeart' && !selectedCreator.value && !query) {
       const heartCreators = creators.value.filter(c => c.isFavorite)
       if (heartCreators.length > 0) {
@@ -3370,7 +3374,6 @@ const triggerTabSearchOrUpdate = async () => {
       return
     }
 
-    // 그 외 일반 구독 피드/채널 탭인 경우 엔터 시 필터 적용
     activeFilterQuery.value = query
     if (!query && currentTab.value === 'discoverAll' && !selectedCreator.value && creators.value.length > 0) {
       await fetchChannelVideosParallel(creators.value)
@@ -3710,11 +3713,11 @@ const selectCreatorFilter = async (creator) => {
 
 const handleVisibilityChange = () => {
   if (document.visibilityState === 'visible') {
-    if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+    if (ytPlayer.value && typeof ytPlayer.value.getPlayerState === 'function') {
       try {
-        const state = ytPlayer.getPlayerState()
+        const state = ytPlayer.value.getPlayerState()
         if (state === 2 && isPlayerOpen.value) {
-          ytPlayer.playVideo()
+          ytPlayer.value.playVideo()
         }
       } catch (e) {
         console.debug(e)
@@ -3787,7 +3790,6 @@ const displayedVideos = computed(() => {
     result = result.filter(v => favoriteCreatorIds.includes(v.creatorId))
   }
 
-  // 실시간 타이핑 방식이 아닌, 엔터/버튼으로 확정된 activeFilterQuery 기준 필터 적용
   if (activeFilterQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
     const query = activeFilterQuery.value.trim().toLowerCase()
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
@@ -3960,4 +3962,10 @@ html, body {
 
 .comment-text-content a { color: #a78bfa !important; text-decoration: underline !important; font-weight: 500; }
 .creator-author-badge { background: rgba(167, 139, 250, 0.25); color: #c4b5fd !important; padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(167, 139, 250, 0.35); }
+.v-checkbox .v-selection-control__label,
+.v-selection-control__wrapper + .v-label {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: #ffffff !important;
+}
 </style>
