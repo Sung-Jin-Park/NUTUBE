@@ -1,12 +1,3 @@
-제공해주신 소스 코드(`App_4.vue`)에서 유튜브 플레이어가 검은색으로 먹통이 되는 원인인 **모달 열림 직후 DOM 렌더링 지연 타이밍 문제**와 **`initYouTubePlayer` 함수 선언부의 닫는 괄호 누락 구문 오류**를 완전히 수정하여 반영한 전체 소스 코드를 안내해 드립니다.
-
-아래 전체 소스 코드를 복사하여 프로젝트의 `App.vue` 파일에 그대로 붙여넣어 사용하시면 정상적으로 영상이 출력됩니다.
-
----
-
-### 📝 유튜브 플레이어 검은색 먹통 현상이 해결된 전체 소스 코드 (`App.vue`)
-
-```vue
 <template>
   <v-app class="neon-youtube-app">
     <!-- 배경 네온 블러 효과 요소 -->
@@ -416,7 +407,9 @@
 
                 <div class="overflow-hidden flex-grow-1">
                   <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
-                  <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                  <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                    {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                  </p>
                 </div>
               </div>
 
@@ -633,7 +626,9 @@
 
                 <div class="overflow-hidden flex-grow-1">
                   <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
-                  <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                  <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                    {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                  </p>
                 </div>
               </div>
 
@@ -710,7 +705,9 @@
                   <div class="overflow-hidden flex-grow-1">
                     <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
                     <div class="d-flex align-center gap-2">
-                      <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                      <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                        {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                      </p>
                       <span class="text-grey-darken-1 text-caption">• 시청일: {{ formatRelativeTime(video.historyUpdatedAt) }}</span>
                     </div>
                   </div>
@@ -772,7 +769,9 @@
                     <div class="pa-2 d-flex flex-column justify-space-between flex-grow-1">
                       <h3 class="text-white font-weight-bold text-caption text-truncate-2" v-html="video.title"></h3>
                       <div class="d-flex justify-space-between align-center mt-1">
-                        <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                      <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                        {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                      </p>
                         <div class="d-flex align-center">
                           <v-btn
                             icon="mdi-folder-plus"
@@ -835,7 +834,9 @@
                         <div class="d-flex justify-space-between align-start gap-2">
                           <div class="flex-grow-1 overflow-hidden">
                             <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
-                            <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">{{ video.creatorName }}</p>
+                            <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                              {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                            </p>
                           </div>
                           <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
                             <span class="text-grey-darken-1 text-caption mb-1">{{ formatRelativeTime(video.publishedAt) }}</span>
@@ -1191,11 +1192,33 @@
             <div class="d-flex align-center jump-box-container pa-1 px-2 rounded-lg">
               <span class="text-caption text-grey-lighten-1 mr-1 flex-shrink-0">시간 제어:</span>
               <div class="d-flex align-center mr-1">
-                <v-text-field v-model.number="jumpMinutes" type="number" density="compact" variant="outlined" hide-details class="custom-jump-input text-center mr-1" placeholder="0" min="0"></v-text-field>
+                <!-- 💡 @paste 이벤트 추가 -->
+                <v-text-field 
+                  v-model.number="jumpMinutes" 
+                  type="number" 
+                  density="compact" 
+                  variant="outlined" 
+                  hide-details 
+                  class="custom-jump-input text-center mr-1" 
+                  placeholder="0" 
+                  min="0"
+                  @paste="handleTimePaste"
+                ></v-text-field>
                 <span class="text-caption text-white">분</span>
               </div>
               <div class="d-flex align-center mr-2">
-                <v-text-field v-model.number="jumpSeconds" type="number" density="compact" variant="outlined" hide-details class="custom-jump-input text-center mr-1" placeholder="0" min="0" max="59"></v-text-field>
+                <v-text-field 
+                  v-model.number="jumpSeconds" 
+                  type="number" 
+                  density="compact" 
+                  variant="outlined" 
+                  hide-details 
+                  class="custom-jump-input text-center mr-1" 
+                  placeholder="0" 
+                  min="0" 
+                  max="59"
+                  @paste="handleTimePaste"
+                ></v-text-field>
                 <span class="text-caption text-white">초</span>
               </div>
               <div class="d-flex align-center gap-1">
@@ -1268,7 +1291,7 @@
                         </div>
 
                         <v-btn
-                          v-if="!showReplies && comment.replyCount > 0"
+                          v-if="comment.replyCount > 0"
                           variant="text"
                           size="x-small"
                           color="accent"
@@ -1282,7 +1305,12 @@
                     </div>
                   </div>
 
-                  <div v-if="showReplies && comment.replyCount > 0" class="ml-8 mt-2 pl-3 border-left-glass">
+                  <!-- 대댓글 표시 영역: 체크박스가 켜져 있거나, 해당 댓글의 '답글 X개' 버튼을 눌렀을 때 표시 -->
+                  <div v-if="showReplies || activeExpandedCommentId === comment.id" class="ml-8 mt-2 pl-3 border-left-glass">
+                    <div v-if="isLoadingReplies && activeExpandedCommentId === comment.id" class="text-center py-2">
+                      <v-progress-circular indeterminate color="accent" size="18" width="2"></v-progress-circular>
+                      <span class="text-grey-lighten-1 text-caption ml-2">답글 불러오는 중...</span>
+                    </div>
                     <div v-for="reply in getRepliesForComment(comment.id)" :key="reply.id" class="comment-item mb-2 pb-1">
                       <div class="d-flex align-start">
                         <v-avatar :size="24" class="mr-2 mt-1 flex-shrink-0">
@@ -1312,30 +1340,6 @@
                   </div>
                 </div>
               </template>
-
-              <div v-if="!showReplies && activeExpandedCommentId" class="mb-3 pl-6 border-left-glass">
-                <div v-if="isLoadingReplies" class="text-center py-2">
-                  <v-progress-circular indeterminate color="accent" size="18" width="2"></v-progress-circular>
-                  <span class="text-grey-lighten-1 text-caption ml-2">답글 불러오는 중...</span>
-                </div>
-                <template v-else>
-                  <div v-for="reply in getRepliesForComment(activeExpandedCommentId)" :key="reply.id" class="comment-item mb-2 pb-1">
-                    <div class="d-flex align-start">
-                      <v-avatar :size="24" class="mr-2 mt-1 flex-shrink-0">
-                        <v-img :src="reply.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
-                      </v-avatar>
-                      <div class="flex-grow-1 overflow-hidden">
-                        <div class="d-flex align-center flex-wrap gap-1 mb-1">
-                          <span class="text-caption font-weight-bold mr-1" :class="reply.isOwner ? 'creator-author-badge' : 'text-white'">{{ reply.author }}</span>
-                          <v-chip v-if="reply.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
-                          <span class="text-grey-darken-1 text-caption ml-1">{{ reply.publishedAt }}</span>
-                        </div>
-                        <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="reply.text"></p>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-              </div>
 
               <div v-if="isLoadingComments" class="text-center py-2">
                 <v-progress-circular indeterminate color="accent" size="20" width="2"></v-progress-circular>
@@ -2728,7 +2732,8 @@ const fetchOrToggleReplies = async (comment) => {
     activeExpandedCommentId.value = null
   } else {
     activeExpandedCommentId.value = comment.id
-    if (!comment.repliesLoaded && getRepliesForComment(comment.id).length === 0) {
+    // ⚡ 수정: 체크 해제 상태에서도 답글 데이터가 없거나 로드되지 않았다면 API를 호출해 가져오도록 보완
+    if (!comment.repliesLoaded || getRepliesForComment(comment.id).length === 0) {
       await fetchRepliesForComment(comment)
     }
   }
@@ -2890,6 +2895,11 @@ const loadDataFromDB = async () => {
     db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
+  // 💡 기존에 저장된 크리에이터들의 구독자 수도 최신 상태로 동기화
+  if (creators.value.length > 0 && API_KEYS.length > 0) {
+    fetchChannelVideosParallel(creators.value)
+  }
+
   const dbVideos = await new Promise((resolve) => {
     db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
   })
@@ -2943,10 +2953,24 @@ const toggleSubscribeFromCard = async (video) => {
     db.transaction('creators', 'readwrite').objectStore('creators').delete(targetCreator.id)
     if (selectedCreator.value?.id === targetCreator.id) selectDiscoverHeart()
   } else {
+    // 새로 구독 시 유튜브 API로 정확한 구독자 수 조회
+    let realSubCount = '구독중'
+    try {
+      const channelData = await fetchWithKeyRotation((key) => 
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${video.creatorId}&key=${key}`
+      )
+      if (channelData.items && channelData.items.length > 0) {
+        const count = parseInt(channelData.items[0].statistics?.subscriberCount || 0, 10)
+        realSubCount = count >= 10000 ? (count / 10000).toFixed(1) + '만명' : count + '명'
+      }
+    } catch (e) {
+      console.error(e)
+    }
+
     const newCreator = { 
       id: video.creatorId, 
       name: video.creatorName, 
-      subCount: '구독중', 
+      subCount: realSubCount, 
       avatar: video.thumbnail || 'https://cdn.vuetifyjs.com/images/lists/1.jpg', 
       isFavorite: false 
     }
@@ -2976,10 +3000,22 @@ const fetchChannelVideosParallel = async (targetCreators) => {
   const promises = targetCreators.map(async (creator) => {
     try {
       const channelData = await fetchWithKeyRotation((key) => 
-        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${creator.id}&key=${key}`
+        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails,statistics&id=${creator.id}&key=${key}`
       )
-      if (channelData.error || !channelData.items || channelData.items.length === 0) return
-      const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+      if (channelData.error || !channelData.items || !channelData.items.length) return
+      
+      const channelItem = channelData.items[0]
+      const uploadsPlaylistId = channelItem.contentDetails.relatedPlaylists.uploads
+      
+      // 실제 구독자 수 포맷팅 (예: 150000 -> 15만명)
+      const rawSubCount = parseInt(channelItem.statistics?.subscriberCount || 0, 10)
+      const formattedSubCount = rawSubCount >= 10000 
+        ? (rawSubCount / 10000).toFixed(1) + '만명' 
+        : rawSubCount >= 1000 
+          ? (rawSubCount / 1000).toFixed(1) + '천명' 
+          : rawSubCount + '명'
+
+      creator.subCount = formattedSubCount
 
       const data = await fetchWithKeyRotation((key) => 
         `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&key=${key}`
@@ -3411,14 +3447,47 @@ const searchYouTubeVideos = async () => {
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
+    // 💡 1단계: 검색된 영상들의 고유 채널 ID(channelId)들을 추출
+    const channelIds = [...new Set(data.items.filter(item => item.snippet?.channelId).map(item => item.snippet.channelId))]
+    const subCountMap = new Map()
+
+    // 💡 2단계: 유튜브 channels API로 해당 채널들의 구독자 수를 일괄 조회
+    if (channelIds.length > 0) {
+      try {
+        const channelsData = await fetchWithKeyRotation((key) => 
+          `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelIds.join(',')}&key=${key}`
+        )
+        if (channelsData.items) {
+          channelsData.items.forEach(ch => {
+            const rawCount = parseInt(ch.statistics?.subscriberCount || 0, 10)
+            const formatted = rawCount >= 10000 
+              ? (rawCount / 10000).toFixed(1) + '만명' 
+              : rawCount >= 1000 
+                ? (rawCount / 1000).toFixed(1) + '천명' 
+                : rawCount + '명'
+            subCountMap.set(ch.id, formatted)
+          })
+        }
+      } catch (err) {
+        console.error('검색 채널 구독자 수 조회 실패:', err)
+      }
+    }
+
     const parseSearchItem = (item) => {
       const title = item.snippet.title.toLowerCase()
       const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
+      const channelId = item.snippet.channelId
+      
+      // 구독 목록에 있거나 방금 조회한 구독자 수 맵에서 가져옴
+      const matchedCreator = creators.value.find(c => c.id === channelId)
+      const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
+
       return {
         id: item.id.videoId,
         youtubeId: item.id.videoId,
-        creatorId: item.snippet.channelId,
+        creatorId: channelId,
         creatorName: item.snippet.channelTitle,
+        creatorSubCount: subCount, // 💡 구독자 수 정상 매핑
         title: item.snippet.title,
         thumbnail: thumbUrl,
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
@@ -3461,17 +3530,22 @@ const searchYouTubeVideos = async () => {
     })
     videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
-    const tx = db.transaction('videos', 'readwrite')
-    const store = tx.objectStore('videos')
+    const dbTx = db.transaction('videos', 'readwrite')
+    const store = dbTx.objectStore('videos')
     searchResultVideos.value.forEach(v => store.put(v))
+
+    await nextTick()
+    scrollToTop(mainScrollRef.value)
   } catch (error) { console.error(error) }
 }
 
 const loadMoreSearchVideos = async () => {
   if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0 || isLoading.value) return
   
+  // 💡 1단계: 스크롤 컨테이너와 현재 스크롤 위치를 정확히 가져옴
   const container = mainScrollRef.value?.$el || mainScrollRef.value
   const currentScrollTop = container ? container.scrollTop : 0
+  // const currentScrollHeight = container ? container.scrollHeight : 0
 
   isLoading.value = true
   try {
@@ -3533,10 +3607,14 @@ const loadMoreSearchVideos = async () => {
     console.error(error) 
   } finally { 
     isLoading.value = false
+    
+    // 💡 2단계: Vue의 DOM 렌더링 완료 및 브라우저 페인트 주기를 완벽히 기다린 후 스크롤 위치 복원
     await nextTick()
-    if (container) {
-      container.scrollTop = currentScrollTop
-    }
+    setTimeout(() => {
+      if (container) {
+        container.scrollTop = currentScrollTop
+      }
+    }, 0)
   }
 }
 
@@ -3702,9 +3780,25 @@ const selectCreatorFilter = async (creator) => {
   if (window.innerWidth < 960) drawer.value = false
 
   try {
+    // 💡 채널을 클릭해서 들어갈 때마다 유튜브 API로 최신 구독자 수와 영상 목록을 동시에 갱신
+    if (API_KEYS.length > 0) {
+      const channelData = await fetchWithKeyRotation((key) => 
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${creator.id}&key=${key}`
+      )
+      if (channelData.items && channelData.items.length > 0) {
+        const count = parseInt(channelData.items[0].statistics?.subscriberCount || 0, 10)
+        const formattedSubCount = count >= 10000 ? (count / 10000).toFixed(1) + '만명' : count + '명'
+        
+        // 메모리와 DB에 최신 구독자 수 반영
+        creator.subCount = formattedSubCount
+        const db = await openDB()
+        db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(creator)))
+      }
+    }
+
     await fetchChannelVideosParallel([creator])
   } catch (err) {
-    console.error('크리에이터 영상 조회 실패:', err)
+    console.error('크리에이터 정보 및 영상 조회 실패:', err)
   } finally {
     isLoading.value = false
     scrollToTop(mainScrollRef.value)
@@ -3722,6 +3816,28 @@ const handleVisibilityChange = () => {
       } catch (e) {
         console.debug(e)
       }
+    }
+  }
+}
+
+const handleTimePaste = (event) => {
+  // 클립보드에서 붙여넣은 텍스트 가져오기
+  const pastedText = (event.clipboardData || window.clipboardData).getData('text').trim()
+  
+  // 콜론(:)이 포함된 시간 형태인지 확인 (예: 1:25, 01:25, 1:25:30)
+  if (pastedText.includes(':')) {
+    event.preventDefault() // 기본 붙여넣기 동작 막기
+    
+    const parts = pastedText.split(':').map(val => parseInt(val, 10) || 0)
+    
+    if (parts.length === 3) {
+      // 시:분:초 형태인 경우 (예: 1:20:30 -> 분에 80초 환산 또는 시를 분으로 합산)
+      jumpMinutes.value = (parts[0] * 60) + parts[1]
+      jumpSeconds.value = parts[2]
+    } else if (parts.length === 2) {
+      // 분:초 형태인 경우 (예: 0:25, 1:25, 01:25)
+      jumpMinutes.value = parts[0]
+      jumpSeconds.value = parts[1]
     }
   }
 }
@@ -3938,8 +4054,8 @@ html, body {
 
 .youtube-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; display: block; }
 
-.comments-scroll-area, .related-scroll-area-long { max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; padding-right: 24px; }
-.related-scroll-area-long { max-height: 350px; }
+.comments-scroll-area { max-height: 450px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; padding-right: 24px; }
+.related-scroll-area-long { max-height: 230px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; padding-right: 24px; }
 
 .comments-scroll-area::-webkit-scrollbar, .related-scroll-area-long::-webkit-scrollbar { width: 4px; }
 .comments-scroll-area::-webkit-scrollbar-thumb, .related-scroll-area-long::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
