@@ -2257,22 +2257,52 @@ const confirmSaveToPlaylists = async () => {
   }
 
   const db = await openDB()
-  const tx = db.transaction('playlistItems', 'readwrite')
-  const store = tx.objectStore('playlistItems')
+  
+  // 1. 현재 선택된 비디오 ID들에 해당하는 비디오 객체들을 현재 화면(검색 결과, 음악 탭 등)에서 탐색
+  const allCurrentSelectableVideos = [
+    ...videos.value,
+    ...searchResultVideos.value,
+    ...musicVideos.value,
+    ...trendingVideos.value
+  ]
+
+  // 2. DB의 'videos' 스토어와 트랜잭션을 열어 누락된 영상 정보를 안전하게 저장
+  const videoTx = db.transaction('videos', 'readwrite')
+  const videoStore = videoTx.objectStore('videos')
+
+  selectedVideoIds.value.forEach(videoId => {
+    const foundVideo = allCurrentSelectableVideos.find(v => v.id === videoId || v.youtubeId === videoId)
+    if (foundVideo) {
+      // DB와 전역 videos 배열에 해당 영상이 없다면 추가/갱신
+      videoStore.put(JSON.parse(JSON.stringify(foundVideo)))
+      if (!videos.value.some(v => v.id === foundVideo.id)) {
+        videos.value.push(foundVideo)
+      }
+    }
+  })
+
+  // 3. 'playlistItems' 스토어에 재생목록 매핑 정보 저장
+  const itemTx = db.transaction('playlistItems', 'readwrite')
+  const itemStore = itemTx.objectStore('playlistItems')
 
   selectedVideoIds.value.forEach(videoId => {
     targetPlaylistIds.value.forEach(playlistId => {
-      if (!playlistItems.value.some(item => item.playlistId === playlistId && item.videoId === videoId)) {
-        store.add({ playlistId, videoId })
+      // 중복 등록 방지 체크
+      const alreadyExists = playlistItems.value.some(
+        item => item.playlistId === playlistId && item.videoId === videoId
+      )
+      if (!alreadyExists) {
+        itemStore.add({ playlistId, videoId })
       }
     })
   })
 
-  tx.oncomplete = async () => {
+  // 트랜잭션 완료 후 데이터 새로고침 및 모달 닫기
+  itemTx.oncomplete = async () => {
     isSaveToPlaylistDialogVisible.value = false
     selectedVideoIds.value = []
-    alert('선택한 영상이 재생 목록에 저장되었습니다.')
-    await loadDataFromDB()
+    alert('선택한 영상이 재생 목록에 안전하게 저장되었습니다.')
+    await loadDataFromDB() // 최신 상태 동기화
   }
 }
 
@@ -2391,9 +2421,10 @@ const playQueueIndex = async (idx) => {
 
   const startSec = enableResume.value ? initialWatchedTime.value : 0
   
-  if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+  // 💡 핵심: 기존 플레이어 인스턴스가 존재하면 destroy 하지 않고 loadVideoById로 영상만 교체하여 재생
+  if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
     try {
-      ytPlayer.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
+      ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
     } catch (e) {
       initYouTubePlayer(video.youtubeId, startSec)
     }
@@ -2426,10 +2457,10 @@ const toggleCommentsView = () => {
 const closePlayer = () => {
   saveCurrentHistoryToDB()
   stopHistoryTracker()
-  // 💡 핵심: 팝업을 닫을 때만 플레이어를 완전히 파괴(destroy)
-  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+  // 💡 핵심: 팝업을 완전히 닫을 때만 플레이어 인스턴스를 파괴하고 메모리/자원 해제
+  if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
     try { 
-      ytPlayer.destroy() 
+      ytPlayer.value.destroy()
     } catch (e) { 
       console.debug(e) 
     }
@@ -2477,47 +2508,43 @@ const setupMediaSession = (video) => {
   }
 }
 
-const initYouTubePlayer = (youtubeId, startTime) => {
-  const startPos = startTime > 5 ? startTime : 0
+  // 3. 유튜브 플레이어 초기화 함수 (최초 1회 또는 인스턴스가 없을 때만 생성)
+  const initYouTubePlayer = (youtubeId, startTime) => {
+    const startPos = startTime > 5 ? startTime : 0
 
-  if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-    try {
-      ytPlayer.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
-      // 💡 라디오 모드일 경우 화질을 144p(tiny)로 설정
-      if (isAudioOnlyMode.value && typeof ytPlayer.setPlaybackQuality === 'function') {
-        ytPlayer.setPlaybackQuality('tiny')
+    // 이미 플레이어가 있다면 파괴하지 않고 로드
+    if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
+      try {
+        ytPlayer.value.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
+        if (isAudioOnlyMode.value && typeof ytPlayer.value.setPlaybackQuality === 'function') {
+          ytPlayer.value.setPlaybackQuality('tiny')
+        }
+        startHistoryTracker()
+        return
+      } catch (e) {
+        console.debug(e)
       }
-      startHistoryTracker()
-      return
-    } catch (e) {
-      console.debug(e)
-    }
   }
 
-  const createPlayerInstance = () => {
+const createPlayerInstance = () => {
     const playerDiv = document.getElementById('youtube-player-div')
     if (!playerDiv) return
 
-    if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-      try { ytPlayer.destroy() } catch (err) { console.debug(err) }
-      ytPlayer = null
+    // 혹시 모를 중복 생성 방지를 위한 안전 장치
+    if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
+      try { ytPlayer.value.destroy() } catch (err) { console.debug(err) }
+      ytPlayer.value = null
     }
 
-    ytPlayer = new window.YT.Player('youtube-player-div', {
+    // 새로운 YouTube Player 인스턴스 생성
+    ytPlayer.value = new window.YT.Player('youtube-player-div', {
       videoId: youtubeId,
       playerVars: { autoplay: 1, playsinline: 1, start: startPos },
       events: {
         onReady: (event) => {
           if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
-          // 💡 플레이어 로드 완료 시 라디오 모드면 144p(tiny) 적용
           if (isAudioOnlyMode.value && typeof event.target.setPlaybackQuality === 'function') {
             event.target.setPlaybackQuality('tiny')
-            // 추가로 제안: 화질이 바로 안 먹히는 경우를 대비해 1초 뒤에 한 번 더 요청
-            setTimeout(() => {
-              if (event.target && typeof event.target.setPlaybackQuality === 'function') {
-                event.target.setPlaybackQuality('tiny')
-              }
-            }, 1000)
           }
           startHistoryTracker()
           if ('mediaSession' in navigator) {
@@ -2525,17 +2552,7 @@ const initYouTubePlayer = (youtubeId, startTime) => {
           }
         },
         onStateChange: async (event) => {
-        // 💡 재생이 시작되거나 버퍼링 상태일 때도 라디오 모드면 화질 낮게 유지
-          if (isAudioOnlyMode.value && (event.data === window.YT.PlayerState.PLAYING || event.data === window.YT.PlayerState.BUFFERING)) {
-            if (typeof event.target.setPlaybackQuality === 'function') {
-              event.target.setPlaybackQuality('tiny')
-            }
-          }
-          if ('mediaSession' in navigator) {
-            if (event.data === 1) navigator.mediaSession.playbackState = 'playing'
-            else if (event.data === 2) navigator.mediaSession.playbackState = 'paused'
-          }
-
+          // 영상이 종료(State: 0)되었을 때 큐에 다음 영상이 있다면 파괴 없이 다음 영상으로 자동 전환
           if (event.data === 0) {
             if (activeVideo.value) {
               try {
