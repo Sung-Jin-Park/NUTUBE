@@ -3532,7 +3532,9 @@ const searchYouTubeVideos = async () => {
 
     const dbTx = db.transaction('videos', 'readwrite')
     const store = dbTx.objectStore('videos')
-    searchResultVideos.value.forEach(v => store.put(v))
+    searchResultVideos.value.forEach(v => {
+      store.put(JSON.parse(JSON.stringify(v)))
+    })
 
     await nextTick()
     scrollToTop(mainScrollRef.value)
