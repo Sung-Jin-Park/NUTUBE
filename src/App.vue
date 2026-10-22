@@ -3400,6 +3400,7 @@ const triggerTabSearchOrUpdate = async () => {
     activeFilterQuery.value = ''
     isLoading.value = true
     
+    
     // 전체 화면 로딩 대신 가볍게 백그라운드에서 최신 영상 병렬 업데이트 실행
     fetchChannelVideosParallel(creators.value).then(async () => {
       await loadDataFromDB()
@@ -4102,8 +4103,16 @@ html, body {
 .comments-scroll-area::-webkit-scrollbar, .related-scroll-area-long::-webkit-scrollbar { width: 4px; }
 .comments-scroll-area::-webkit-scrollbar-thumb, .related-scroll-area-long::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
 
-.scroll-top-fab, .modal-scroll-top-fab, .main-scroll-top-fab { position: absolute; bottom: 12px; right: 12px; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; }
-.modal-scroll-top-fab, .main-scroll-top-fab { position: sticky; float: right; margin-right: 20px; margin-bottom: 20px; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important; }
+.scroll-top-fab, .modal-scroll-top-fab { position: absolute; bottom: 12px; right: 12px; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; }
+.modal-scroll-top-fab { position: sticky; float: right; margin-right: 20px; margin-bottom: 20px; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important; }
+
+.main-scroll-top-fab {
+  position: fixed !important; /* 스크롤과 무관하게 화면 뷰포트 기준으로 우측 하단에 고정 */
+  bottom: 75px !important;    /* 화면 맨 아래에서 살짝 위로 띄워 눈에 잘 띄고 누르기 편한 위치 지정 */
+  right: 28px !important;     /* 화면 우측에서 떨어진 여백 간격 설정 */
+  z-index: 99 !important;     /* 다른 모달이나 카드 콘텐츠 뒤로 숨지 않도록 최상단 레이어 지정 */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7) !important; /* 버튼 입체감을 위한 그림자 효과 */
+}
 
 .mobile-tight-header { min-height: 36px !important; }
 .border-top-glass { border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.15); }
