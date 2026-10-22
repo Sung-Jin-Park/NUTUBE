@@ -1433,6 +1433,7 @@ const trendingVideos = ref([])
 const searchResultVideos = ref([])
 const musicVideos = ref([])
 const algorithmVideos = ref([])
+const algorithmNextPageToken = ref(null)
 const historyList = ref([])
 
 const musicCategory = ref('top')
@@ -1550,6 +1551,8 @@ const checkMainScroll = (e) => {
     if (bottomReached && !isLoading.value) {
       if (isTrendingMode.value && trendingNextPageToken.value) {
         loadMoreTrendingVideos()
+      } else if (isAlgorithmMode.value && algorithmNextPageToken.value) {
+        loadMoreAlgorithmVideos() // 👈 이 줄을 추가합니다.
       } else if (isSearchMode.value && searchNextPageToken.value) {
         loadMoreSearchVideos()
       } else if (selectedCreator.value) {
@@ -1557,7 +1560,7 @@ const checkMainScroll = (e) => {
       }
     }
     scrollTimeout = null
-  }, 100) // 0.1초 간격으로 최적화
+  }, 100)
 }
 
 const checkModalScroll = (e) => {
@@ -3256,25 +3259,32 @@ const fetchTrendingVideos = async () => {
 const fetchAlgorithmVideos = async () => {
   if (API_KEYS.length === 0) return
   isLoading.value = true
+  algorithmNextPageToken.value = null
 
   try {
-    // 1. 구독 중인 크리에이터 중 무작위로 채널을 선택해 해당 컨셉/이름을 검색 키워드로 활용
-    let query = '추천 컨텐츠'
-    if (creators.value.length > 0) {
-      const randomIndex = Math.floor(Math.random() * creators.value.length)
-      query = creators.value[randomIndex].name
-    }
+// 구독하지 않은 새로운 채널의 영상을 다양하게 추천받기 위한 일반 키워드 풀
+const recommendationKeywords = [
+  '인기 추천 컨텐츠', 
+  '요즘 뜨는 트렌드', 
+  '이 시국 이슈', 
+  '알고리즘 추천 영상', 
+  '재밌는 영상 모음', 
+  '브이로그 추천', 
+  'IT 테크 리뷰'
+]
+const randomQuery = recommendationKeywords[Math.floor(Math.random() * recommendationKeywords.length)]
 
-    // 2. 채널 업로드 목록 대신 검색 API(search)를 사용하여 유사한 컨셉의 영상을 탐색
-    const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=30&q=${encodeURIComponent(query)}&type=video&key=${key}`
-    )
+const data = await fetchWithKeyRotation((key) => 
+  `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=30&q=${encodeURIComponent(randomQuery)}&type=video&key=${key}`
+)
 
     if (data.error || !data.items) {
       await fetchTrendingVideos()
       algorithmVideos.value = trendingVideos.value
       return
     }
+
+    algorithmNextPageToken.value = data.nextPageToken || null
 
     // 3. 이미 구독 중인 크리에이터의 ID 목록 추출
     const subscribedCreatorIds = new Set(creators.value.map(c => c.id))
@@ -3316,6 +3326,77 @@ const fetchAlgorithmVideos = async () => {
     algorithmVideos.value = parsed
   } catch (error) {
     console.error('알고리즘 추천 로드 실패:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 👈 새로 추가할 함수
+const loadMoreAlgorithmVideos = async () => {
+  if (API_KEYS.length === 0 || !algorithmNextPageToken.value || isLoading.value) return
+  isLoading.value = true
+
+  try {
+    const recommendationKeywords = [
+      '인기 추천 컨텐츠', 
+      '요즘 뜨는 트렌드', 
+      '이 시국 이슈', 
+      '알고리즘 추천 영상', 
+      '재밌는 영상 모음', 
+      '브이로그 추천', 
+      'IT 테크 리뷰'
+    ]
+    const randomQuery = recommendationKeywords[Math.floor(Math.random() * recommendationKeywords.length)]
+
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=30&q=${encodeURIComponent(randomQuery)}&pageToken=${algorithmNextPageToken.value}&type=video&key=${key}`
+    )
+
+    if (data.error || !data.items) {
+      algorithmNextPageToken.value = null
+      isLoading.value = false
+      return
+    }
+
+    algorithmNextPageToken.value = data.nextPageToken || null
+
+    const subscribedCreatorIds = new Set(creators.value.map(c => c.id))
+    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
+    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+    const parsed = data.items
+      .filter(item => item.id?.videoId && !subscribedCreatorIds.has(item.snippet.channelId))
+      .map(item => {
+        const snippet = item.snippet
+        const videoId = item.id.videoId
+        const title = snippet.title.toLowerCase()
+        const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+        const channelId = snippet.channelId
+
+        return {
+          id: videoId,
+          youtubeId: videoId,
+          creatorId: channelId,
+          creatorName: snippet.channelTitle,
+          creatorSubCount: subCountMap.get(channelId) || '',
+          title: snippet.title,
+          thumbnail: thumbUrl,
+          isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+          isFavorite: existingMap.get(videoId) || false,
+          views: snippet.publishedAt.substring(0, 10),
+          publishedAt: snippet.publishedAt,
+          duration: 0,
+          progressPercent: 0,
+          currentTime: 0,
+          historyUpdatedAt: null
+        }
+      })
+
+    await fetchAndUpdateVideoDurations(parsed)
+    algorithmVideos.value.push(...parsed)
+  } catch (error) {
+    console.error('알고리즘 추가 로드 실패:', error)
   } finally {
     isLoading.value = false
   }
