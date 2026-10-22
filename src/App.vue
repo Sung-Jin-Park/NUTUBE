@@ -4349,7 +4349,17 @@ html, body {
 .modal-vertical-container::-webkit-scrollbar { width: 8px; }
 .modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
-.video-container { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 180px; background: #000000; overflow: hidden; flex-shrink: 0; transition: all 0.3s ease; }
+.video-container {
+position: relative;
+width: 100%;
+aspect-ratio: 16 / 9;
+min-height: 180px;
+background: #000000;
+overflow: hidden;
+flex-shrink: 0;
+transform: translateZ(0); /* GPU 가속 활성화로 깜빡임 방지 */
+will-change: width, height;
+}
 .video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 320px; }
 .video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
 
@@ -4361,7 +4371,16 @@ html, body {
   100% { transform: scale(1); opacity: 1; }
 }
 
-.youtube-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; display: block; }
+.youtube-iframe {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+border: 0;
+display: block;
+transform: translateZ(0);
+}
 
 .comments-scroll-area { max-height: 480px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; padding-right: 16px; }
 .related-scroll-area-long { max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; padding-right: 16px; }
