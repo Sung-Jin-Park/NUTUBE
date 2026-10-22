@@ -2413,8 +2413,9 @@ const playQueueIndex = async (idx) => {
       }
       startHistoryTracker()
 
-      if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') {
-        ytPlayer.value.playVideo()
+      if (ytPlayer.value) {
+        if (typeof ytPlayer.value.unMute === 'function') ytPlayer.value.unMute()
+        if (typeof ytPlayer.value.playVideo === 'function') ytPlayer.value.playVideo()
       }
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = 'playing'
@@ -3858,15 +3859,14 @@ const handleVisibilityChange = () => {
       }
     }
   }else {
-    if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') {
+    if (ytPlayer.value) {
       try {
-        ytPlayer.value.playVideo()
+        if (typeof ytPlayer.value.unMute === 'function') ytPlayer.value.unMute()
+        if (typeof ytPlayer.value.playVideo === 'function') ytPlayer.value.playVideo()
       } catch (e) {
         console.debug(e)
       }
     }
-    
-    // 💡 화면이 꺼지거나 백그라운드로 진입할 때 미디어 세션이 끊기는 것 방지
     if ('mediaSession' in navigator && ytPlayer.value) {
       navigator.mediaSession.playbackState = 'playing'
     }
