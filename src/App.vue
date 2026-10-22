@@ -114,7 +114,7 @@
               variant="flat"
               :color="isAlgorithmMode ? 'deep-purple-darken-2' : 'transparent'"
               class="text-white flex-shrink-0 rounded-circle"
-              title="알고리즘 추천 탭"
+              title="알고리즘 추천탭"
               @click="enableAlgorithmMode"
             ></v-btn>
             <v-btn
