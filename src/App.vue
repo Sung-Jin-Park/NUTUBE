@@ -10,12 +10,12 @@
     <input ref="singlePlaylistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadSinglePlaylist" />
     <input ref="musicFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadMusic" />
 
-    <!-- 상단 앱바 -->
-    <v-app-bar flat class="glass-app-bar px-1 px-md-4" height="64">
+    <!-- 상단 앱바 (모바일 세이프 아레아 상단 패딩 포함) -->
+    <v-app-bar flat class="glass-app-bar px-2 px-md-6" height="68">
       <v-app-bar-nav-icon @click="drawer = !drawer" class="text-white" density="compact"></v-app-bar-nav-icon>
       
-      <div class="d-flex align-center ml-0 mr-2 gap-1 flex-shrink-0">
-        <v-icon icon="mdi-play-box-multiple" class="text-accent" size="26"></v-icon>
+      <div class="d-flex align-center ml-1 mr-3 gap-1 flex-shrink-0">
+        <v-icon icon="mdi-play-box-multiple" class="text-accent" size="28"></v-icon>
         <span class="text-accent text-caption font-weight-bold ml-1" title="현재 사용 중인 YouTube API 키 번호">#{{ currentApiKeyNumber }}</span>
       </div>
       
@@ -23,9 +23,9 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isAlgorithmMode ? '알고리즘 추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 전체 피д 내 검색어 입력 후 엔터...')))))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isAlgorithmMode ? '알고리즘 추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 전체 피드 내 검색어 입력 후 엔터...')))))))"
         prepend-inner-icon="mdi-magnify"
-        class="search-bar flex-grow-1"
+        class="search-bar flex-grow-1 mx-2"
         hide-details
         single-line
         @keydown.enter="handleSearch"
@@ -89,13 +89,13 @@
 
       <template v-slot:extension>
         <div class="d-flex align-center px-4 py-1 w-100 overflow-x-auto glass-extension-bar">
-          <div class="d-flex align-center gap-1 icon-tab-group pa-1 rounded-xl flex-nowrap w-100 justify-start justify-md-center">
+          <div class="d-flex align-center gap-2 icon-tab-group pa-1.5 rounded-pill flex-nowrap w-100 justify-start justify-md-center">
             <v-btn
               icon="mdi-play-box-multiple-outline"
               size="small"
               variant="flat"
               :color="currentTab === 'discoverAll' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="구독 전체 피드"
               @click="selectDiscoverAll"
             ></v-btn>
@@ -104,7 +104,7 @@
               size="small"
               variant="flat"
               :color="currentTab === 'discoverHeart' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="구독 피드 모음"
               @click="selectDiscoverHeart"
             ></v-btn>
@@ -113,7 +113,7 @@
               size="small"
               variant="flat"
               :color="isAlgorithmMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="알고리즘 추천 탭"
               @click="enableAlgorithmMode"
             ></v-btn>
@@ -122,7 +122,7 @@
               size="small"
               variant="flat"
               :color="isFavoriteVideosMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="즐겨찾기 영상"
               @click="enableFavoriteVideosMode"
             ></v-btn>
@@ -131,7 +131,7 @@
               size="small"
               variant="flat"
               :color="isPlaylistMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="재생 목록"
               @click="enablePlaylistMode"
             ></v-btn>
@@ -140,7 +140,7 @@
               size="small"
               variant="flat"
               :color="isHistoryMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="시청 기록"
               @click="enableHistoryMode"
             ></v-btn>
@@ -149,7 +149,7 @@
               size="small"
               variant="flat"
               :color="isSearchMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="유튜브 전체 검색"
               @click="enableSearchMode"
             ></v-btn>
@@ -158,7 +158,7 @@
               size="small"
               variant="flat"
               :color="isTrendingMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="실시간 급상승 영상"
               @click="enableTrendingMode"
             ></v-btn>
@@ -167,7 +167,7 @@
               size="small"
               variant="flat"
               :color="isMusicMode ? 'deep-purple-darken-2' : 'transparent'"
-              class="text-white flex-shrink-0"
+              class="text-white flex-shrink-0 rounded-circle"
               title="음악 탭"
               @click="enableMusicMode"
             ></v-btn>
@@ -187,9 +187,9 @@
       v-model="drawer" 
       :temporary="$vuetify.display.mobile" 
       class="glass-sidebar border-0" 
-      width="280"
+      width="300"
     >
-      <v-list density="compact" nav class="text-white">
+      <v-list density="compact" nav class="text-white pa-3">
         <v-list-item 
           prepend-icon="mdi-play-box-multiple-outline" 
           title="구독 크리에이터 전체 피드" 
@@ -273,15 +273,15 @@
         
         <v-divider class="border-opacity-25 my-4"></v-divider>
         
-        <div class="px-4 d-flex align-center justify-space-between mb-2">
-          <span class="text-subtitle-2 text-grey-lighten-1">구독 크리에이터</span>
+        <div class="px-3 d-flex align-center justify-space-between mb-2">
+          <span class="text-subtitle-2 text-grey-lighten-1 font-weight-bold">구독 크리에이터</span>
           <div class="d-flex align-center gap-1">
             <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="구독 목록 백업 (내려받기)" @click="downloadCreatorsBackup"></v-btn>
             <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="구독 목록 불러오기 (올리기)" @click="triggerUploadCreators"></v-btn>
           </div>
         </div>
         
-        <div v-if="creators.length === 0" class="px-4 py-3 text-grey-darken-1 text-caption text-center">
+        <div v-if="creators.length === 0" class="px-3 py-4 text-grey-darken-1 text-caption text-center">
           검색 후 채널을 구독하거나<br/>영상을 추가해 보세요.
         </div>
 
@@ -319,14 +319,14 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 메인 콘텐츠 영역 -->
+    <!-- 메인 콘텐츠 영역 (모바일/PC 세이프 아레아 패딩 반영) -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
-      <v-container fluid class="pa-2 pa-md-6">
+      <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
-        <v-card class="glass-banner mb-3 mb-md-6 pa-3 pa-md-4 rounded-xl position-relative overflow-hidden">
+        <v-card class="glass-banner mb-4 mb-md-6 pa-4 pa-md-6 rounded-2xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
-          <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3">
+          <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3 flex-wrap">
             <div class="d-flex align-center gap-3">
               <v-checkbox
                 v-if="(!isPlaylistMode || activePlaylistId) && !isHistoryMode"
@@ -339,7 +339,7 @@
                 title="현재 표시된 모든 영상 선택/해제"
                 @change="toggleSelectAll"
               ></v-checkbox>
-              <h1 class="text-subtitle-1 text-md-h5 font-weight-black text-white ma-0">
+              <h1 class="text-subtitle-1 text-md-h4 font-weight-black text-white ma-0">
                 {{ getHeaderTitle }} <span v-if="selectedVideoIds.length > 0" class="text-accent text-subtitle-2">({{ selectedVideoIds.length }}개 선택됨)</span>
               </h1>
             </div>
@@ -350,7 +350,7 @@
               variant="flat"
               color="deep-purple-darken-2"
               prepend-icon="mdi-refresh"
-              class="text-white font-weight-bold"
+              class="text-white font-weight-bold rounded-pill px-4"
               @click="fetchAlgorithmVideos"
             >
               추천 새로고침
@@ -365,7 +365,7 @@
               v-for="cat in musicCategories"
               :key="cat.value"
               :color="musicCategory === cat.value ? 'deep-purple-darken-2' : 'default'"
-              class="text-white font-weight-bold glass-chip flex-shrink-0 cursor-pointer"
+              class="text-white font-weight-bold glass-chip flex-shrink-0 cursor-pointer px-4"
               @click="selectMusicCategory(cat.value)"
             >
               {{ cat.title }}
@@ -386,7 +386,7 @@
                 variant="flat"
                 size="small"
                 prepend-icon="mdi-playlist-play"
-                class="text-white font-weight-bold"
+                class="text-white font-weight-bold rounded-pill px-4"
                 :disabled="displayedVideos.length === 0"
                 @click="playSelectedOrAllMusic"
               >
@@ -410,11 +410,11 @@
             </v-col>
           </v-row>
 
-          <div v-else class="d-flex flex-column gap-2">
+          <div v-else class="d-flex flex-column gap-3">
             <v-card
               v-for="(video) in displayedVideos"
               :key="video.id"
-              class="glass-card rounded-xl pa-2 d-flex align-center justify-space-between position-relative playlist-list-item"
+              class="glass-card rounded-2xl pa-3 d-flex align-center justify-space-between position-relative playlist-list-item"
               elevation="0"
               @click="playVideo(video)"
             >
@@ -429,16 +429,16 @@
                   @click.stop
                 ></v-checkbox>
 
-                <div class="playlist-thumb-wrapper position-relative bg-black rounded-lg overflow-hidden flex-shrink-0">
-                  <v-img :src="video.thumbnail" width="96" height="54" cover>
+                <div class="playlist-thumb-wrapper position-relative bg-black rounded-xl overflow-hidden flex-shrink-0">
+                  <v-img :src="video.thumbnail" width="110" height="62" cover>
                     <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
                   </v-img>
                 </div>
 
                 <div class="overflow-hidden flex-grow-1">
-                  <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
+                  <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                    {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                   </p>
                 </div>
               </div>
@@ -467,7 +467,7 @@
 
         <!-- 재생 목록 폴더 목록 뷰 -->
         <div v-else-if="isPlaylistMode && !activePlaylistId">
-          <div class="d-flex justify-space-between align-center mb-4">
+          <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
             <div class="d-flex align-center gap-2">
               <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">내 재생 목록 폴더</h2>
               <div class="d-flex align-center gap-1">
@@ -480,7 +480,7 @@
               variant="flat"
               size="small"
               prepend-icon="mdi-folder-plus"
-              class="text-white font-weight-bold"
+              class="text-white font-weight-bold rounded-pill px-4"
               @click="openCreatePlaylistDialog"
             >
               새 폴더 만들기
@@ -495,16 +495,16 @@
             </v-col>
           </v-row>
 
-          <v-row v-else dense>
+          <v-row v-else>
             <v-col v-for="(playlist, index) in playlists" :key="playlist.id" cols="12" sm="6" md="4" lg="3">
               <v-card 
-                class="glass-card rounded-xl pa-4 h-100 d-flex flex-column justify-space-between position-relative" 
+                class="glass-card rounded-2xl pa-4 h-100 d-flex flex-column justify-space-between position-relative" 
                 elevation="0"
                 @click="selectPlaylistFolder(playlist)"
               >
                 <div>
-                  <div class="d-flex justify-space-between align-start mb-2">
-                    <v-icon icon="mdi-folder-music" color="accent" size="36"></v-icon>
+                  <div class="d-flex justify-space-between align-start mb-3">
+                    <v-icon icon="mdi-folder-music" color="accent" size="40"></v-icon>
                     <div class="d-flex align-center gap-1" @click.stop>
                       <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
                       <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
@@ -548,8 +548,7 @@
                   <p class="text-grey-lighten-1 text-caption mb-0">동영상 {{ getPlaylistVideoCount(playlist.id) }}개</p>
                 </div>
                 
-                <!-- 각 재생목록별 이어보기 체크박스 -->
-                <div class="mt-2" @click.stop>
+                <div class="mt-3" @click.stop>
                   <v-checkbox
                     v-model="playlistResumeStates[playlist.id]"
                     color="accent"
@@ -561,12 +560,12 @@
                   ></v-checkbox>
                 </div>
 
-                <div class="d-flex justify-end mt-3">
+                <div class="d-flex justify-end mt-4">
                   <v-btn
                     size="small"
                     variant="flat"
                     color="deep-purple-darken-2"
-                    class="text-white font-weight-bold"
+                    class="text-white font-weight-bold rounded-pill px-4"
                     @click.stop="playPlaylistFolder(playlist)"
                     :disabled="getPlaylistVideoCount(playlist.id) === 0"
                   >
@@ -580,12 +579,13 @@
 
         <!-- 재생 목록 폴더 안의 영상 뷰 -->
         <template v-else-if="isPlaylistMode && activePlaylistId">
-          <div class="mb-3 d-flex align-center justify-space-between flex-wrap gap-2">
+          <div class="mb-4 d-flex align-center justify-space-between flex-wrap gap-2">
             <v-btn
               variant="text"
               color="accent"
               size="small"
               prepend-icon="mdi-arrow-left"
+              class="font-weight-bold"
               @click="activePlaylistId = null"
             >
               재생 목록 폴더 목록으로 돌아가기
@@ -607,7 +607,7 @@
                 variant="flat"
                 size="small"
                 prepend-icon="mdi-play"
-                class="text-white font-weight-bold"
+                class="text-white font-weight-bold rounded-pill px-4"
                 :disabled="displayedVideos.length === 0"
                 @click="playPlaylistFolder({ id: activePlaylistId })"
               >
@@ -623,11 +623,11 @@
             </v-col>
           </v-row>
 
-          <div v-else class="d-flex flex-column gap-2">
+          <div v-else class="d-flex flex-column gap-3">
             <v-card
               v-for="(video, index) in displayedVideos"
               :key="video.id"
-              class="glass-card rounded-xl pa-2 d-flex align-center justify-space-between position-relative playlist-list-item"
+              class="glass-card rounded-2xl pa-3 d-flex align-center justify-space-between position-relative playlist-list-item"
               elevation="0"
               draggable="true"
               @dragstart="onDragStart(index)"
@@ -648,16 +648,16 @@
                   @click.stop
                 ></v-checkbox>
 
-                <div class="playlist-thumb-wrapper position-relative bg-black rounded-lg overflow-hidden flex-shrink-0">
-                  <v-img :src="video.thumbnail" width="96" height="54" cover>
+                <div class="playlist-thumb-wrapper position-relative bg-black rounded-xl overflow-hidden flex-shrink-0">
+                  <v-img :src="video.thumbnail" width="110" height="62" cover>
                     <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
                   </v-img>
                 </div>
 
                 <div class="overflow-hidden flex-grow-1">
-                  <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
+                  <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                    {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                   </p>
                 </div>
               </div>
@@ -715,17 +715,17 @@
 
           <template v-else>
             <!-- 시청 기록 탭 전용 리스트 뷰 -->
-            <div v-if="isHistoryMode" class="d-flex flex-column gap-2">
+            <div v-if="isHistoryMode" class="d-flex flex-column gap-3">
               <v-card
                 v-for="video in displayedVideos"
                 :key="video.id"
-                class="glass-card rounded-xl pa-2 d-flex align-center justify-space-between position-relative playlist-list-item"
+                class="glass-card rounded-2xl pa-3 d-flex align-center justify-space-between position-relative playlist-list-item"
                 elevation="0"
                 @click="playVideo(video)"
               >
                 <div class="d-flex align-center gap-3 overflow-hidden flex-grow-1 pr-2">
-                  <div class="playlist-thumb-wrapper position-relative bg-black rounded-lg overflow-hidden flex-shrink-0">
-                    <v-img :src="video.thumbnail" width="96" height="54" cover>
+                  <div class="playlist-thumb-wrapper position-relative bg-black rounded-xl overflow-hidden flex-shrink-0">
+                    <v-img :src="video.thumbnail" width="110" height="62" cover>
                       <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
                       <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                         <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
@@ -733,10 +733,10 @@
                     </v-img>
                   </div>
                   <div class="overflow-hidden flex-grow-1">
-                    <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
-                    <div class="d-flex align-center gap-2">
+                    <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
+                    <div class="d-flex align-center gap-2 flex-wrap">
                       <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                        {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                        {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                       </p>
                       <span class="text-grey-darken-1 text-caption">• 시청일: {{ formatRelativeTime(video.historyUpdatedAt) }}</span>
                     </div>
@@ -758,16 +758,16 @@
 
             <!-- 일반 그리드 뷰 -->
             <template v-else>
-              <div v-if="shortsVideos.length > 0" class="mb-4">
-                <div class="d-flex align-center mb-2">
-                  <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="20"></v-icon>
-                  <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
+              <div v-if="shortsVideos.length > 0" class="mb-6">
+                <div class="d-flex align-center mb-3">
+                  <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="22"></v-icon>
+                  <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
                 </div>
                 <div class="shorts-horizontal-scroll">
                   <div 
                     v-for="video in shortsVideos" 
                     :key="video.id" 
-                    class="shorts-card glass-card rounded-xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
+                    class="shorts-card glass-card rounded-2xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
                     @click="playVideo(video)"
                   >
                     <div class="video-checkbox-wrapper">
@@ -783,7 +783,7 @@
                     </div>
 
                     <div class="shorts-thumbnail-wrapper position-relative bg-black">
-                      <v-img :src="video.thumbnail" height="200" contain class="align-end">
+                      <v-img :src="video.thumbnail" height="220" cover class="align-end">
                         <div class="shorts-badge">Shorts</div>
                         <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
                         <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
@@ -796,12 +796,12 @@
                         </div>
                       </div>
                     </div>
-                    <div class="pa-2 d-flex flex-column justify-space-between flex-grow-1">
-                      <h3 class="text-white font-weight-bold text-caption text-truncate-2" v-html="video.title"></h3>
-                      <div class="d-flex justify-space-between align-center mt-1">
-                      <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                        {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
-                      </p>
+                    <div class="pa-3 d-flex flex-column justify-space-between flex-grow-1">
+                      <h3 class="text-white font-weight-bold text-caption text-truncate-2 mb-2" v-html="video.title"></h3>
+                      <div class="d-flex justify-space-between align-center">
+                        <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                          {{ video.creatorName }} <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                        </p>
                         <div class="d-flex align-center">
                           <v-btn
                             icon="mdi-folder-plus"
@@ -827,13 +827,13 @@
               </div>
 
               <div v-if="normalVideos.length > 0">
-                <div v-if="shortsVideos.length > 0" class="d-flex align-center mb-2">
-                  <v-icon icon="mdi-youtube" color="red" class="mr-2" size="20"></v-icon>
-                  <h2 class="text-subtitle-2 text-md-h6 font-weight-bold text-white ma-0">동영상</h2>
+                <div v-if="shortsVideos.length > 0" class="d-flex align-center mb-3">
+                  <v-icon icon="mdi-youtube" color="red" class="mr-2" size="22"></v-icon>
+                  <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">동영상</h2>
                 </div>
-                <v-row dense>
+                <v-row>
                   <v-col v-for="video in normalVideos" :key="video.id" cols="12" sm="6" md="4" lg="3">
-                    <v-card class="glass-card rounded-xl overflow-hidden h-100 d-flex flex-column mb-2 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
+                    <v-card class="glass-card rounded-2xl overflow-hidden h-100 d-flex flex-column mb-3 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
                       <div class="video-checkbox-wrapper">
                         <v-checkbox
                           v-model="selectedVideoIds"
@@ -841,13 +841,13 @@
                           color="accent"
                           hide-details
                           density="compact"
-                          class="ma-1 pa-0 bg-dark-glass rounded"
+                          class="ma-1.5 pa-0 bg-dark-glass rounded"
                           @click.stop
                         ></v-checkbox>
                       </div>
 
                       <div class="video-thumbnail-wrapper position-relative bg-black">
-                        <v-img :src="video.thumbnail" class="video-thumb-img align-end" contain>
+                        <v-img :src="video.thumbnail" class="video-thumb-img align-end" cover>
                           <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
                           <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                             <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
@@ -855,17 +855,17 @@
                         </v-img>
                         <div class="play-overlay">
                           <div class="play-btn-circle shorts-play-btn">
-                            <v-icon icon="mdi-play" color="white" size="24"></v-icon>
+                            <v-icon icon="mdi-play" color="white" size="28"></v-icon>
                           </div>
                         </div>
                       </div>
 
-                      <v-card-text class="flex-grow-1 d-flex flex-column justify-space-between pa-2 pa-md-3">
+                      <v-card-text class="flex-grow-1 d-flex flex-column justify-space-between pa-3 pa-md-4">
                         <div class="d-flex justify-space-between align-start gap-2">
                           <div class="flex-grow-1 overflow-hidden">
-                            <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
+                            <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
                             <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                              {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                              {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                             </p>
                           </div>
                           <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
@@ -916,7 +916,7 @@
           size="small"
           color="deep-purple-darken-2"
           variant="flat"
-          class="main-scroll-top-fab text-white"
+          class="main-scroll-top-fab text-white rounded-circle"
           title="최상위로 이동"
           @click="scrollToTop(mainScrollRef)"
         >
@@ -927,7 +927,7 @@
 
     <!-- 로딩 오버레이 -->
     <div v-if="isLoading" class="loading-overlay-container">
-      <div class="loading-card glass-modal pa-4 rounded-xl d-flex flex-column align-center shadow-lg">
+      <div class="loading-card glass-modal pa-6 rounded-2xl d-flex flex-column align-center shadow-lg">
         <v-progress-circular indeterminate color="accent" size="48" width="4" class="mb-3"></v-progress-circular>
         <h3 class="text-subtitle-1 text-white font-weight-bold mb-1">조회 중입니다...</h3>
         <p class="text-caption text-grey-lighten-1 mb-0">잠시만 기다려 주세요.</p>
@@ -936,7 +936,7 @@
 
     <!-- 재생 목록 생성/수정 다이얼로그 -->
     <v-dialog v-model="isPlaylistDialogVisible" max-width="400px">
-      <v-card class="glass-modal rounded-xl pa-4 text-white">
+      <v-card class="glass-modal rounded-2xl pa-5 text-white">
         <h3 class="text-subtitle-1 font-weight-bold mb-3">{{ editingPlaylist ? '재생 목록 폴더 이름 수정' : '새 재생 목록 폴더 생성' }}</h3>
         <v-text-field
           v-model="playlistFormName"
@@ -948,14 +948,14 @@
         ></v-text-field>
         <div class="d-flex justify-end gap-2">
           <v-btn variant="text" color="grey-lighten-1" size="small" @click="isPlaylistDialogVisible = false">취소</v-btn>
-          <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold" @click="savePlaylistFolder">저장</v-btn>
+          <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold rounded-pill px-4" @click="savePlaylistFolder">저장</v-btn>
         </div>
       </v-card>
     </v-dialog>
 
     <!-- 영상 -> 재생 목록에 저장 다이얼로그 -->
     <v-dialog v-model="isSaveToPlaylistDialogVisible" max-width="420px">
-      <v-card class="glass-modal rounded-xl pa-4 text-white">
+      <v-card class="glass-modal rounded-2xl pa-5 text-white">
         <h3 class="text-subtitle-1 font-weight-bold mb-3">재생 목록에 저장</h3>
         
         <div v-if="playlists.length === 0" class="text-grey-darken-1 text-caption mb-3">
@@ -994,7 +994,7 @@
               color="deep-purple-darken-2"
               variant="flat"
               size="small"
-              class="text-white font-weight-bold flex-shrink-0"
+              class="text-white font-weight-bold flex-shrink-0 rounded-pill px-3"
               @click="quickCreateAndSelectPlaylist"
             >
               폴더 생성
@@ -1002,16 +1002,16 @@
           </div>
         </div>
 
-        <div class="d-flex justify-end gap-2 mt-2">
+        <div class="d-flex justify-end gap-2 mt-3">
           <v-btn variant="text" color="grey-lighten-1" size="small" @click="isSaveToPlaylistDialogVisible = false">취소</v-btn>
-          <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold" @click="confirmSaveToPlaylists">확인</v-btn>
+          <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold rounded-pill px-4" @click="confirmSaveToPlaylists">확인</v-btn>
         </div>
       </v-card>
     </v-dialog>
 
     <!-- 현재 재생 리스트 보기 모달 -->
     <v-dialog v-model="isQueueModalOpen" max-width="500px">
-      <v-card class="glass-modal rounded-xl pa-4 text-white">
+      <v-card class="glass-modal rounded-2xl pa-5 text-white">
         <div class="d-flex justify-space-between align-center mb-3">
           <h3 class="text-subtitle-1 font-weight-bold">📋 현재 재생 리스트 ({{ playlistQueue.length }}개)</h3>
           <div class="d-flex align-center gap-2">
@@ -1020,6 +1020,7 @@
               size="small"
               variant="flat"
               color="deep-purple-darken-2"
+              class="rounded-circle"
               title="리스트 무작위 섞기 (랜덤 재생)"
               @click="shufflePlaylistQueue"
             ></v-btn>
@@ -1031,28 +1032,28 @@
           <div
             v-for="(item, idx) in playlistQueue"
             :key="item.id + '_' + idx"
-            class="d-flex align-center justify-space-between pa-2 rounded-lg cursor-pointer"
+            class="d-flex align-center justify-space-between pa-2.5 rounded-xl cursor-pointer"
             :class="{ 'neon-active': idx === playlistIndex }"
             @click="playQueueIndex(idx)"
           >
-            <div class="d-flex align-center gap-2 overflow-hidden">
+            <div class="d-flex align-center gap-3 overflow-hidden">
               <span class="text-accent text-caption font-weight-bold">{{ idx + 1 }}</span>
-              <v-img :src="item.thumbnail" width="60" height="34" cover class="rounded flex-shrink-0 bg-black"></v-img>
+              <v-img :src="item.thumbnail" width="68" height="38" cover class="rounded-lg flex-shrink-0 bg-black"></v-img>
               <div class="overflow-hidden">
                 <p class="text-caption text-white font-weight-bold text-truncate mb-0">{{ item.title }}</p>
                 <p class="text-grey-lighten-1 text-caption mb-0">{{ item.creatorName }}</p>
               </div>
             </div>
-            <v-icon v-if="idx === playlistIndex" icon="mdi-play-circle" color="accent" size="20"></v-icon>
+            <v-icon v-if="idx === playlistIndex" icon="mdi-play-circle" color="accent" size="22"></v-icon>
           </div>
         </div>
       </v-card>
     </v-dialog>
 
     <!-- 시네마틱 영상 재생 모달 -->
-    <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '850px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
-      <v-card class="glass-modal rounded-xl overflow-hidden pa-0">
-        <div class="d-flex justify-space-between align-center px-3 py-1 px-md-4 bg-glass-bar mobile-tight-header">
+    <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '880px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
+      <v-card class="glass-modal rounded-2xl overflow-hidden pa-0">
+        <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
           <div class="d-flex align-center overflow-hidden pr-2">
             <span v-if="playlistQueue.length > 1" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
               [{{ playlistIndex + 1 }}/{{ playlistQueue.length }}]
@@ -1060,7 +1061,6 @@
             <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
           </div>
           <div class="d-flex align-center flex-shrink-0">
-            <!-- 한 영상 반복 재생 토글 버튼 -->
             <v-btn 
               icon 
               variant="text" 
@@ -1073,10 +1073,7 @@
               <v-icon :icon="isLoopMode ? 'mdi-repeat-once' : 'mdi-repeat'" size="20"></v-icon>
             </v-btn>
 
-            <!-- 랜덤 재생 버튼 -->
             <v-btn icon="mdi-shuffle" variant="text" size="small" color="accent" class="mr-1" title="재생 리스트 무작위 섞기" @click="shufflePlaylistQueue"></v-btn>
-            
-            <!-- 리스트 보기 버튼 -->
             <v-btn icon="mdi-playlist-music-outline" variant="text" size="small" color="white" class="mr-1" title="현재 재생 리스트 보기" @click="isQueueModalOpen = true"></v-btn>
 
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
@@ -1100,7 +1097,7 @@
                   <v-icon v-else icon="mdi-sleep" size="20"></v-icon>
                 </v-btn>
               </template>
-              <v-list density="compact" class="glass-modal rounded-lg py-2 text-white" width="210">
+              <v-list density="compact" class="glass-modal rounded-xl py-2 text-white" width="220">
                 <v-list-item class="px-3 py-1">
                   <v-list-item-title class="font-weight-bold text-caption text-accent">
                     {{ sleepTimerSecondsLeft > 0 ? `⏰ 남은 시간: ${formatSleepTime(sleepTimerSecondsLeft)}` : '취침 예약 설정' }}
@@ -1117,12 +1114,12 @@
                       variant="outlined"
                       hide-details
                       class="custom-jump-input flex-grow-1"
-                      placeholder="분 입력"
+                      placeholder="분"
                       min="1"
                       @keydown.enter="setCustomSleepTimer"
                     ></v-text-field>
                     <span class="text-caption text-white mr-1">분</span>
-                    <v-btn size="small" color="accent" variant="outlined" class="px-2" @click="setCustomSleepTimer">적용</v-btn>
+                    <v-btn size="small" color="accent" variant="outlined" class="px-2 rounded-pill" @click="setCustomSleepTimer">적용</v-btn>
                   </div>
                 </v-list-item>
 
@@ -1138,7 +1135,6 @@
               </v-list>
             </v-menu>
 
-            <!-- 라디오 모드 토글 버튼 (화면 숨김 / 오디오만 재생) -->
             <v-btn 
               icon 
               variant="text" 
@@ -1159,7 +1155,6 @@
         </div>
 
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
-          <!-- 비디오 영역 (라디오 모드일 경우 화면을 숨김) -->
           <div 
             class="video-container" 
             :class="{ 'landscape-expanded': isLandscapeMode, 'audio-only-hidden': isAudioOnlyMode }"
@@ -1167,14 +1162,13 @@
             <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
 
-          <!-- 라디오 모드 시 표시되는 비주얼 플레이어 카드 -->
           <div v-if="isAudioOnlyMode" class="radio-placeholder-card pa-6 text-center d-flex flex-column align-center justify-center">
             <v-icon icon="mdi-radio-tower" size="56" color="accent" class="pulse-icon mb-3"></v-icon>
             <h3 class="text-subtitle-1 font-weight-bold text-white mb-1">📻 라디오 전용 오디오 모드 재생 중</h3>
             <p class="text-caption text-grey-lighten-1 mb-0">영상은 숨겨지고 오디오만 연속 재생 중입니다.</p>
           </div>
 
-          <div class="pa-3 pa-md-4 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-2 border-bottom-glass">
+          <div class="pa-4 pa-md-5 bg-glass-bar d-flex justify-space-between align-center flex-wrap gap-3 border-bottom-glass">
             <div class="flex-grow-1 overflow-hidden pr-2">
               <div class="d-flex align-center flex-wrap gap-2 mb-1">
                 <h3 class="text-white text-caption text-md-subtitle-2 font-weight-bold ma-0" v-html="activeVideo?.title"></h3>
@@ -1185,20 +1179,21 @@
                   prepend-icon="mdi-youtube"
                   :href="`https://www.youtube.com/watch?v=${activeVideo?.youtubeId}`"
                   target="_blank"
-                  class="text-white font-weight-bold"
+                  class="text-white font-weight-bold rounded-pill"
                 >
                   유튜브에서 직접 보기
                 </v-btn>
               </div>
-              <div class="d-flex align-center gap-2 mt-1">
+              <div class="d-flex align-center gap-2 mt-2">
                 <p class="text-grey-lighten-1 text-caption mb-0">
-                  {{ activeVideo?.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(activeVideo?.creatorId, activeVideo) }})</span>
+                  {{ activeVideo?.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(activeVideo?.creatorId, activeVideo) }})</span>
                 </p>
                 <div class="d-flex align-center gap-1">
                   <v-btn
                     size="x-small"
                     variant="outlined"
                     color="accent"
+                    class="rounded-pill"
                     :prepend-icon="creators.some(c => c.id === activeVideo?.creatorId) ? 'mdi-check' : 'mdi-account-plus'"
                     @click="toggleSubscribeFromPlayer"
                   >
@@ -1216,7 +1211,6 @@
                 </div>
               </div>
 
-              <!-- 이어보기 체크박스 -->
               <div class="d-flex align-center gap-2 mt-2">
                 <v-checkbox
                   v-model="enableResume"
@@ -1230,8 +1224,8 @@
               </div>
             </div>
             
-            <div class="d-flex align-center jump-box-container pa-1 px-2 rounded-lg">
-              <span class="text-caption text-grey-lighten-1 mr-1 flex-shrink-0">시간 제어:</span>
+            <div class="d-flex align-center jump-box-container pa-2 px-3 rounded-xl">
+              <span class="text-caption text-grey-lighten-1 mr-2 flex-shrink-0 font-weight-medium">시간 제어:</span>
               <div class="d-flex align-center mr-1">
                 <v-text-field 
                   v-model.number="jumpMinutes" 
@@ -1262,21 +1256,21 @@
                 <span class="text-caption text-white">초</span>
               </div>
               <div class="d-flex align-center gap-1">
-                <v-btn color="accent" variant="flat" size="small" class="px-2" @click="jumpToTime">이동</v-btn>
-                <v-btn color="blue-grey-darken-2" variant="flat" size="small" class="px-2 font-weight-bold" @click="cumulativeJump(-1)">- 이전</v-btn>
-                <v-btn color="amber-darken-2" variant="flat" size="small" class="px-2 font-weight-bold" @click="cumulativeJump(1)">+ 이후</v-btn>
+                <v-btn color="accent" variant="flat" size="small" class="px-2 rounded-pill" @click="jumpToTime">이동</v-btn>
+                <v-btn color="blue-grey-darken-2" variant="flat" size="small" class="px-2 rounded-pill font-weight-bold" @click="cumulativeJump(-1)">- 이전</v-btn>
+                <v-btn color="amber-darken-2" variant="flat" size="small" class="px-2 rounded-pill font-weight-bold" @click="cumulativeJump(1)">+ 이후</v-btn>
               </div>
             </div>
 
             <div>
-              <v-btn color="accent" variant="outlined" size="small" :prepend-icon="showComments ? 'mdi-comment-off-outline' : 'mdi-comment-multiple-outline'" @click="toggleCommentsView">
+              <v-btn color="accent" variant="outlined" size="small" class="rounded-pill px-4" :prepend-icon="showComments ? 'mdi-comment-off-outline' : 'mdi-comment-multiple-outline'" @click="toggleCommentsView">
                 {{ showComments ? '댓글 숨기기' : '댓글 보기' }}
               </v-btn>
             </div>
           </div>
 
-          <div v-if="showComments" class="comments-section pa-3 border-bottom-glass position-relative">
-            <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3 pb-1 border-bottom-glass">
+          <div v-if="showComments" class="comments-section pa-4 border-bottom-glass position-relative">
+            <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3 pb-2 border-bottom-glass">
               <span class="text-subtitle-1 font-weight-bold text-white">
                 댓글 {{ totalCommentCount > 0 ? totalCommentCount.toLocaleString() + '개' : '' }}
               </span>
@@ -1293,9 +1287,9 @@
 
                 <v-menu location="bottom left">
                   <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" variant="text" size="small" class="text-none text-white font-weight-bold px-2" prepend-icon="mdi-sort-variant">정렬 기준</v-btn>
+                    <v-btn v-bind="props" variant="text" size="small" class="text-none text-white font-weight-bold px-2 rounded-pill" prepend-icon="mdi-sort-variant">정렬 기준</v-btn>
                   </template>
-                  <v-list density="compact" class="glass-modal rounded-lg py-1">
+                  <v-list density="compact" class="glass-modal rounded-xl py-1">
                     <v-list-item value="relevance" :class="{ 'text-accent': commentsOrder === 'relevance' }" @click="changeCommentsOrder('relevance')">
                       <v-list-item-title class="font-weight-bold text-body-2 text-white">인기 댓글순</v-list-item-title>
                     </v-list-item>
@@ -1311,18 +1305,18 @@
               <div v-if="comments.length === 0 && !isLoadingComments" class="text-grey-darken-1 text-caption text-center py-4">표시할 댓글이 없습니다.</div>
               
               <template v-for="(comment, index) in topLevelComments" :key="comment.id || index">
-                <div class="comment-item mb-3 pb-2 border-bottom-glass">
+                <div class="comment-item mb-4 pb-3 border-bottom-glass">
                   <div class="d-flex align-start">
-                    <v-avatar :size="32" class="mr-3 mt-1 flex-shrink-0">
+                    <v-avatar :size="34" class="mr-3 mt-1 flex-shrink-0">
                       <v-img :src="comment.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
                     </v-avatar>
                     <div class="flex-grow-1 overflow-hidden">
                       <div class="d-flex align-center flex-wrap gap-1 mb-1">
                         <span class="text-caption font-weight-bold mr-1" :class="comment.isOwner ? 'creator-author-badge' : 'text-white'">{{ comment.author }}</span>
-                        <v-chip v-if="comment.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
+                        <v-chip v-if="comment.isOwner" size="x-small" color="accent" variant="flat" class="px-2 py-0 font-weight-bold text-caption rounded-pill" style="height: 18px;">채널 작성자</v-chip>
                         <span class="text-grey-darken-1 text-caption ml-1">{{ comment.publishedAt }}</span>
                       </div>
-                      <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="comment.text"></p>
+                      <p class="text-grey-lighten-2 text-caption mb-2 comment-text-content" v-html="comment.text"></p>
                       
                       <div class="d-flex align-center gap-2 text-caption text-grey-darken-1">
                         <div class="d-flex align-center">
@@ -1345,21 +1339,20 @@
                     </div>
                   </div>
 
-                  <!-- 대댓글 표시 영역 -->
                   <div v-if="showReplies || activeExpandedCommentId === comment.id" class="ml-8 mt-2 pl-3 border-left-glass">
                     <div v-if="isLoadingReplies && activeExpandedCommentId === comment.id" class="text-center py-2">
                       <v-progress-circular indeterminate color="accent" size="18" width="2"></v-progress-circular>
                       <span class="text-grey-lighten-1 text-caption ml-2">답글 불러오는 중...</span>
                     </div>
-                    <div v-for="reply in getRepliesForComment(comment.id)" :key="reply.id" class="comment-item mb-2 pb-1">
+                    <div v-for="reply in getRepliesForComment(comment.id)" :key="reply.id" class="comment-item mb-2 pb-2">
                       <div class="d-flex align-start">
-                        <v-avatar :size="24" class="mr-2 mt-1 flex-shrink-0">
+                        <v-avatar :size="26" class="mr-2 mt-1 flex-shrink-0">
                           <v-img :src="reply.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
                         </v-avatar>
                         <div class="flex-grow-1 overflow-hidden">
                           <div class="d-flex align-center flex-wrap gap-1 mb-1">
                             <span class="text-caption font-weight-bold mr-1" :class="reply.isOwner ? 'creator-author-badge' : 'text-white'">{{ reply.author }}</span>
-                            <v-chip v-if="reply.isOwner" size="x-small" color="accent" variant="flat" class="px-1 py-0 font-weight-bold text-caption" style="height: 18px;">채널 작성자</v-chip>
+                            <v-chip v-if="reply.isOwner" size="x-small" color="accent" variant="flat" class="px-2 py-0 font-weight-bold text-caption rounded-pill" style="height: 18px;">채널 작성자</v-chip>
                             <span class="text-grey-darken-1 text-caption ml-1">{{ reply.publishedAt }}</span>
                           </div>
                           <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="reply.text"></p>
@@ -1388,18 +1381,18 @@
             </div>
           </div>
 
-          <div class="related-videos-section pa-3 position-relative">
+          <div class="related-videos-section pa-4 position-relative">
             <div class="text-subtitle-2 font-weight-bold text-white mb-3 d-flex align-center">
-              <v-icon icon="mdi-playlist-play" class="mr-1 text-accent" size="20"></v-icon>
+              <v-icon icon="mdi-playlist-play" class="mr-2 text-accent" size="22"></v-icon>
               관련 영상 (비슷한 채널 및 추천)
             </div>
             <div v-if="relatedVideos.length === 0" class="text-grey-darken-1 text-caption text-center py-6">관련 영상이 없습니다.</div>
             <div ref="relatedScrollRef" class="related-scroll-area-long" @scroll="checkRelatedScroll">
-              <div v-for="video in relatedVideos" :key="video.id" class="related-video-item d-flex align-center mb-2 pa-2 rounded-lg cursor-pointer" @click="playVideo(video)">
-                <v-img :src="video.thumbnail" width="120" height="70" contain class="rounded-lg mr-3 flex-shrink-0 bg-black"></v-img>
+              <div v-for="video in relatedVideos" :key="video.id" class="related-video-item d-flex align-center mb-2.5 pa-2.5 rounded-xl cursor-pointer" @click="playVideo(video)">
+                <v-img :src="video.thumbnail" width="130" height="74" cover class="rounded-xl mr-3 flex-shrink-0 bg-black"></v-img>
                 <div class="overflow-hidden flex-grow-1">
-                  <h4 class="text-white text-caption font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
-                  <p class="text-grey-darken-1 text-caption mb-0">{{ video.creatorName }} <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span></p>
+                  <h4 class="text-white text-caption text-md-body-2 font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
+                  <p class="text-grey-darken-1 text-caption mb-0">{{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span></p>
                 </div>
               </div>
             </div>
@@ -1425,7 +1418,7 @@ const isFavoriteVideosMode = ref(false)
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
 const isMusicMode = ref(false)
-const isAlgorithmMode = ref(false) // 💡 알고리즘 탭 상태 변수
+const isAlgorithmMode = ref(false)
 const isLoading = ref(false)
 
 const creatorFileInput = ref(null)
@@ -1439,7 +1432,7 @@ const videos = ref([])
 const trendingVideos = ref([])
 const searchResultVideos = ref([])
 const musicVideos = ref([])
-const algorithmVideos = ref([]) // 💡 알고리즘 추천 영상 리스트
+const algorithmVideos = ref([])
 const historyList = ref([])
 
 const musicCategory = ref('top')
@@ -1546,20 +1539,25 @@ const relatedScrollRef = ref(null)
 const showMainScrollTop = ref(false)
 const showModalScrollTop = ref(false)
 
+let scrollTimeout = null
 const checkMainScroll = (e) => {
-  const target = e.target
-  showMainScrollTop.value = target.scrollTop > 100
+  if (scrollTimeout) return
+  scrollTimeout = setTimeout(() => {
+    const target = e.target
+    showMainScrollTop.value = target.scrollTop > 100
 
-  const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
-  if (bottomReached && !isLoading.value) {
-    if (isTrendingMode.value && trendingNextPageToken.value) {
-      loadMoreTrendingVideos()
-    } else if (isSearchMode.value && searchNextPageToken.value) {
-      loadMoreSearchVideos()
-    } else if (selectedCreator.value) {
-      loadMoreChannelVideos(selectedCreator.value)
+    const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
+    if (bottomReached && !isLoading.value) {
+      if (isTrendingMode.value && trendingNextPageToken.value) {
+        loadMoreTrendingVideos()
+      } else if (isSearchMode.value && searchNextPageToken.value) {
+        loadMoreSearchVideos()
+      } else if (selectedCreator.value) {
+        loadMoreChannelVideos(selectedCreator.value)
+      }
     }
-  }
+    scrollTimeout = null
+  }, 100) // 0.1초 간격으로 최적화
 }
 
 const checkModalScroll = (e) => {
@@ -3255,61 +3253,67 @@ const fetchTrendingVideos = async () => {
   }
 }
 
-// 💡 토큰(쿼터)을 극도로 아끼는 알고리즘 추천 가져오기 함수 (playlistItems 활용: 단 2쿼터 소모)
 const fetchAlgorithmVideos = async () => {
   if (API_KEYS.length === 0) return
   isLoading.value = true
 
   try {
-    let targetCreator = null
+    // 1. 구독 중인 크리에이터 중 무작위로 채널을 선택해 해당 컨셉/이름을 검색 키워드로 활용
+    let query = '추천 컨텐츠'
     if (creators.value.length > 0) {
       const randomIndex = Math.floor(Math.random() * creators.value.length)
-      targetCreator = creators.value[randomIndex]
+      query = creators.value[randomIndex].name
     }
 
-    if (targetCreator) {
-      const channelData = await fetchWithKeyRotation((key) => 
-        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${targetCreator.id}&key=${key}`
-      )
-      if (channelData.items && channelData.items.length > 0) {
-        const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
-        const data = await fetchWithKeyRotation((key) => 
-          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&key=${key}`
-        )
-        if (data.items) {
-          const db = await openDB()
-          const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
-          const parsed = data.items.map(item => {
-            const snippet = item.snippet
-            const videoId = snippet.resourceId?.videoId || snippet.resourceId
-            const title = snippet.title.toLowerCase()
-            const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-            return {
-              id: videoId,
-              youtubeId: videoId,
-              creatorId: snippet.channelId,
-              creatorName: snippet.channelTitle,
-              creatorSubCount: targetCreator.subCount || '',
-              title: snippet.title,
-              thumbnail: thumbUrl,
-              isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
-              isFavorite: existingMap.get(videoId) || false,
-              views: snippet.publishedAt.substring(0, 10),
-              publishedAt: snippet.publishedAt,
-              duration: 0,
-              progressPercent: 0,
-              currentTime: 0,
-              historyUpdatedAt: null
-            }
-          })
-          await fetchAndUpdateVideoDurations(parsed)
-          algorithmVideos.value = parsed
-        }
-      }
-    } else {
+    // 2. 채널 업로드 목록 대신 검색 API(search)를 사용하여 유사한 컨셉의 영상을 탐색
+    const data = await fetchWithKeyRotation((key) => 
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=30&q=${encodeURIComponent(query)}&type=video&key=${key}`
+    )
+
+    if (data.error || !data.items) {
       await fetchTrendingVideos()
       algorithmVideos.value = trendingVideos.value
+      return
     }
+
+    // 3. 이미 구독 중인 크리에이터의 ID 목록 추출
+    const subscribedCreatorIds = new Set(creators.value.map(c => c.id))
+    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
+    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+
+    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+    // 4. 검색 결과 중 '구독 중이지 않은 채널'의 영상만 필터링하여 가져오기
+    const parsed = data.items
+      .filter(item => item.id?.videoId && !subscribedCreatorIds.has(item.snippet.channelId))
+      .map(item => {
+        const snippet = item.snippet
+        const videoId = item.id.videoId
+        const title = snippet.title.toLowerCase()
+        const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+        const channelId = snippet.channelId
+
+        return {
+          id: videoId,
+          youtubeId: videoId,
+          creatorId: channelId,
+          creatorName: snippet.channelTitle,
+          creatorSubCount: subCountMap.get(channelId) || '',
+          title: snippet.title,
+          thumbnail: thumbUrl,
+          isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+          isFavorite: existingMap.get(videoId) || false,
+          views: snippet.publishedAt.substring(0, 10),
+          publishedAt: snippet.publishedAt,
+          duration: 0,
+          progressPercent: 0,
+          currentTime: 0,
+          historyUpdatedAt: null
+        }
+      })
+
+    await fetchAndUpdateVideoDurations(parsed)
+    algorithmVideos.value = parsed
   } catch (error) {
     console.error('알고리즘 추천 로드 실패:', error)
   } finally {
@@ -4163,6 +4167,7 @@ const normalVideos = computed(() => displayedVideos.value.filter(v => !v.isShort
 </script>
 
 <style>
+/* 최신 모바일 및 PC 반응형 레이아웃 정밀 튜닝 */
 html, body {
   overflow-x: hidden !important;
   width: 100%;
@@ -4170,6 +4175,7 @@ html, body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  background-color: #06070a;
 }
 
 .neon-youtube-app {
@@ -4179,131 +4185,151 @@ html, body {
   position: relative;
   overflow-x: hidden !important;
   width: 100%;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.max-container-width {
+  max-width: 1600px !important;
+  margin: 0 auto;
 }
 
 .bg-blob {
   position: absolute;
-  width: 350px;
-  height: 350px;
+  width: 450px;
+  height: 450px;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(100px);
   z-index: 0;
-  opacity: 0.15;
+  opacity: 0.12;
   pointer-events: none;
 }
-.blob-1 { top: -100px; left: -100px; background: #7928ca; }
-.blob-2 { bottom: -100px; right: -100px; background: #0070f3; }
+.blob-1 { top: -150px; left: -150px; background: #7928ca; }
+.blob-2 { bottom: -150px; right: -150px; background: #0070f3; }
 
 .glass-app-bar, .glass-sidebar, .glass-card, .glass-banner, .glass-chip, .glass-modal, .bg-glass-bar {
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.035) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 .text-accent { color: #a78bfa !important; }
-.icon-tab-group { background: rgba(0, 0, 0, 0.4) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.icon-tab-group { background: rgba(0, 0, 0, 0.45) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
 .search-bar { max-width: 100%; }
-.search-bar .v-field { border-radius: 30px !important; background: rgba(0, 0, 0, 0.3) !important; color: white !important; font-size: 13px !important; }
+.search-bar .v-field { border-radius: 32px !important; background: rgba(0, 0, 0, 0.35) !important; color: white !important; font-size: 14px !important; }
 
-.video-checkbox-wrapper { position: absolute; top: 6px; right: 6px; z-index: 4; }
-.bg-dark-glass { background: rgba(0, 0, 0, 0.6) !important; backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.2); }
-.jump-box-container { background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.video-checkbox-wrapper { position: absolute; top: 8px; right: 8px; z-index: 4; }
+.bg-dark-glass { background: rgba(0, 0, 0, 0.65) !important; backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, 0.2); }
+.jump-box-container { background: rgba(0, 0, 0, 0.55) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
 
-.custom-jump-input { width: 38px !important; }
-.custom-jump-input .v-field { background: rgba(0, 0, 0, 0.6) !important; border-radius: 6px !important; color: white !important; height: 28px !important; padding: 0 2px !important; }
-.custom-jump-input .v-field__input { padding: 0 !important; min-height: 28px !important; height: 28px !important; line-height: 28px !important; font-size: 11px !important; text-align: center !important; }
+.custom-jump-input { width: 42px !important; }
+.custom-jump-input .v-field { background: rgba(0, 0, 0, 0.6) !important; border-radius: 8px !important; color: white !important; height: 30px !important; padding: 0 2px !important; }
+.custom-jump-input .v-field__input { padding: 0 !important; min-height: 30px !important; height: 30px !important; line-height: 30px !important; font-size: 12px !important; text-align: center !important; }
 
-.custom-list-item { border-radius: 12px !important; margin-bottom: 4px; transition: all 0.3s ease; }
-.custom-list-item:hover { background: rgba(255, 255, 255, 0.07) !important; }
-.neon-active { background: linear-gradient(135deg, rgba(121, 40, 202, 0.4), rgba(0, 112, 243, 0.4)) !important; border: 1px solid rgba(167, 139, 250, 0.3) !important; }
+.custom-list-item { border-radius: 14px !important; margin-bottom: 6px; transition: all 0.3s ease; }
+.custom-list-item:hover { background: rgba(255, 255, 255, 0.08) !important; }
+.neon-active { background: linear-gradient(135deg, rgba(121, 40, 202, 0.45), rgba(0, 112, 243, 0.45)) !important; border: 1px solid rgba(167, 139, 250, 0.35) !important; }
 
-.glass-card { transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
-.glass-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(121, 40, 202, 0.3) !important; border-color: rgba(167, 139, 250, 0.4) !important; }
+.glass-card { 
+  transition: transform 0.3s cubic-bezier(0.1, 0.7, 0.1, 1), box-shadow 0.3s ease; 
+  cursor: pointer;
+  will-change: transform;
+  transform: translateZ(0); /* GPU 가속 활성화 */
+}
+.glass-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(121, 40, 202, 0.25) !important; border-color: rgba(167, 139, 250, 0.45) !important; }
 
 .playlist-list-item { transition: background 0.2s ease; cursor: pointer; }
-.playlist-list-item:hover { background: rgba(255, 255, 255, 0.07) !important; }
-.video-duration-badge-small { position: absolute; bottom: 2px; right: 2px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 1px 3px; border-radius: 3px; font-size: 9px; font-weight: bold; z-index: 2; }
+.playlist-list-item:hover { background: rgba(255, 255, 255, 0.08) !important; }
+.video-duration-badge-small { position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.85); color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 2; }
 
-.video-thumb-img { height: 110px !important; }
-@media (min-width: 600px) { .video-thumb-img { height: 150px !important; } }
+.video-thumbnail-wrapper {
+  position: relative;
+  background: #000;
+  aspect-ratio: 16 / 9; /* 유튜브와 동일한 16:9 비율 강제 고정 */
+  width: 100%;
+  overflow: hidden;
+}
 
-.shorts-horizontal-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; }
-.shorts-horizontal-scroll::-webkit-scrollbar { height: 5px; }
-.shorts-horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+.video-thumb-img {
+  height: 100% !important;
+  width: 100% !important;
+}
 
-.shorts-card { width: 130px; min-width: 130px; }
-@media (min-width: 600px) { .shorts-card { width: 160px; min-width: 160px; } }
+.shorts-horizontal-scroll { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
+.shorts-horizontal-scroll::-webkit-scrollbar { height: 6px; }
+.shorts-horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
-.shorts-badge { position: absolute; top: 6px; left: 6px; background: rgba(255, 0, 0, 0.8); color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; }
-.video-progress-bar-container { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background-color: rgba(255, 255, 255, 0.3); z-index: 3; }
+.shorts-card { width: 140px; min-width: 140px; }
+@media (min-width: 600px) { .shorts-card { width: 180px; min-width: 180px; } }
+
+.shorts-badge { position: absolute; top: 8px; left: 8px; background: rgba(255, 0, 0, 0.85); color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+.video-progress-bar-container { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background-color: rgba(255, 255, 255, 0.3); z-index: 3; }
 .video-progress-bar-fill { height: 100%; background-color: #ff0000; transition: width 0.3s ease; }
 
-.play-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+.play-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.45); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
 .video-thumbnail-wrapper:hover .play-overlay, .shorts-thumbnail-wrapper:hover .play-overlay { opacity: 1; }
 
-.video-duration-badge-left { position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 1px 5px; border-radius: 4px; font-size: 11px; font-weight: bold; z-index: 2; letter-spacing: 0.5px; }
-.safe-player-dialog { margin: 4px !important; max-height: 98vh !important; }
+.video-duration-badge-left { position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.85); color: #fff; padding: 2px 6px; border-radius: 6px; font-size: 12px; font-weight: bold; z-index: 2; letter-spacing: 0.5px; }
+.safe-player-dialog { margin: 8px !important; max-height: 96vh !important; }
 @media (max-width: 600px) { .safe-player-dialog { margin: 0 !important; max-height: 100vh !important; } }
 
-.main-content { overflow-y: auto !important; max-height: calc(100vh - 64px); }
-.loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
-.loading-card { border: 1px solid rgba(167, 139, 250, 0.3) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important; min-width: 220px; text-align: center; }
+.main-content { overflow-y: auto !important; max-height: calc(100vh - 68px); }
+.loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
+.loading-card { border: 1px solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
 
-.modal-vertical-container { max-height: calc(88vh - 40px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; }
-.modal-vertical-container::-webkit-scrollbar { width: 6px; }
-.modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+.modal-vertical-container { max-height: calc(88vh - 40px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
+.modal-vertical-container::-webkit-scrollbar { width: 8px; }
+.modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
-.video-container { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 160px; background: #000000; overflow: hidden; flex-shrink: 0; transition: all 0.3s ease; }
-.video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 280px; }
+.video-container { position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 180px; background: #000000; overflow: hidden; flex-shrink: 0; transition: all 0.3s ease; }
+.video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 320px; }
 .video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
 
-.radio-placeholder-card { background: rgba(121, 40, 202, 0.15); border-bottom: 1px solid rgba(167, 139, 250, 0.3); }
+.radio-placeholder-card { background: rgba(121, 40, 202, 0.18); border-bottom: 1px solid rgba(167, 139, 250, 0.35); }
 .pulse-icon { animation: pulse 2s infinite; }
 @keyframes pulse {
   0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.15); opacity: 0.7; }
+  50% { transform: scale(1.18); opacity: 0.75; }
   100% { transform: scale(1); opacity: 1; }
 }
 
 .youtube-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; display: block; }
 
-.comments-scroll-area { max-height: 450px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; padding-right: 24px; }
-.related-scroll-area-long { max-height: 230px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; padding-right: 24px; }
+.comments-scroll-area { max-height: 480px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; padding-right: 16px; }
+.related-scroll-area-long { max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; padding-right: 16px; }
 
-.comments-scroll-area::-webkit-scrollbar, .related-scroll-area-long::-webkit-scrollbar { width: 4px; }
-.comments-scroll-area::-webkit-scrollbar-thumb, .related-scroll-area-long::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
-
-.scroll-top-fab, .modal-scroll-top-fab { position: absolute; bottom: 12px; right: 12px; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; }
-.modal-scroll-top-fab { position: sticky; float: right; margin-right: 20px; margin-bottom: 20px; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important; }
+.comments-scroll-area::-webkit-scrollbar, .related-scroll-area-long::-webkit-scrollbar { width: 6px; }
+.comments-scroll-area::-webkit-scrollbar-thumb, .related-scroll-area-long::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
 .main-scroll-top-fab {
   position: fixed !important; 
-  bottom: 75px !important;    
-  right: 28px !important;     
+  bottom: 85px !important;    
+  right: 32px !important;     
   z-index: 99 !important;     
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7) !important; 
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8) !important; 
 }
 
-.mobile-tight-header { min-height: 36px !important; }
-.border-top-glass { border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.15); }
-.border-bottom-glass { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-.border-left-glass { border-left: 2px solid rgba(167, 139, 250, 0.3); }
+.mobile-tight-header { min-height: 42px !important; }
+.border-top-glass { border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.2); }
+.border-bottom-glass { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.border-left-glass { border-left: 2px solid rgba(167, 139, 250, 0.35); }
 
 .related-video-item, .comment-item { transition: background 0.2s ease; }
-.related-video-item:hover { background: rgba(255, 255, 255, 0.07); }
+.related-video-item:hover { background: rgba(255, 255, 255, 0.08); }
 
 .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.play-btn-circle { width: 52px; height: 52px; border-radius: 50%; background: rgba(167, 139, 250, 1); display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); transition: transform 0.2s ease, background-color 0.2s ease; }
-.play-btn-circle:hover { transform: scale(1.1); background: #7c3aed; }
-.shorts-play-btn { width: 40px; height: 40px; }
+.play-btn-circle { width: 56px; height: 56px; border-radius: 50%; background: rgba(167, 139, 250, 1); display: flex; justify-content: center; align-items: center; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); transition: transform 0.2s ease, background-color 0.2s ease; }
+.play-btn-circle:hover { transform: scale(1.12); background: #7c3aed; }
+.shorts-play-btn { width: 44px; height: 44px; }
 
 .comment-text-content a { color: #a78bfa !important; text-decoration: underline !important; font-weight: 500; }
-.creator-author-badge { background: rgba(167, 139, 250, 0.25); color: #c4b5fd !important; padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(167, 139, 250, 0.35); }
+.creator-author-badge { background: rgba(167, 139, 250, 0.28); color: #c4b5fd !important; padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.4); }
 .v-checkbox .v-selection-control__label,
 .v-selection-control__wrapper + .v-label {
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   font-weight: 400 !important;
   color: #ffffff !important;
 }
+
 </style>
