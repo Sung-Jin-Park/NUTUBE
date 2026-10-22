@@ -2523,9 +2523,7 @@ const playQueueIndex = async (idx) => {
       }
       startHistoryTracker()
 
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.playbackState = 'playing'
-      }
+      
     } catch (e) {
       initYouTubePlayer(video.youtubeId, startSec)
     }
@@ -2540,9 +2538,7 @@ const playNextInQueue = async () => {
   if (playlistIndex.value < playlistQueue.value.length - 1) {
     await playQueueIndex(playlistIndex.value + 1)
     
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = 'playing'
-    }
+    
   }
 }
 
@@ -2550,9 +2546,7 @@ const playPreviousInQueue = async () => {
   if (playlistIndex.value > 0) {
     await playQueueIndex(playlistIndex.value - 1)
     
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = 'playing'
-    }
+    
   }
 }
 
@@ -2645,14 +2639,10 @@ const initYouTubePlayer = (youtubeId, startTime) => {
             event.target.setPlaybackQuality('tiny')
           }
           startHistoryTracker()
-          if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'playing'
-          }
+          
         },
         onStateChange: async (event) => {
-          if (event.data === 1 && 'mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'playing'
-          }
+          
 
           if (event.data === 0) {
             if (isLoopMode.value) {
@@ -4113,11 +4103,7 @@ const handleVisibilityChange = () => {
         console.debug(e)
       }
     }
-  } else {
-    if ('mediaSession' in navigator && ytPlayer.value) {
-      navigator.mediaSession.playbackState = 'playing'
-    }
-  }
+  } 
 }
 
 const handleTimePaste = (event) => {
