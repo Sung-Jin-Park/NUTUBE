@@ -2425,12 +2425,21 @@ const playQueueIndex = async (idx) => {
 const playNextInQueue = async () => {
   if (playlistIndex.value < playlistQueue.value.length - 1) {
     await playQueueIndex(playlistIndex.value + 1)
+    
+    // 💡 브레이브/모바일 백그라운드 연속 재생 시 오디오 포커스 유지 보완
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing'
+    }
   }
 }
 
 const playPreviousInQueue = async () => {
   if (playlistIndex.value > 0) {
     await playQueueIndex(playlistIndex.value - 1)
+    
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing'
+    }
   }
 }
 
@@ -2557,6 +2566,11 @@ const initYouTubePlayer = (youtubeId, startTime) => {
           }
         },
         onStateChange: async (event) => {
+          // 💡 재생 중 상태일 때 mediaSession을 playing으로 확실히 고정
+          if (event.data === 1 && 'mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing'
+          }
+
           if (event.data === 0) {
             if (activeVideo.value) {
               try {
@@ -3368,11 +3382,27 @@ const loadMoreChannelVideos = async (creator) => {
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
+// [수정 후] 검색 버튼 클릭 시 모든 구독자 최신 영상 업데이트 속도 단축 버전
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
 
   if (isPlaylistMode.value || isHistoryMode.value) {
     activeFilterQuery.value = query
+    return
+  }
+
+  // 💡 [추가] 전체 구독 피드 모드에서 검색어 없이 돋보기(업데이트)를 누른 경우
+  if (!query && currentTab.value === 'discoverAll' && !selectedCreator.value && creators.value.length > 0) {
+    activeFilterQuery.value = ''
+    isLoading.value = true
+    
+    // 전체 화면 로딩 대신 가볍게 백그라운드에서 최신 영상 병렬 업데이트 실행
+    fetchChannelVideosParallel(creators.value).then(async () => {
+      await loadDataFromDB()
+      isLoading.value = false
+    }).catch(() => {
+      isLoading.value = false
+    })
     return
   }
 
@@ -3400,21 +3430,22 @@ const triggerTabSearchOrUpdate = async () => {
 
     if (currentTab.value === 'discoverHeart' && !selectedCreator.value && !query) {
       const heartCreators = creators.value.filter(c => c.isFavorite)
-      if (heartCreators.length > 0) {
-        await fetchChannelVideosParallel(heartCreators)
-      } else {
-        await fetchChannelVideosParallel(creators.value)
-      }
-      await loadDataFromDB()
+      const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
+      
       activeFilterQuery.value = ''
+      isLoading.value = true
+
+      // 하트 피드 모드 역시 백그라운드 병렬 업데이트로 전환하여 속도 단축
+      fetchChannelVideosParallel(targetCreators).then(async () => {
+        await loadDataFromDB()
+        isLoading.value = false
+      }).catch(() => {
+        isLoading.value = false
+      })
       return
     }
 
     activeFilterQuery.value = query
-    if (!query && currentTab.value === 'discoverAll' && !selectedCreator.value && creators.value.length > 0) {
-      await fetchChannelVideosParallel(creators.value)
-      await loadDataFromDB()
-    }
   } finally {
     isLoading.value = false
   }
@@ -3818,6 +3849,11 @@ const handleVisibilityChange = () => {
       } catch (e) {
         console.debug(e)
       }
+    }
+  }else {
+    // 💡 화면이 꺼지거나 백그라운드로 진입할 때 미디어 세션이 끊기는 것 방지
+    if ('mediaSession' in navigator && ytPlayer.value) {
+      navigator.mediaSession.playbackState = 'playing'
     }
   }
 }
