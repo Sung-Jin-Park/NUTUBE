@@ -23,7 +23,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 전체 피드 내 검색어 입력 후 엔터...'))))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isAlgorithmMode ? '알고리즘 추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 전체 피д 내 검색어 입력 후 엔터...')))))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1"
         hide-details
@@ -107,6 +107,15 @@
               class="text-white flex-shrink-0"
               title="구독 피드 모음"
               @click="selectDiscoverHeart"
+            ></v-btn>
+            <v-btn
+              icon="mdi-brain"
+              size="small"
+              variant="flat"
+              :color="isAlgorithmMode ? 'deep-purple-darken-2' : 'transparent'"
+              class="text-white flex-shrink-0"
+              title="알고리즘 추천 탭"
+              @click="enableAlgorithmMode"
             ></v-btn>
             <v-btn
               icon="mdi-heart-multiple"
@@ -197,6 +206,15 @@
           class="mb-2 custom-list-item"
           :class="{ 'neon-active': currentTab === 'discoverHeart' && !selectedCreator }"
           @click="selectDiscoverHeart"
+        ></v-list-item>
+
+        <v-list-item 
+          prepend-icon="mdi-brain" 
+          title="알고리즘 추천 피드" 
+          value="algorithmMode" 
+          class="mb-2 custom-list-item"
+          :class="{ 'neon-active': isAlgorithmMode }"
+          @click="enableAlgorithmMode"
         ></v-list-item>
 
         <v-list-item 
@@ -325,6 +343,18 @@
                 {{ getHeaderTitle }} <span v-if="selectedVideoIds.length > 0" class="text-accent text-subtitle-2">({{ selectedVideoIds.length }}개 선택됨)</span>
               </h1>
             </div>
+            <!-- 알고리즘 새로고침 버튼 -->
+            <v-btn
+              v-if="isAlgorithmMode"
+              size="small"
+              variant="flat"
+              color="deep-purple-darken-2"
+              prepend-icon="mdi-refresh"
+              class="text-white font-weight-bold"
+              @click="fetchAlgorithmVideos"
+            >
+              추천 새로고침
+            </v-btn>
           </div>
         </v-card>
 
@@ -408,7 +438,7 @@
                 <div class="overflow-hidden flex-grow-1">
                   <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                    {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                    {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                   </p>
                 </div>
               </div>
@@ -627,7 +657,7 @@
                 <div class="overflow-hidden flex-grow-1">
                   <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                    {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                    {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                   </p>
                 </div>
               </div>
@@ -678,7 +708,7 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))) }}
+                {{ isAlgorithmMode ? '구독 중인 채널이 없습니다. 먼저 크리에이터를 구독해 주세요.' : (isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.')))) }}
               </p>
             </v-col>
           </v-row>
@@ -706,7 +736,7 @@
                     <h3 class="text-white font-weight-bold text-caption text-md-subtitle-2 text-truncate mb-1" v-html="video.title"></h3>
                     <div class="d-flex align-center gap-2">
                       <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                        {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                        {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                       </p>
                       <span class="text-grey-darken-1 text-caption">• 시청일: {{ formatRelativeTime(video.historyUpdatedAt) }}</span>
                     </div>
@@ -770,7 +800,7 @@
                       <h3 class="text-white font-weight-bold text-caption text-truncate-2" v-html="video.title"></h3>
                       <div class="d-flex justify-space-between align-center mt-1">
                       <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                        {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                        {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                       </p>
                         <div class="d-flex align-center">
                           <v-btn
@@ -835,7 +865,7 @@
                           <div class="flex-grow-1 overflow-hidden">
                             <h3 class="text-white font-weight-bold text-caption text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
                             <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                              {{ video.creatorName }} <span v-if="video.creatorSubCount" class="text-accent text-caption">({{ video.creatorSubCount }})</span>
+                              {{ video.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                             </p>
                           </div>
                           <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
@@ -1030,6 +1060,19 @@
             <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
           </div>
           <div class="d-flex align-center flex-shrink-0">
+            <!-- 한 영상 반복 재생 토글 버튼 -->
+            <v-btn 
+              icon 
+              variant="text" 
+              size="small" 
+              :color="isLoopMode ? 'accent' : 'white'" 
+              class="mr-1" 
+              :title="isLoopMode ? '반복 재생 켜짐 (한 영상 무한 반복)' : '반복 재생 꺼짐'"
+              @click="toggleLoopMode"
+            >
+              <v-icon :icon="isLoopMode ? 'mdi-repeat-once' : 'mdi-repeat'" size="20"></v-icon>
+            </v-btn>
+
             <!-- 랜덤 재생 버튼 -->
             <v-btn icon="mdi-shuffle" variant="text" size="small" color="accent" class="mr-1" title="재생 리스트 무작위 섞기" @click="shufflePlaylistQueue"></v-btn>
             
@@ -1148,7 +1191,9 @@
                 </v-btn>
               </div>
               <div class="d-flex align-center gap-2 mt-1">
-                <p class="text-grey-lighten-1 text-caption mb-0">{{ activeVideo?.creatorName }}</p>
+                <p class="text-grey-lighten-1 text-caption mb-0">
+                  {{ activeVideo?.creatorName }} <span class="text-accent text-caption">({{ getCreatorSubCount(activeVideo?.creatorId, activeVideo) }})</span>
+                </p>
                 <div class="d-flex align-center gap-1">
                   <v-btn
                     size="x-small"
@@ -1182,17 +1227,12 @@
                   class="text-caption ma-0 pa-0 text-white"
                   @change="saveResumeSetting"
                 ></v-checkbox>
-                <!--
-                <p v-if="initialWatchedTime > 5 && enableResume" class="text-accent text-caption mt-0 mb-0">
-                  ⚡ 이전 시청 기록({{ formatTime(initialWatchedTime) }})에서 이어서 재생됩니다.
-                </p> -->
               </div>
             </div>
             
             <div class="d-flex align-center jump-box-container pa-1 px-2 rounded-lg">
               <span class="text-caption text-grey-lighten-1 mr-1 flex-shrink-0">시간 제어:</span>
               <div class="d-flex align-center mr-1">
-                <!-- 💡 @paste 이벤트 추가 -->
                 <v-text-field 
                   v-model.number="jumpMinutes" 
                   type="number" 
@@ -1305,7 +1345,7 @@
                     </div>
                   </div>
 
-                  <!-- 대댓글 표시 영역: 체크박스가 켜져 있거나, 해당 댓글의 '답글 X개' 버튼을 눌렀을 때 표시 -->
+                  <!-- 대댓글 표시 영역 -->
                   <div v-if="showReplies || activeExpandedCommentId === comment.id" class="ml-8 mt-2 pl-3 border-left-glass">
                     <div v-if="isLoadingReplies && activeExpandedCommentId === comment.id" class="text-center py-2">
                       <v-progress-circular indeterminate color="accent" size="18" width="2"></v-progress-circular>
@@ -1359,7 +1399,7 @@
                 <v-img :src="video.thumbnail" width="120" height="70" contain class="rounded-lg mr-3 flex-shrink-0 bg-black"></v-img>
                 <div class="overflow-hidden flex-grow-1">
                   <h4 class="text-white text-caption font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
-                  <p class="text-grey-darken-1 text-caption mb-0">{{ video.creatorName }}</p>
+                  <p class="text-grey-darken-1 text-caption mb-0">{{ video.creatorName }} <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span></p>
                 </div>
               </div>
             </div>
@@ -1375,7 +1415,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue'
 
 const drawer = ref(false)
 const searchQuery = ref('')
-const activeFilterQuery = ref('') // 엔터 입력 시에만 확정되는 실제 필터 검색어
+const activeFilterQuery = ref('') 
 const lastSearchQuery = ref('') 
 const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
@@ -1385,6 +1425,7 @@ const isFavoriteVideosMode = ref(false)
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
 const isMusicMode = ref(false)
+const isAlgorithmMode = ref(false) // 💡 알고리즘 탭 상태 변수
 const isLoading = ref(false)
 
 const creatorFileInput = ref(null)
@@ -1398,6 +1439,7 @@ const videos = ref([])
 const trendingVideos = ref([])
 const searchResultVideos = ref([])
 const musicVideos = ref([])
+const algorithmVideos = ref([]) // 💡 알고리즘 추천 영상 리스트
 const historyList = ref([])
 
 const musicCategory = ref('top')
@@ -1467,6 +1509,11 @@ const saveResumeSetting = () => {
 
 const isLandscapeMode = ref(false)
 const isAudioOnlyMode = ref(false) 
+const isLoopMode = ref(false)
+
+const toggleLoopMode = () => {
+  isLoopMode.value = !isLoopMode.value
+}
 
 const sleepTimerSecondsLeft = ref(0)
 const customSleepMinutes = ref(null)
@@ -1705,6 +1752,46 @@ const fetchWithKeyRotation = async (urlBuilder) => {
   throw new Error('모든 YouTube API 키의 일일 할당량이 소진되었습니다.')
 }
 
+const getCreatorSubCount = (creatorId, video) => {
+  if (video && video.creatorSubCount) {
+    return video.creatorSubCount
+  }
+  const foundCreator = creators.value.find(c => c.id === creatorId)
+  if (foundCreator && foundCreator.subCount) {
+    return foundCreator.subCount
+  }
+  return '정보 없음'
+}
+
+const fetchSubscriberCountsForChannelIds = async (channelIds) => {
+  const uniqueIds = [...new Set(channelIds.filter(Boolean))]
+  if (uniqueIds.length === 0 || API_KEYS.length === 0) return new Map()
+  
+  const subCountMap = new Map()
+  for (let i = 0; i < uniqueIds.length; i += 50) {
+    const chunk = uniqueIds.slice(i, i + 50).join(',')
+    try {
+      const data = await fetchWithKeyRotation((key) => 
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${chunk}&key=${key}`
+      )
+      if (data.items) {
+        data.items.forEach(ch => {
+          const rawCount = parseInt(ch.statistics?.subscriberCount || 0, 10)
+          const formatted = rawCount >= 10000 
+            ? (rawCount / 10000).toFixed(1) + '만명' 
+            : rawCount >= 1000 
+              ? (rawCount / 1000).toFixed(1) + '천명' 
+              : rawCount + '명'
+          subCountMap.set(ch.id, formatted)
+        })
+      }
+    } catch (err) {
+      console.error('채널 구독자 수 일괄 조회 실패:', err)
+    }
+  }
+  return subCountMap
+}
+
 const parseISO8601Duration = (durationStr) => {
   if (!durationStr) return 0
   const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
@@ -1743,6 +1830,25 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
   const missingIds = itemVideoIds.filter(id => !existingVideoIds.has(id))
 
   if (missingIds.length > 0) {
+    const channelIdsSet = new Set()
+    for (let i = 0; i < missingIds.length; i += 50) {
+      const chunk = missingIds.slice(i, i + 50).join(',')
+      try {
+        const data = await fetchWithKeyRotation((key) => 
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${chunk}&key=${key}`
+        )
+        if (data.items) {
+          data.items.forEach(item => {
+            if (item.snippet?.channelId) channelIdsSet.add(item.snippet.channelId)
+          })
+        }
+      } catch (err) {
+        console.error('누락된 영상 정보 조회 실패:', err)
+      }
+    }
+
+    const subCountMap = await fetchSubscriberCountsForChannelIds([...channelIdsSet])
+
     for (let i = 0; i < missingIds.length; i += 50) {
       const chunk = missingIds.slice(i, i + 50).join(',')
       try {
@@ -1759,12 +1865,16 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
             const title = snippet.title.toLowerCase()
             const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
             const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+            const channelId = snippet.channelId
+            const matchedCreator = creators.value.find(c => c.id === channelId)
+            const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
 
             const parsed = {
               id: videoId,
               youtubeId: videoId,
-              creatorId: snippet.channelId,
+              creatorId: channelId,
               creatorName: snippet.channelTitle,
+              creatorSubCount: subCount,
               title: snippet.title,
               thumbnail: thumbUrl,
               isShorts: isShorts,
@@ -1783,7 +1893,7 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
           })
         }
       } catch (err) {
-        console.error('누락된 영상 정보 조회 실패:', err)
+        console.error('누락된 영상 저장 실패:', err)
       }
     }
   }
@@ -2249,7 +2359,8 @@ const confirmSaveToPlaylists = async () => {
     ...videos.value,
     ...searchResultVideos.value,
     ...musicVideos.value,
-    ...trendingVideos.value
+    ...trendingVideos.value,
+    ...algorithmVideos.value
   ]
 
   const videoTx = db.transaction('videos', 'readwrite')
@@ -2399,9 +2510,7 @@ const playQueueIndex = async (idx) => {
 
   fetchComments(video.youtubeId)
   
-  // 💡 핵심: 모달창 DOM 및 iframe 영역이 완전히 렌더링되도록 대기
   await nextTick()
-  // await new Promise(resolve => setTimeout(resolve, 50))
 
   const startSec = enableResume.value ? initialWatchedTime.value : 0
   
@@ -2430,7 +2539,6 @@ const playNextInQueue = async () => {
   if (playlistIndex.value < playlistQueue.value.length - 1) {
     await playQueueIndex(playlistIndex.value + 1)
     
-    // 💡 브레이브/모바일 백그라운드 연속 재생 시 오디오 포커스 유지 보완
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'playing'
     }
@@ -2455,7 +2563,6 @@ const toggleCommentsView = () => {
 }
 
 const closePlayer = () => {
-  // ⚡ 최적화: 무거운 DB 저장 및 타이머 정지를 백그라운드로 넘기거나 즉시 처리 후 UI를 바로 닫음
   stopHistoryTracker()
   
   if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
@@ -2467,10 +2574,7 @@ const closePlayer = () => {
   }
   ytPlayer.value = null
   
-  // 💡 팝업 상태를 지연 없이 즉시 false로 변경하여 버벅임/딜레이 제거
   isPlayerOpen.value = false
-
-  // 비동기 시청 기록 저장은 팝업을 닫은 직후 백그라운드에서 안전하게 실행
   saveCurrentHistoryToDB()
 
   if (!isPopStateTriggered) window.history.back()
@@ -2480,29 +2584,6 @@ const closePlayer = () => {
     navigator.mediaSession.playbackState = 'none'
   }
 }
-
-// const closePlayer = () => {
-//   saveCurrentHistoryToDB()
-//   stopHistoryTracker()
-  
-//   if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
-//     try { 
-//       ytPlayer.value.destroy()
-//     } catch (e) { 
-//       console.debug(e) 
-//     }
-//   }
-//   ytPlayer.value = null
-  
-//   isPlayerOpen.value = false
-
-//   if (!isPopStateTriggered) window.history.back()
-//   isPopStateTriggered = false
-//   window.removeEventListener('popstate', handlePopState)
-//   if ('mediaSession' in navigator) {
-//     navigator.mediaSession.playbackState = 'none'
-//   }
-// }
 
 const onDialogModelUpdate = (val) => { if (!val) closePlayer() }
 
@@ -2542,13 +2623,11 @@ const initYouTubePlayer = (youtubeId, startTime) => {
     const playerDiv = document.getElementById('youtube-player-div')
     if (!playerDiv) return
 
-    // 기존 인스턴스가 존재하면 안전하게 파괴
     if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
       try { ytPlayer.value.destroy() } catch (err) { console.debug(err) }
       ytPlayer.value = null
     }
 
-    // 새 플레이어 인스턴스를 ytPlayer.value에 할당
     ytPlayer.value = new window.YT.Player('youtube-player-div', {
       videoId: youtubeId,
       playerVars: { 
@@ -2570,12 +2649,19 @@ const initYouTubePlayer = (youtubeId, startTime) => {
           }
         },
         onStateChange: async (event) => {
-          // 💡 재생 중 상태일 때 mediaSession을 playing으로 확실히 고정
           if (event.data === 1 && 'mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'playing'
           }
 
           if (event.data === 0) {
+            if (isLoopMode.value) {
+              if (ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
+                ytPlayer.value.seekTo(0, true)
+                ytPlayer.value.playVideo()
+              }
+              return
+            }
+
             if (activeVideo.value) {
               try {
                 const db = await openDB()
@@ -2627,12 +2713,12 @@ const startHistoryTracker = () => {
         const t = ytPlayer.value.getCurrentTime()
         const dur = ytPlayer.value.getDuration()
         if (t && t > 0 && dur && dur > 0) {
-          if (dur - t <= 1 && playlistIndex.value < playlistQueue.value.length - 1) {
+          if (!isLoopMode.value && dur - t <= 1 && playlistIndex.value < playlistQueue.value.length - 1) {
             await playNextInQueue()
             return
           }
 
-          if (dur - t <= 5) {
+          if (dur - t <= 5 && !isLoopMode.value) {
             currentPlayingTime = 0
             if (activeVideo.value) {
               const db = await openDB()
@@ -2710,8 +2796,6 @@ const cumulativeJump = (direction) => {
   if (ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') ytPlayer.value.seekTo(targetSeconds, true)
 }
 
-// const formatTime = (seconds) => `${Math.floor(seconds / 60)}분 ${seconds % 60}초`
-
 const formatRelativeTime = (dateString) => {
   if (!dateString) return ''
   const diffSec = Math.floor((new Date() - new Date(dateString)) / 1000)
@@ -2750,7 +2834,6 @@ const fetchOrToggleReplies = async (comment) => {
     activeExpandedCommentId.value = null
   } else {
     activeExpandedCommentId.value = comment.id
-    // ⚡ 수정: 체크 해제 상태에서도 답글 데이터가 없거나 로드되지 않았다면 API를 호출해 가져오도록 보완
     if (!comment.repliesLoaded || getRepliesForComment(comment.id).length === 0) {
       await fetchRepliesForComment(comment)
     }
@@ -2913,7 +2996,6 @@ const loadDataFromDB = async () => {
     db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
-  // 💡 기존에 저장된 크리에이터들의 구독자 수도 최신 상태로 동기화
   if (creators.value.length > 0 && API_KEYS.length > 0) {
     fetchChannelVideosParallel(creators.value)
   }
@@ -2971,7 +3053,6 @@ const toggleSubscribeFromCard = async (video) => {
     db.transaction('creators', 'readwrite').objectStore('creators').delete(targetCreator.id)
     if (selectedCreator.value?.id === targetCreator.id) selectDiscoverHeart()
   } else {
-    // 새로 구독 시 유튜브 API로 정확한 구독자 수 조회
     let realSubCount = '구독중'
     try {
       const channelData = await fetchWithKeyRotation((key) => 
@@ -3025,7 +3106,6 @@ const fetchChannelVideosParallel = async (targetCreators) => {
       const channelItem = channelData.items[0]
       const uploadsPlaylistId = channelItem.contentDetails.relatedPlaylists.uploads
       
-      // 실제 구독자 수 포맷팅 (예: 150000 -> 15만명)
       const rawSubCount = parseInt(channelItem.statistics?.subscriberCount || 0, 10)
       const formattedSubCount = rawSubCount >= 10000 
         ? (rawSubCount / 10000).toFixed(1) + '만명' 
@@ -3059,6 +3139,7 @@ const fetchChannelVideosParallel = async (targetCreators) => {
             youtubeId: videoId,
             creatorId: snippet.channelId,
             creatorName: snippet.channelTitle,
+            creatorSubCount: formattedSubCount,
             title: snippet.title,
             thumbnail: thumbUrl,
             isShorts: isShorts,
@@ -3112,6 +3193,9 @@ const fetchTrendingVideos = async () => {
 
     trendingNextPageToken.value = data.nextPageToken || null
 
+    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
+    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+
     const db = await openDB()
     const dbHistory = await new Promise((resolve) => {
       db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
@@ -3125,12 +3209,16 @@ const fetchTrendingVideos = async () => {
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+      const channelId = snippet.channelId
+      const matchedCreator = creators.value.find(c => c.id === channelId)
+      const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
 
       const parsed = {
         id: videoId,
         youtubeId: videoId,
-        creatorId: snippet.channelId,
+        creatorId: channelId,
         creatorName: snippet.channelTitle,
+        creatorSubCount: subCount,
         title: snippet.title,
         thumbnail: thumbUrl,
         isShorts,
@@ -3167,6 +3255,68 @@ const fetchTrendingVideos = async () => {
   }
 }
 
+// 💡 토큰(쿼터)을 극도로 아끼는 알고리즘 추천 가져오기 함수 (playlistItems 활용: 단 2쿼터 소모)
+const fetchAlgorithmVideos = async () => {
+  if (API_KEYS.length === 0) return
+  isLoading.value = true
+
+  try {
+    let targetCreator = null
+    if (creators.value.length > 0) {
+      const randomIndex = Math.floor(Math.random() * creators.value.length)
+      targetCreator = creators.value[randomIndex]
+    }
+
+    if (targetCreator) {
+      const channelData = await fetchWithKeyRotation((key) => 
+        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${targetCreator.id}&key=${key}`
+      )
+      if (channelData.items && channelData.items.length > 0) {
+        const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+        const data = await fetchWithKeyRotation((key) => 
+          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&key=${key}`
+        )
+        if (data.items) {
+          const db = await openDB()
+          const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+          const parsed = data.items.map(item => {
+            const snippet = item.snippet
+            const videoId = snippet.resourceId?.videoId || snippet.resourceId
+            const title = snippet.title.toLowerCase()
+            const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+            return {
+              id: videoId,
+              youtubeId: videoId,
+              creatorId: snippet.channelId,
+              creatorName: snippet.channelTitle,
+              creatorSubCount: targetCreator.subCount || '',
+              title: snippet.title,
+              thumbnail: thumbUrl,
+              isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+              isFavorite: existingMap.get(videoId) || false,
+              views: snippet.publishedAt.substring(0, 10),
+              publishedAt: snippet.publishedAt,
+              duration: 0,
+              progressPercent: 0,
+              currentTime: 0,
+              historyUpdatedAt: null
+            }
+          })
+          await fetchAndUpdateVideoDurations(parsed)
+          algorithmVideos.value = parsed
+        }
+      }
+    } else {
+      await fetchTrendingVideos()
+      algorithmVideos.value = trendingVideos.value
+    }
+  } catch (error) {
+    console.error('알고리즘 추천 로드 실패:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 const fetchMusicVideos = async (query = '인기 가요 믹스') => {
   if (API_KEYS.length === 0) return
   isLoading.value = true
@@ -3176,6 +3326,9 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
       `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&key=${key}`
     )
     if (data.error || !data.items) return
+
+    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
+    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
 
     const db = await openDB()
     const dbHistory = await new Promise((resolve) => {
@@ -3188,12 +3341,16 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
       const snippet = item.snippet
       const videoId = item.id.videoId
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+      const channelId = snippet.channelId
+      const matchedCreator = creators.value.find(c => c.id === channelId)
+      const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
 
       const parsed = {
         id: videoId,
         youtubeId: videoId,
-        creatorId: snippet.channelId,
+        creatorId: channelId,
         creatorName: snippet.channelTitle,
+        creatorSubCount: subCount,
         title: snippet.title,
         thumbnail: thumbUrl,
         isShorts: false,
@@ -3255,6 +3412,9 @@ const loadMoreTrendingVideos = async () => {
 
     trendingNextPageToken.value = data.nextPageToken || null
 
+    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
+    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+
     const db = await openDB()
     const dbHistory = await new Promise((resolve) => {
       db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
@@ -3268,12 +3428,16 @@ const loadMoreTrendingVideos = async () => {
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+      const channelId = snippet.channelId
+      const matchedCreator = creators.value.find(c => c.id === channelId)
+      const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
 
       const parsed = {
         id: videoId,
         youtubeId: videoId,
-        creatorId: snippet.channelId,
+        creatorId: channelId,
         creatorName: snippet.channelTitle,
+        creatorSubCount: subCount,
         title: snippet.title,
         thumbnail: thumbUrl,
         isShorts,
@@ -3350,6 +3514,7 @@ const loadMoreChannelVideos = async (creator) => {
         youtubeId: videoId,
         creatorId: snippet.channelId,
         creatorName: snippet.channelTitle,
+        creatorSubCount: creator.subCount,
         title: snippet.title,
         thumbnail: thumbUrl,
         isShorts,
@@ -3386,7 +3551,6 @@ const loadMoreChannelVideos = async (creator) => {
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
-// [수정 후] 검색 버튼 클릭 시 모든 구독자 최신 영상 업데이트 속도 단축 버전
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
 
@@ -3395,13 +3559,10 @@ const triggerTabSearchOrUpdate = async () => {
     return
   }
 
-  // 💡 [추가] 전체 구독 피드 모드에서 검색어 없이 돋보기(업데이트)를 누른 경우
   if (!query && currentTab.value === 'discoverAll' && !selectedCreator.value && creators.value.length > 0) {
     activeFilterQuery.value = ''
     isLoading.value = true
     
-    
-    // 전체 화면 로딩 대신 가볍게 백그라운드에서 최신 영상 병렬 업데이트 실행
     fetchChannelVideosParallel(creators.value).then(async () => {
       await loadDataFromDB()
       isLoading.value = false
@@ -3413,6 +3574,12 @@ const triggerTabSearchOrUpdate = async () => {
 
   isLoading.value = true
   try {
+    if (isAlgorithmMode.value) {
+      activeFilterQuery.value = query
+      await fetchAlgorithmVideos()
+      return
+    }
+
     if (isMusicMode.value) {
       activeFilterQuery.value = ''
       await fetchMusicVideos(query || '인기 가요 믹스')
@@ -3440,7 +3607,6 @@ const triggerTabSearchOrUpdate = async () => {
       activeFilterQuery.value = ''
       isLoading.value = true
 
-      // 하트 피드 모드 역시 백그라운드 병렬 업데이트로 전환하여 속도 단축
       fetchChannelVideosParallel(targetCreators).then(async () => {
         await loadDataFromDB()
         isLoading.value = false
@@ -3457,7 +3623,7 @@ const triggerTabSearchOrUpdate = async () => {
 }
 
 const handleSearch = async () => {
-  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || (currentTab.value === 'discoverHeart' && !searchQuery.value.trim())) {
+  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || (currentTab.value === 'discoverHeart' && !searchQuery.value.trim())) {
     await triggerTabSearchOrUpdate()
   } else {
     activeFilterQuery.value = searchQuery.value.trim()
@@ -3483,38 +3649,14 @@ const searchYouTubeVideos = async () => {
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
-    // 💡 1단계: 검색된 영상들의 고유 채널 ID(channelId)들을 추출
     const channelIds = [...new Set(data.items.filter(item => item.snippet?.channelId).map(item => item.snippet.channelId))]
-    const subCountMap = new Map()
-
-    // 💡 2단계: 유튜브 channels API로 해당 채널들의 구독자 수를 일괄 조회
-    if (channelIds.length > 0) {
-      try {
-        const channelsData = await fetchWithKeyRotation((key) => 
-          `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelIds.join(',')}&key=${key}`
-        )
-        if (channelsData.items) {
-          channelsData.items.forEach(ch => {
-            const rawCount = parseInt(ch.statistics?.subscriberCount || 0, 10)
-            const formatted = rawCount >= 10000 
-              ? (rawCount / 10000).toFixed(1) + '만명' 
-              : rawCount >= 1000 
-                ? (rawCount / 1000).toFixed(1) + '천명' 
-                : rawCount + '명'
-            subCountMap.set(ch.id, formatted)
-          })
-        }
-      } catch (err) {
-        console.error('검색 채널 구독자 수 조회 실패:', err)
-      }
-    }
+    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
 
     const parseSearchItem = (item) => {
       const title = item.snippet.title.toLowerCase()
       const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
       const channelId = item.snippet.channelId
       
-      // 구독 목록에 있거나 방금 조회한 구독자 수 맵에서 가져옴
       const matchedCreator = creators.value.find(c => c.id === channelId)
       const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
 
@@ -3523,7 +3665,7 @@ const searchYouTubeVideos = async () => {
         youtubeId: item.id.videoId,
         creatorId: channelId,
         creatorName: item.snippet.channelTitle,
-        creatorSubCount: subCount, // 💡 구독자 수 정상 매핑
+        creatorSubCount: subCount,
         title: item.snippet.title,
         thumbnail: thumbUrl,
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
@@ -3580,10 +3722,8 @@ const searchYouTubeVideos = async () => {
 const loadMoreSearchVideos = async () => {
   if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0 || isLoading.value) return
   
-  // 💡 1단계: 스크롤 컨테이너와 현재 스크롤 위치를 정확히 가져옴
   const container = mainScrollRef.value?.$el || mainScrollRef.value
   const currentScrollTop = container ? container.scrollTop : 0
-  // const currentScrollHeight = container ? container.scrollHeight : 0
 
   isLoading.value = true
   try {
@@ -3597,15 +3737,24 @@ const loadMoreSearchVideos = async () => {
     }
 
     searchNextPageToken.value = data.nextPageToken || null
+    
+    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
+    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+
     const db = await openDB()
     const moreVideos = data.items.filter(item => item.id?.videoId).map(item => {
       const title = item.snippet.title.toLowerCase()
       const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
+      const channelId = item.snippet.channelId
+      const matchedCreator = creators.value.find(c => c.id === channelId)
+      const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
+
       return {
         id: item.id.videoId,
         youtubeId: item.id.videoId,
-        creatorId: item.snippet.channelId,
+        creatorId: channelId,
         creatorName: item.snippet.channelTitle,
+        creatorSubCount: subCount,
         title: item.snippet.title,
         thumbnail: thumbUrl,
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
@@ -3646,7 +3795,6 @@ const loadMoreSearchVideos = async () => {
   } finally { 
     isLoading.value = false
     
-    // 💡 2단계: Vue의 DOM 렌더링 완료 및 브라우저 페인트 주기를 완벽히 기다린 후 스크롤 위치 복원
     await nextTick()
     setTimeout(() => {
       if (container) {
@@ -3666,6 +3814,7 @@ const selectDiscoverAll = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
@@ -3684,6 +3833,7 @@ const selectDiscoverHeart = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
@@ -3702,10 +3852,29 @@ const enableTrendingMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
   await fetchTrendingVideos()
+  scrollToTop(mainScrollRef.value)
+}
+
+const enableAlgorithmMode = async () => {
+  isLoading.value = true
+  selectedCreator.value = null
+  currentTab.value = ''
+  isSearchMode.value = false
+  isTrendingMode.value = false
+  isFavoriteVideosMode.value = false
+  isHistoryMode.value = false
+  isPlaylistMode.value = false
+  isMusicMode.value = false
+  isAlgorithmMode.value = true
+  searchQuery.value = '' 
+  activeFilterQuery.value = ''
+  if (window.innerWidth < 960) drawer.value = false
+  await fetchAlgorithmVideos()
   scrollToTop(mainScrollRef.value)
 }
 
@@ -3719,6 +3888,7 @@ const enableFavoriteVideosMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
@@ -3737,6 +3907,7 @@ const enableHistoryMode = async () => {
   isHistoryMode.value = true
   isPlaylistMode.value = false
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
@@ -3755,6 +3926,7 @@ const enablePlaylistMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = true
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   activePlaylistId.value = null
   searchQuery.value = '' 
   activeFilterQuery.value = ''
@@ -3774,6 +3946,7 @@ const enableSearchMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   
   if (lastSearchQuery.value) {
     searchQuery.value = lastSearchQuery.value
@@ -3796,6 +3969,7 @@ const enableMusicMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = true
+  isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
@@ -3813,12 +3987,12 @@ const selectCreatorFilter = async (creator) => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
+  isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
   try {
-    // 💡 채널을 클릭해서 들어갈 때마다 유튜브 API로 최신 구독자 수와 영상 목록을 동시에 갱신
     if (API_KEYS.length > 0) {
       const channelData = await fetchWithKeyRotation((key) => 
         `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${creator.id}&key=${key}`
@@ -3827,7 +4001,6 @@ const selectCreatorFilter = async (creator) => {
         const count = parseInt(channelData.items[0].statistics?.subscriberCount || 0, 10)
         const formattedSubCount = count >= 10000 ? (count / 10000).toFixed(1) + '만명' : count + '명'
         
-        // 메모리와 DB에 최신 구독자 수 반영
         creator.subCount = formattedSubCount
         const db = await openDB()
         db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(creator)))
@@ -3855,8 +4028,7 @@ const handleVisibilityChange = () => {
         console.debug(e)
       }
     }
-  }else {
-    // 💡 화면이 꺼지거나 백그라운드로 진입할 때 미디어 세션이 끊기는 것 방지
+  } else {
     if ('mediaSession' in navigator && ytPlayer.value) {
       navigator.mediaSession.playbackState = 'playing'
     }
@@ -3864,21 +4036,17 @@ const handleVisibilityChange = () => {
 }
 
 const handleTimePaste = (event) => {
-  // 클립보드에서 붙여넣은 텍스트 가져오기
   const pastedText = (event.clipboardData || window.clipboardData).getData('text').trim()
   
-  // 콜론(:)이 포함된 시간 형태인지 확인 (예: 1:25, 01:25, 1:25:30)
   if (pastedText.includes(':')) {
-    event.preventDefault() // 기본 붙여넣기 동작 막기
+    event.preventDefault() 
     
     const parts = pastedText.split(':').map(val => parseInt(val, 10) || 0)
     
     if (parts.length === 3) {
-      // 시:분:초 형태인 경우 (예: 1:20:30 -> 분에 80초 환산 또는 시를 분으로 합산)
       jumpMinutes.value = (parts[0] * 60) + parts[1]
       jumpSeconds.value = parts[2]
     } else if (parts.length === 2) {
-      // 분:초 형태인 경우 (예: 0:25, 1:25, 01:25)
       jumpMinutes.value = parts[0]
       jumpSeconds.value = parts[1]
     }
@@ -3900,6 +4068,7 @@ onUnmounted(() => {
 
 const getHeaderTitle = computed(() => {
   if (selectedCreator.value) return selectedCreator.value.name
+  if (isAlgorithmMode.value) return '알고리즘 추천 피드'
   if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
   if (isHistoryMode.value) return '시청 기록'
   if (isPlaylistMode.value) {
@@ -3919,7 +4088,9 @@ const getHeaderTitle = computed(() => {
 const displayedVideos = computed(() => {
   let result = videos.value
 
-  if (isMusicMode.value) {
+  if (isAlgorithmMode.value) {
+    result = algorithmVideos.value
+  } else if (isMusicMode.value) {
     result = musicVideos.value
   } else if (isTrendingMode.value) {
     result = trendingVideos.value
@@ -3954,7 +4125,7 @@ const displayedVideos = computed(() => {
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
   }
 
-  if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value && !isHistoryMode.value) {
+  if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value && !isHistoryMode.value && !isAlgorithmMode.value) {
     result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
   }
 
@@ -4107,11 +4278,11 @@ html, body {
 .modal-scroll-top-fab { position: sticky; float: right; margin-right: 20px; margin-bottom: 20px; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.7) !important; }
 
 .main-scroll-top-fab {
-  position: fixed !important; /* 스크롤과 무관하게 화면 뷰포트 기준으로 우측 하단에 고정 */
-  bottom: 75px !important;    /* 화면 맨 아래에서 살짝 위로 띄워 눈에 잘 띄고 누르기 편한 위치 지정 */
-  right: 28px !important;     /* 화면 우측에서 떨어진 여백 간격 설정 */
-  z-index: 99 !important;     /* 다른 모달이나 카드 콘텐츠 뒤로 숨지 않도록 최상단 레이어 지정 */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7) !important; /* 버튼 입체감을 위한 그림자 효과 */
+  position: fixed !important; 
+  bottom: 75px !important;    
+  right: 28px !important;     
+  z-index: 99 !important;     
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7) !important; 
 }
 
 .mobile-tight-header { min-height: 36px !important; }
