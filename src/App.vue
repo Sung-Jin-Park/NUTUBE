@@ -2590,6 +2590,9 @@ const initYouTubePlayer = (youtubeId, startTime) => {
             }
 
             if (playlistIndex.value < playlistQueue.value.length - 1) {
+              if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing'
+              }
               await playNextInQueue()
             }
           }
