@@ -2412,6 +2412,10 @@ const playQueueIndex = async (idx) => {
         ytPlayer.value.setPlaybackQuality('tiny')
       }
       startHistoryTracker()
+
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+      }
     } catch (e) {
       initYouTubePlayer(video.youtubeId, startSec)
     }
@@ -2425,12 +2429,21 @@ const playQueueIndex = async (idx) => {
 const playNextInQueue = async () => {
   if (playlistIndex.value < playlistQueue.value.length - 1) {
     await playQueueIndex(playlistIndex.value + 1)
+    
+    // 💡 브레이브/모바일 백그라운드 연속 재생 시 오디오 포커스 유지 보완
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing'
+    }
   }
 }
 
 const playPreviousInQueue = async () => {
   if (playlistIndex.value > 0) {
     await playQueueIndex(playlistIndex.value - 1)
+    
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing'
+    }
   }
 }
 
@@ -2557,6 +2570,11 @@ const initYouTubePlayer = (youtubeId, startTime) => {
           }
         },
         onStateChange: async (event) => {
+          // 💡 재생 중 상태일 때 mediaSession을 playing으로 확실히 고정
+          if (event.data === 1 && 'mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing'
+          }
+
           if (event.data === 0) {
             if (activeVideo.value) {
               try {
@@ -3835,6 +3853,11 @@ const handleVisibilityChange = () => {
       } catch (e) {
         console.debug(e)
       }
+    }
+  }else {
+    // 💡 화면이 꺼지거나 백그라운드로 진입할 때 미디어 세션이 끊기는 것 방지
+    if ('mediaSession' in navigator && ytPlayer.value) {
+      navigator.mediaSession.playbackState = 'playing'
     }
   }
 }
