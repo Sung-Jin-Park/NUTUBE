@@ -2412,6 +2412,13 @@ const playQueueIndex = async (idx) => {
         ytPlayer.value.setPlaybackQuality('tiny')
       }
       startHistoryTracker()
+
+      if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') {
+        ytPlayer.value.playVideo()
+      }
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+      }
     } catch (e) {
       initYouTubePlayer(video.youtubeId, startSec)
     }
@@ -2590,9 +2597,6 @@ const initYouTubePlayer = (youtubeId, startTime) => {
             }
 
             if (playlistIndex.value < playlistQueue.value.length - 1) {
-              if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing'
-              }
               await playNextInQueue()
             }
           }
@@ -3854,6 +3858,14 @@ const handleVisibilityChange = () => {
       }
     }
   }else {
+    if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') {
+      try {
+        ytPlayer.value.playVideo()
+      } catch (e) {
+        console.debug(e)
+      }
+    }
+    
     // 💡 화면이 꺼지거나 백그라운드로 진입할 때 미디어 세션이 끊기는 것 방지
     if ('mediaSession' in navigator && ytPlayer.value) {
       navigator.mediaSession.playbackState = 'playing'
