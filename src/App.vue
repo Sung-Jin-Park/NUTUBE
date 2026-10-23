@@ -1653,9 +1653,6 @@ const formatVideoDuration = (totalSeconds) => {
   return `${minutes}:${pad(seconds)}`
 }
 
-/**
- * 🌟 썸네일 이미지 비율(세로형: 높이 > 너비) 감지를 통해 쇼츠로 자동 판별하는 함수
- */
 const checkThumbnailAspectRatio = (videoList) => {
   if (!Array.isArray(videoList)) return
   videoList.forEach(video => {
@@ -2998,9 +2995,7 @@ const loadDataFromDB = async () => {
     db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
-  if (creators.value.length > 0 && API_KEYS.length > 0) {
-    fetchChannelVideosParallel(creators.value)
-  }
+  // 앱 최초 구동/새로고침 시 구독 채널 영상 API 자동 호출 제거 (DB 데이터만 로드)
 
   const dbVideos = await new Promise((resolve) => {
     db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
@@ -3261,9 +3256,6 @@ const fetchTrendingVideos = async () => {
   }
 }
 
-/**
- * 🔥 유튜브 알고리즘 추천 로직
- */
 const fetchAlgorithmVideos = async () => {
   if (API_KEYS.length === 0) return
   isLoading.value = true
@@ -3695,6 +3687,7 @@ const triggerTabSearchOrUpdate = async () => {
     return
   }
 
+  // 🎯 검색 버튼이나 조회 버튼을 누를 때 전체 구독 피드 갱신
   if (!query && currentTab.value === 'discoverAll' && !selectedCreator.value && creators.value.length > 0) {
     activeFilterQuery.value = ''
     isLoading.value = true
@@ -3736,18 +3729,15 @@ const triggerTabSearchOrUpdate = async () => {
       return
     }
 
-    // 🎯 구독 피드 모음 탭에서 조회/검색 실행
+    // 🎯 구독 피드 모음 탭에서 조회/검색 버튼을 눌렀을 때만 YouTube API 호출
     if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
       activeFilterQuery.value = query
-      // 🌟 핵심: 검색어 값이 없으면 YouTube API를 직접 호출하여 최신 영상 가져오기
-      if (!query) {
-        const heartCreators = creators.value.filter(c => c.isFavorite)
-        const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
-        
-        if (targetCreators.length > 0) {
-          await fetchChannelVideosParallel(targetCreators)
-          await loadDataFromDB()
-        }
+      const heartCreators = creators.value.filter(c => c.isFavorite)
+      const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
+      
+      if (targetCreators.length > 0) {
+        await fetchChannelVideosParallel(targetCreators)
+        await loadDataFromDB()
       }
       return
     }
@@ -3962,7 +3952,7 @@ const selectDiscoverAll = async () => {
 }
 
 /**
- * 🎯 구독 피드 모음 (하트 인플루언서) 탭 선택시 실행
+ * 🎯 구독 피드 모음 (하트 인플루언서) 탭 선택시 실행 (API 호출 제거, DB 데이터만 렌더링)
  */
 const selectDiscoverHeart = async () => {
   isLoading.value = true
@@ -3979,15 +3969,7 @@ const selectDiscoverHeart = async () => {
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
-  // 🌟 하트(isFavorite: true) 인플루언서의 최신 동영상을 YouTube API로 병렬 호출하여 가져오기
-  const heartCreators = creators.value.filter(c => c.isFavorite)
-  const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
-  
-  if (targetCreators.length > 0) {
-    await fetchChannelVideosParallel(targetCreators)
-    await loadDataFromDB()
-  }
-
+  await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -4231,9 +4213,6 @@ const getHeaderTitle = computed(() => {
   return '구독 피드 모음 (하트 크리에이터)'
 })
 
-/**
- * 🎯 화면에 노출될 영상 목록 계산
- */
 const displayedVideos = computed(() => {
   let result = videos.value
 
@@ -4265,7 +4244,6 @@ const displayedVideos = computed(() => {
     const subscribedIds = creators.value.map(c => c.id)
     result = result.filter(v => subscribedIds.includes(v.creatorId))
   } else if (currentTab.value === 'discoverHeart') {
-    // 💖 구독 피드 모음 탭: 하트 등록 인플루언서만 추출
     const favoriteCreators = creators.value.filter(c => c.isFavorite)
     const targetCreatorIds = favoriteCreators.length > 0 
       ? favoriteCreators.map(c => c.id) 
@@ -4274,13 +4252,11 @@ const displayedVideos = computed(() => {
     result = result.filter(v => targetCreatorIds.includes(v.creatorId))
   }
 
-  // 🔍 검색어 값(activeFilterQuery)이 존재할 때만 로컬 데이터베이스 필터링 적용
   if (activeFilterQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
     const query = activeFilterQuery.value.trim().toLowerCase()
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
   }
 
-  // 정렬 처리 (최신순)
   if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value && !isHistoryMode.value && !isAlgorithmMode.value) {
     result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
   }
@@ -4319,7 +4295,6 @@ const normalVideos = computed(() => displayedVideos.value.filter(v => !v.isShort
 </script>
 
 <style>
-/* 최신 모바일 및 PC 반응형 레이아웃 정밀 튜닝 */
 html, body {
   overflow-x: hidden !important;
   width: 100%;
