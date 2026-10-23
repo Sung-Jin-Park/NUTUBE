@@ -3176,6 +3176,10 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         const targetCreator = chunk.find(c => c.id === item.id)
         if (targetCreator) {
           targetCreator.subCount = formattedSubCount
+          // DB에도 갱신된 구독자 수 반영
+          openDB().then(db => {
+            db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(targetCreator)))
+          })
         }
 
         channelMap.set(item.id, {
@@ -4267,6 +4271,12 @@ const handleTimePaste = (event) => {
 onMounted(async () => {
   await getActiveApiKeyIndex()
   await loadDataFromDB()
+  
+  // 💡 수정 핵심: 앱 초기 구동 시 저장된 구독 크리에이터들의 구독자 수 및 최신 영상 자동 동기화
+  if (creators.value.length > 0) {
+    await fetchChannelVideosParallel(creators.value)
+  }
+
   document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
