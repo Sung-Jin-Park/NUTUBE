@@ -1653,6 +1653,24 @@ const formatVideoDuration = (totalSeconds) => {
   return `${minutes}:${pad(seconds)}`
 }
 
+/**
+ * 🌟 썸네일 이미지 비율(세로형: 높이 > 너비) 감지를 통해 쇼츠로 자동 판별하는 함수
+ */
+const checkThumbnailAspectRatio = (videoList) => {
+  if (!Array.isArray(videoList)) return
+  videoList.forEach(video => {
+    if (!video.isShorts && video.thumbnail) {
+      const img = new Image()
+      img.onload = () => {
+        if (img.naturalHeight > img.naturalWidth) {
+          video.isShorts = true
+        }
+      }
+      img.src = video.thumbnail
+    }
+  })
+}
+
 const DB_NAME = 'NeonTubeDB_Clean'
 const DB_VERSION = 4
 
@@ -1887,6 +1905,7 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
               currentTime: 0,
               historyUpdatedAt: null
             }
+            checkThumbnailAspectRatio([parsed])
             videoStore.put(parsed)
             if (!videos.value.some(v => v.id === parsed.id)) {
               videos.value.push(parsed)
@@ -2155,6 +2174,7 @@ const handleUploadMusic = async (event) => {
       const imported = JSON.parse(e.target.result)
       if (Array.isArray(imported)) {
         musicVideos.value = imported
+        checkThumbnailAspectRatio(musicVideos.value)
         isLoading.value = false
         alert('음악 탭 데이터를 성공적으로 불러왔습니다.')
       } else {
@@ -3001,6 +3021,8 @@ const loadDataFromDB = async () => {
     return { ...v, duration: videoDuration, currentTime, progressPercent: percent, historyUpdatedAt: h?.updatedAt || null }
   }).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
+  checkThumbnailAspectRatio(videos.value)
+
   playlists.value = (await new Promise((resolve) => {
     db.transaction('playlists', 'readonly').objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -3141,6 +3163,7 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         })
 
         await fetchAndUpdateVideoDurations(channelVideos)
+        checkThumbnailAspectRatio(channelVideos)
 
         const tx = db.transaction('videos', 'readwrite')
         const store = tx.objectStore('videos')
@@ -3225,6 +3248,7 @@ const fetchTrendingVideos = async () => {
       return parsed
     })
 
+    checkThumbnailAspectRatio(parsedTrending)
     trendingVideos.value = parsedTrending
 
     const tx = db.transaction('videos', 'readwrite')
@@ -3353,6 +3377,7 @@ const fetchAlgorithmVideos = async () => {
     }
 
     await fetchAndUpdateVideoDurations(combined)
+    checkThumbnailAspectRatio(combined)
     algorithmVideos.value = combined
   } catch (error) {
     console.error('알고리즘 추천 로드 실패:', error)
@@ -3412,6 +3437,7 @@ const loadMoreAlgorithmVideos = async () => {
     })
 
     await fetchAndUpdateVideoDurations(parsed)
+    checkThumbnailAspectRatio(parsed)
     
     const existingIds = new Set(algorithmVideos.value.map(v => v.id))
     parsed.forEach(v => {
@@ -3483,6 +3509,7 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
     })
 
     await fetchAndUpdateVideoDurations(parsedMusic)
+    checkThumbnailAspectRatio(parsedMusic)
     musicVideos.value = parsedMusic
 
     const tx = db.transaction('videos', 'readwrite')
@@ -3569,6 +3596,7 @@ const loadMoreTrendingVideos = async () => {
       return parsed
     })
 
+    checkThumbnailAspectRatio(moreTrending)
     trendingVideos.value.push(...moreTrending)
 
     const tx = db.transaction('videos', 'readwrite')
@@ -3645,6 +3673,7 @@ const loadMoreChannelVideos = async (creator) => {
     })
 
     await fetchAndUpdateVideoDurations(moreVideos)
+    checkThumbnailAspectRatio(moreVideos)
     moreVideos.forEach(mv => {
       if (!videos.value.some(v => v.id === mv.id)) {
         videos.value.push(mv)
@@ -3799,6 +3828,7 @@ const searchYouTubeVideos = async () => {
     })
 
     await fetchAndUpdateVideoDurations(apiVideos)
+    checkThumbnailAspectRatio(apiVideos)
     
     apiVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
     
@@ -3875,6 +3905,7 @@ const loadMoreSearchVideos = async () => {
       }
     })
     await fetchAndUpdateVideoDurations(moreVideos)
+    checkThumbnailAspectRatio(moreVideos)
     
     moreVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
     
