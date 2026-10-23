@@ -439,6 +439,7 @@
                   <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
                     {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                   </p>
                 </div>
               </div>
@@ -658,6 +659,7 @@
                   <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
                     {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                   </p>
                 </div>
               </div>
@@ -737,6 +739,7 @@
                     <div class="d-flex align-center gap-2 flex-wrap">
                       <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
                         {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                        <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                       </p>
                       <span class="text-grey-darken-1 text-caption">• 시청일: {{ formatRelativeTime(video.historyUpdatedAt) }}</span>
                     </div>
@@ -798,28 +801,31 @@
                     </div>
                     <div class="pa-3 d-flex flex-column justify-space-between flex-grow-1">
                       <h3 class="text-white font-weight-bold text-caption text-truncate-2 mb-2" v-html="video.title"></h3>
-                      <div class="d-flex justify-space-between align-center">
-                        <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                          {{ video.creatorName }} <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span>
-                        </p>
-                        <div class="d-flex align-center">
-                          <v-btn
-                            icon="mdi-folder-plus"
-                            size="x-small"
-                            variant="text"
-                            color="accent"
-                            title="재생 목록에 추가"
-                            @click.stop="openSaveToPlaylistDialog(video)"
-                          ></v-btn>
-                          <v-btn
-                            icon="mdi-heart"
-                            size="x-small"
-                            variant="text"
-                            :color="video.isFavorite ? 'pink' : 'grey'"
-                            title="영상 즐겨찾기"
-                            @click.stop="toggleVideoFavorite(video)"
-                          ></v-btn>
+                      <div class="d-flex flex-column gap-1">
+                        <div class="d-flex justify-space-between align-center">
+                          <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                            {{ video.creatorName }} <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                          </p>
+                          <div class="d-flex align-center">
+                            <v-btn
+                              icon="mdi-folder-plus"
+                              size="x-small"
+                              variant="text"
+                              color="accent"
+                              title="재생 목록에 추가"
+                              @click.stop="openSaveToPlaylistDialog(video)"
+                            ></v-btn>
+                            <v-btn
+                              icon="mdi-heart"
+                              size="x-small"
+                              variant="text"
+                              :color="video.isFavorite ? 'pink' : 'grey'"
+                              title="영상 즐겨찾기"
+                              @click.stop="toggleVideoFavorite(video)"
+                            ></v-btn>
+                          </div>
                         </div>
+                        <span v-if="video.views > 0" class="text-grey-darken-1 text-caption">{{ formatViewCount(video.views) }}</span>
                       </div>
                     </div>
                   </div>
@@ -868,8 +874,9 @@
                               {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                             </p>
                           </div>
-                          <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 85px;">
-                            <span class="text-grey-darken-1 text-caption mb-1">{{ formatRelativeTime(video.publishedAt) }}</span>
+                          <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 95px;">
+                            <span class="text-grey-darken-1 text-caption mb-0.5">{{ formatRelativeTime(video.publishedAt) }}</span>
+                            <span v-if="video.views > 0" class="text-grey-darken-1 text-caption mb-1">{{ formatViewCount(video.views) }}</span>
                             <div class="d-flex align-center">
                               <v-btn 
                                 icon="mdi-folder-plus" 
@@ -1187,6 +1194,7 @@
               <div class="d-flex align-center gap-2 mt-2">
                 <p class="text-grey-lighten-1 text-caption mb-0">
                   {{ activeVideo?.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(activeVideo?.creatorId, activeVideo) }})</span>
+                  <span v-if="activeVideo?.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(activeVideo.views) }}</span>
                 </p>
                 <div class="d-flex align-center gap-1">
                   <v-btn
@@ -1392,7 +1400,10 @@
                 <v-img :src="video.thumbnail" width="130" height="74" cover class="rounded-xl mr-3 flex-shrink-0 bg-black"></v-img>
                 <div class="overflow-hidden flex-grow-1">
                   <h4 class="text-white text-caption text-md-body-2 font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
-                  <p class="text-grey-darken-1 text-caption mb-0">{{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span></p>
+                  <p class="text-grey-darken-1 text-caption mb-0">
+                    {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -1653,9 +1664,20 @@ const formatVideoDuration = (totalSeconds) => {
   return `${minutes}:${pad(seconds)}`
 }
 
-/**
- * 🎯 쇼츠 판별 조건 1: 이미지 세로 스냅샷 비율 감지 (높이 > 너비)
- */
+const formatViewCount = (viewCount) => {
+  const count = Number(viewCount) || 0
+  if (count >= 100000000) {
+    return `${(count / 100000000).toFixed(1)}억회`
+  }
+  if (count >= 10000) {
+    return `${(count / 10000).toFixed(1)}만회`
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}천회`
+  }
+  return `${count}회`
+}
+
 const checkThumbnailAspectRatio = (videoList) => {
   if (!Array.isArray(videoList)) return
   videoList.forEach(video => {
@@ -1795,12 +1817,14 @@ const fetchSubscriberCountsForChannelIds = async (channelIds) => {
       )
       if (data.items) {
         data.items.forEach(ch => {
-          const rawCount = parseInt(ch.statistics?.subscriberCount || 0, 10)
-          const formatted = rawCount >= 10000 
-            ? (rawCount / 10000).toFixed(1) + '만명' 
-            : rawCount >= 1000 
-              ? (rawCount / 1000).toFixed(1) + '천명' 
-              : rawCount + '명'
+          const rawCount = ch.statistics?.hiddenSubscriberCount ? null : parseInt(ch.statistics?.subscriberCount || 0, 10)
+          const formatted = rawCount === null 
+            ? '구독자 숨김' 
+            : rawCount >= 10000 
+              ? (rawCount / 10000).toFixed(1) + '만명' 
+              : rawCount >= 1000 
+                ? (rawCount / 1000).toFixed(1) + '천명' 
+                : rawCount + '명'
           subCountMap.set(ch.id, formatted)
         })
       }
@@ -1819,34 +1843,43 @@ const parseISO8601Duration = (durationStr) => {
 }
 
 /**
- * 🎯 쇼츠 판별 조건 2: 재생 시간 120초(2분) 이하 조건 적용
+ * 🎯 API 코스트 최적화: 재생 시간 및 조회수(viewCount)를 50개 단위로 일괄 배치(Batch) 조회
  */
-const fetchAndUpdateVideoDurations = async (videoList) => {
+const fetchAndUpdateVideoDetails = async (videoList) => {
   if (!videoList || videoList.length === 0 || API_KEYS.length === 0) return videoList
-  const targetVideos = videoList.filter(v => !v.duration || v.duration === 0)
+  const targetVideos = videoList.filter(v => !v.duration || v.duration === 0 || !v.views || v.views === 0)
   if (targetVideos.length === 0) return videoList
 
-  const ids = targetVideos.map(v => v.youtubeId).slice(0, 50).join(',')
-  try {
-    const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${key}`
-    )
-    if (data.items) {
-      const durationMap = new Map()
-      data.items.forEach(item => durationMap.set(item.id, parseISO8601Duration(item.contentDetails.duration)))
-      
-      videoList.forEach(v => {
-        if (durationMap.has(v.youtubeId)) {
-          const dur = durationMap.get(v.youtubeId)
-          v.duration = dur
-          
-          if (dur > 0 && dur <= 120) {
-            v.isShorts = true
+  for (let i = 0; i < targetVideos.length; i += 50) {
+    const chunk = targetVideos.slice(i, i + 50)
+    const ids = chunk.map(v => v.youtubeId).join(',')
+    try {
+      const data = await fetchWithKeyRotation((key) => 
+        `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${ids}&key=${key}`
+      )
+      if (data.items) {
+        const detailMap = new Map()
+        data.items.forEach(item => {
+          detailMap.set(item.id, {
+            duration: parseISO8601Duration(item.contentDetails?.duration),
+            views: parseInt(item.statistics?.viewCount || 0, 10)
+          })
+        })
+        
+        videoList.forEach(v => {
+          if (detailMap.has(v.youtubeId)) {
+            const info = detailMap.get(v.youtubeId)
+            v.duration = info.duration
+            v.views = info.views
+            
+            if (info.duration > 0 && info.duration <= 120) {
+              v.isShorts = true
+            }
           }
-        }
-      })
-    }
-  } catch (err) { console.error(err) }
+        })
+      }
+    } catch (err) { console.error('영상 상세 정보 일괄 조회 실패:', err) }
+  }
   return videoList
 }
 
@@ -1865,7 +1898,7 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
       const chunk = missingIds.slice(i, i + 50).join(',')
       try {
         const data = await fetchWithKeyRotation((key) => 
-          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${chunk}&key=${key}`
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk}&key=${key}`
         )
         if (data.items) {
           data.items.forEach(item => {
@@ -1883,7 +1916,7 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
       const chunk = missingIds.slice(i, i + 50).join(',')
       try {
         const data = await fetchWithKeyRotation((key) => 
-          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${chunk}&key=${key}`
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk}&key=${key}`
         )
         if (data.items) {
           const videoTx = db.transaction('videos', 'readwrite')
@@ -1895,6 +1928,7 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
             const title = snippet.title.toLowerCase()
             const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
             const dur = parseISO8601Duration(item.contentDetails?.duration)
+            const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
             const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
             const channelId = snippet.channelId
             const matchedCreator = creators.value.find(c => c.id === channelId)
@@ -1910,7 +1944,7 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
               thumbnail: thumbUrl,
               isShorts: isShorts,
               isFavorite: false,
-              views: snippet.publishedAt.substring(0, 10),
+              views: viewsCount,
               publishedAt: snippet.publishedAt,
               duration: dur,
               progressPercent: 0,
@@ -3072,8 +3106,9 @@ const toggleSubscribeFromCard = async (video) => {
         `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${video.creatorId}&key=${key}`
       )
       if (channelData.items && channelData.items.length > 0) {
-        const count = parseInt(channelData.items[0].statistics?.subscriberCount || 0, 10)
-        realSubCount = count >= 10000 ? (count / 10000).toFixed(1) + '만명' : count + '명'
+        const stat = channelData.items[0].statistics
+        const rawCount = stat?.hiddenSubscriberCount ? null : parseInt(stat?.subscriberCount || 0, 10)
+        realSubCount = rawCount === null ? '구독자 숨김' : (rawCount >= 10000 ? (rawCount / 10000).toFixed(1) + '만명' : rawCount + '명')
       }
     } catch (e) {
       console.error(e)
@@ -3106,90 +3141,111 @@ const unsubscribeCreator = async (creator) => {
   if (selectedCreator.value?.id === creator.id) selectDiscoverHeart()
 }
 
+/**
+ * 🎯 API 코스트 최적화: 채널 목록을 50개 단위로 일괄 배치(Batch) 조회하도록 개선
+ */
 const fetchChannelVideosParallel = async (targetCreators) => {
   if (!targetCreators || targetCreators.length === 0 || API_KEYS.length === 0) return
   
-  const promises = targetCreators.map(async (creator) => {
+  for (let i = 0; i < targetCreators.length; i += 50) {
+    const chunk = targetCreators.slice(i, i + 50)
+    const channelIds = chunk.map(c => c.id).join(',')
     try {
       const channelData = await fetchWithKeyRotation((key) => 
-        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails,statistics&id=${creator.id}&key=${key}`
+        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails,statistics&id=${channelIds}&key=${key}`
       )
-      if (channelData.error || !channelData.items || !channelData.items.length) return
-      
-      const channelItem = channelData.items[0]
-      const uploadsPlaylistId = channelItem.contentDetails.relatedPlaylists.uploads
-      
-      const rawSubCount = parseInt(channelItem.statistics?.subscriberCount || 0, 10)
-      const formattedSubCount = rawSubCount >= 10000 
-        ? (rawSubCount / 10000).toFixed(1) + '만명' 
-        : rawSubCount >= 1000 
-          ? (rawSubCount / 1000).toFixed(1) + '천명' 
-          : rawSubCount + '명'
+      if (channelData.error || !channelData.items) continue
 
-      creator.subCount = formattedSubCount
+      const channelMap = new Map()
+      channelData.items.forEach(item => {
+        const stat = item.statistics
+        const rawCount = stat?.hiddenSubscriberCount ? null : parseInt(stat?.subscriberCount || 0, 10)
+        const formattedSubCount = rawCount === null 
+          ? '구독자 숨김' 
+          : rawCount >= 10000 
+            ? (rawCount / 10000).toFixed(1) + '만명' 
+            : rawCount >= 1000 
+              ? (rawCount / 1000).toFixed(1) + '천명' 
+              : rawCount + '명'
 
-      const data = await fetchWithKeyRotation((key) => 
-        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&key=${key}`
-      )
-
-      if (!data.error && data.items) {
-        if (data.nextPageToken) {
-          channelNextPageTokens.value.set(creator.id, data.nextPageToken)
+        const targetCreator = chunk.find(c => c.id === item.id)
+        if (targetCreator) {
+          targetCreator.subCount = formattedSubCount
         }
 
-        const db = await openDB()
-        const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt }]))
-
-        const channelVideos = data.items.map(item => {
-          const snippet = item.snippet
-          const videoId = snippet.resourceId?.videoId || snippet.resourceId
-          const title = snippet.title.toLowerCase()
-          const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-          const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
-
-          const parsed = {
-            id: videoId,
-            youtubeId: videoId,
-            creatorId: snippet.channelId,
-            creatorName: snippet.channelTitle,
-            creatorSubCount: formattedSubCount,
-            title: snippet.title,
-            thumbnail: thumbUrl,
-            isShorts: isShorts,
-            isFavorite: false,
-            views: snippet.publishedAt.substring(0, 10),
-            publishedAt: snippet.publishedAt,
-            duration: 0,
-            progressPercent: 0,
-            currentTime: 0,
-            historyUpdatedAt: null
-          }
-
-          if (existingMap.has(parsed.id)) {
-            Object.assign(parsed, existingMap.get(parsed.id))
-          }
-          return parsed
+        channelMap.set(item.id, {
+          uploadsPlaylistId: item.contentDetails.relatedPlaylists.uploads,
+          subCount: formattedSubCount
         })
+      })
 
-        await fetchAndUpdateVideoDurations(channelVideos)
-        checkThumbnailAspectRatio(channelVideos)
+      await Promise.all(chunk.map(async (creator) => {
+        const chInfo = channelMap.get(creator.id)
+        if (!chInfo) return
 
-        const tx = db.transaction('videos', 'readwrite')
-        const store = tx.objectStore('videos')
-        channelVideos.forEach(v => store.put(v))
-        
-        channelVideos.forEach(cv => {
-          if (!videos.value.some(v => v.id === cv.id)) {
-            videos.value.push(cv)
+        const data = await fetchWithKeyRotation((key) => 
+          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${chInfo.uploadsPlaylistId}&key=${key}`
+        )
+
+        if (!data.error && data.items) {
+          if (data.nextPageToken) {
+            channelNextPageTokens.value.set(creator.id, data.nextPageToken)
           }
-        })
-      }
+
+          const db = await openDB()
+          const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt, views: v.views }]))
+
+          const channelVideos = data.items.map(item => {
+            const snippet = item.snippet
+            const videoId = snippet.resourceId?.videoId || snippet.resourceId
+            const title = snippet.title.toLowerCase()
+            const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+            const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+
+            const parsed = {
+              id: videoId,
+              youtubeId: videoId,
+              creatorId: snippet.channelId,
+              creatorName: snippet.channelTitle,
+              creatorSubCount: chInfo.subCount,
+              title: snippet.title,
+              thumbnail: thumbUrl,
+              isShorts: isShorts,
+              isFavorite: false,
+              views: 0,
+              publishedAt: snippet.publishedAt,
+              duration: 0,
+              progressPercent: 0,
+              currentTime: 0,
+              historyUpdatedAt: null
+            }
+
+            if (existingMap.has(parsed.id)) {
+              const ex = existingMap.get(parsed.id)
+              Object.assign(parsed, ex)
+            }
+            return parsed
+          })
+
+          await fetchAndUpdateVideoDetails(channelVideos)
+          checkThumbnailAspectRatio(channelVideos)
+
+          const tx = db.transaction('videos', 'readwrite')
+          const store = tx.objectStore('videos')
+          channelVideos.forEach(v => store.put(v))
+          
+          channelVideos.forEach(cv => {
+            if (!videos.value.some(v => v.id === cv.id)) {
+              videos.value.push(cv)
+            }
+          })
+        }
+      }))
     } catch (err) {
-      console.error(`채널(${creator.name}) 영상 로드 실패:`, err)
+      console.error('채널 일괄 로드 실패:', err)
     }
-  })
+  }
 
-  await Promise.all(promises)
   videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 }
 
@@ -3223,6 +3279,7 @@ const fetchTrendingVideos = async () => {
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const dur = parseISO8601Duration(item.contentDetails?.duration)
+      const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
       const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
       const channelId = snippet.channelId
       const matchedCreator = creators.value.find(c => c.id === channelId)
@@ -3238,7 +3295,7 @@ const fetchTrendingVideos = async () => {
         thumbnail: thumbUrl,
         isShorts,
         isFavorite: existingMap.get(videoId) || false,
-        views: snippet.publishedAt.substring(0, 10),
+        views: viewsCount,
         publishedAt: snippet.publishedAt,
         duration: dur,
         progressPercent: 0,
@@ -3328,7 +3385,7 @@ const fetchAlgorithmVideos = async () => {
           thumbnail: thumbUrl,
           isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
           isFavorite: existingMap.get(videoId) || false,
-          views: snippet.publishedAt.substring(0, 10),
+          views: 0,
           publishedAt: snippet.publishedAt,
           duration: 0,
           progressPercent: 0,
@@ -3351,6 +3408,7 @@ const fetchAlgorithmVideos = async () => {
         const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
         const channelId = snippet.channelId
         const dur = parseISO8601Duration(item.contentDetails?.duration)
+        const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
 
         return {
           id: videoId,
@@ -3362,7 +3420,7 @@ const fetchAlgorithmVideos = async () => {
           thumbnail: thumbUrl,
           isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120),
           isFavorite: existingMap.get(videoId) || false,
-          views: snippet.publishedAt.substring(0, 10),
+          views: viewsCount,
           publishedAt: snippet.publishedAt,
           duration: dur,
           progressPercent: 0,
@@ -3384,7 +3442,7 @@ const fetchAlgorithmVideos = async () => {
       [combined[i], combined[j]] = [combined[j], combined[i]]
     }
 
-    await fetchAndUpdateVideoDurations(combined)
+    await fetchAndUpdateVideoDetails(combined)
     checkThumbnailAspectRatio(combined)
     algorithmVideos.value = combined
   } catch (error) {
@@ -3435,7 +3493,7 @@ const loadMoreAlgorithmVideos = async () => {
         thumbnail: thumbUrl,
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
         isFavorite: existingMap.get(videoId) || false,
-        views: snippet.publishedAt.substring(0, 10),
+        views: 0,
         publishedAt: snippet.publishedAt,
         duration: 0,
         progressPercent: 0,
@@ -3444,7 +3502,7 @@ const loadMoreAlgorithmVideos = async () => {
       }
     })
 
-    await fetchAndUpdateVideoDurations(parsed)
+    await fetchAndUpdateVideoDetails(parsed)
     checkThumbnailAspectRatio(parsed)
     
     const existingIds = new Set(algorithmVideos.value.map(v => v.id))
@@ -3496,7 +3554,7 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
         thumbnail: thumbUrl,
         isShorts: false,
         isFavorite: existingMap.get(videoId) || false,
-        views: snippet.publishedAt.substring(0, 10),
+        views: 0,
         publishedAt: snippet.publishedAt,
         duration: 0,
         progressPercent: 0,
@@ -3516,7 +3574,7 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
       return parsed
     })
 
-    await fetchAndUpdateVideoDurations(parsedMusic)
+    await fetchAndUpdateVideoDetails(parsedMusic)
     checkThumbnailAspectRatio(parsedMusic)
     musicVideos.value = parsedMusic
 
@@ -3570,6 +3628,7 @@ const loadMoreTrendingVideos = async () => {
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const dur = parseISO8601Duration(item.contentDetails?.duration)
+      const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
       const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
       const channelId = snippet.channelId
       const matchedCreator = creators.value.find(c => c.id === channelId)
@@ -3585,7 +3644,7 @@ const loadMoreTrendingVideos = async () => {
         thumbnail: thumbUrl,
         isShorts,
         isFavorite: existingMap.get(videoId) || false,
-        views: snippet.publishedAt.substring(0, 10),
+        views: viewsCount,
         publishedAt: snippet.publishedAt,
         duration: dur,
         progressPercent: 0,
@@ -3663,7 +3722,7 @@ const loadMoreChannelVideos = async (creator) => {
         thumbnail: thumbUrl,
         isShorts,
         isFavorite: existingMap.get(videoId) || false,
-        views: snippet.publishedAt.substring(0, 10),
+        views: 0,
         publishedAt: snippet.publishedAt,
         duration: 0,
         progressPercent: 0,
@@ -3681,7 +3740,7 @@ const loadMoreChannelVideos = async (creator) => {
       return parsed
     })
 
-    await fetchAndUpdateVideoDurations(moreVideos)
+    await fetchAndUpdateVideoDetails(moreVideos)
     checkThumbnailAspectRatio(moreVideos)
     moreVideos.forEach(mv => {
       if (!videos.value.some(v => v.id === mv.id)) {
@@ -3696,9 +3755,6 @@ const loadMoreChannelVideos = async (creator) => {
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
-/**
- * 🎯 구독 피드 모드(discoverAll/discoverHeart)는 검색어가 없는 상태에서 돋보기버튼/엔터 입력 시만 API 호출
- */
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
 
@@ -3707,7 +3763,6 @@ const triggerTabSearchOrUpdate = async () => {
     return
   }
 
-  // 🎯 구독 전체 피드 모드에서 돋보기 아이콘을 누르거나 엔터 입력 시 API 조회
   if (currentTab.value === 'discoverAll' && !selectedCreator.value) {
     activeFilterQuery.value = query
     if (creators.value.length > 0) {
@@ -3722,7 +3777,6 @@ const triggerTabSearchOrUpdate = async () => {
     return
   }
 
-  // 🎯 구독 피드 모음(하트) 탭에서 돋보기 아이콘을 누르거나 엔터 입력 시 API 조회
   if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
     activeFilterQuery.value = query
     const heartCreators = creators.value.filter(c => c.isFavorite)
@@ -3822,7 +3876,7 @@ const searchYouTubeVideos = async () => {
         thumbnail: thumbUrl,
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
         isFavorite: existingMap.get(item.id.videoId) || false,
-        views: item.snippet.publishedAt.substring(0, 10),
+        views: 0,
         publishedAt: item.snippet.publishedAt,
         duration: 0,
         progressPercent: 0,
@@ -3843,7 +3897,7 @@ const searchYouTubeVideos = async () => {
       return parsed
     })
 
-    await fetchAndUpdateVideoDurations(apiVideos)
+    await fetchAndUpdateVideoDetails(apiVideos)
     checkThumbnailAspectRatio(apiVideos)
     
     apiVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
@@ -3912,7 +3966,7 @@ const loadMoreSearchVideos = async () => {
         thumbnail: thumbUrl,
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
         isFavorite: false,
-        views: item.snippet.publishedAt.substring(0, 10),
+        views: 0,
         publishedAt: item.snippet.publishedAt,
         duration: 0,
         progressPercent: 0,
@@ -3920,7 +3974,7 @@ const loadMoreSearchVideos = async () => {
         historyUpdatedAt: null
       }
     })
-    await fetchAndUpdateVideoDurations(moreVideos)
+    await fetchAndUpdateVideoDetails(moreVideos)
     checkThumbnailAspectRatio(moreVideos)
     
     moreVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
@@ -3958,9 +4012,6 @@ const loadMoreSearchVideos = async () => {
   }
 }
 
-/**
- * 🎯 구독 전체 피드 탭 이동 시 API 자동 요청 제거 (DB 데이터만 빠른 렌더링)
- */
 const selectDiscoverAll = async () => {
   isLoading.value = true
   selectedCreator.value = null
@@ -3980,9 +4031,6 @@ const selectDiscoverAll = async () => {
   scrollToTop(mainScrollRef.value)
 }
 
-/**
- * 🎯 구독 피드 모음 (하트) 탭 이동 시 API 자동 요청 제거 (DB 데이터만 빠른 렌더링)
- */
 const selectDiscoverHeart = async () => {
   isLoading.value = true
   selectedCreator.value = null
@@ -4159,8 +4207,9 @@ const selectCreatorFilter = async (creator) => {
         `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${creator.id}&key=${key}`
       )
       if (channelData.items && channelData.items.length > 0) {
-        const count = parseInt(channelData.items[0].statistics?.subscriberCount || 0, 10)
-        const formattedSubCount = count >= 10000 ? (count / 10000).toFixed(1) + '만명' : count + '명'
+        const stat = channelData.items[0].statistics
+        const rawCount = stat?.hiddenSubscriberCount ? null : parseInt(stat?.subscriberCount || 0, 10)
+        const formattedSubCount = rawCount === null ? '구독자 숨김' : (rawCount >= 10000 ? (rawCount / 10000).toFixed(1) + '만명' : rawCount + '명')
         
         creator.subCount = formattedSubCount
         const db = await openDB()
@@ -4438,7 +4487,6 @@ html, body {
 .modal-vertical-container::-webkit-scrollbar { width: 8px; }
 .modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
-/* 동영상 깜빡임 방지 및 렌더링 최적화 CSS */
 .video-container {
   position: relative;
   width: 100%;
