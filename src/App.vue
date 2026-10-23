@@ -290,7 +290,7 @@
           :key="creator.id"
           :prepend-avatar="creator.avatar"
           :title="creator.name"
-          :subtitle="creator.subCount + ' 구독자'"
+          :subtitle="formatCreatorSubCount(creator.subCount)"
           @click="selectCreatorFilter(creator)"
           class="mb-1 custom-list-item"
           :class="{ 'neon-active': selectedCreator?.id === creator.id }"
@@ -1670,12 +1670,23 @@ const formatViewCount = (viewCount) => {
     return `${(count / 100000000).toFixed(1)}억회`
   }
   if (count >= 10000) {
-    return `${(count / 10000).toFixed(1)}만회`
+    return `${(count / 10000).toFixed(1)}만명`
   }
   if (count >= 1000) {
     return `${(count / 1000).toFixed(1)}천회`
   }
   return `${count}회`
+}
+
+/**
+ * 🎯 구독자 수 표기 중복 및 오류 정제 헬퍼 함수
+ */
+const formatCreatorSubCount = (subCount) => {
+  if (!subCount) return '구독중'
+  const str = String(subCount).trim()
+  if (str === '구독중' || str === '구독자 숨김') return str
+  if (str.includes('명') || str.includes('구독자')) return str
+  return `${str} 구독자`
 }
 
 const checkThumbnailAspectRatio = (videoList) => {
@@ -1795,13 +1806,13 @@ const fetchWithKeyRotation = async (urlBuilder) => {
 
 const getCreatorSubCount = (creatorId, video) => {
   if (video && video.creatorSubCount) {
-    return video.creatorSubCount
+    return formatCreatorSubCount(video.creatorSubCount)
   }
   const foundCreator = creators.value.find(c => c.id === creatorId)
   if (foundCreator && foundCreator.subCount) {
-    return foundCreator.subCount
+    return formatCreatorSubCount(foundCreator.subCount)
   }
-  return '정보 없음'
+  return '구독중'
 }
 
 const fetchSubscriberCountsForChannelIds = async (channelIds) => {
@@ -1842,9 +1853,6 @@ const parseISO8601Duration = (durationStr) => {
   return (parseInt(match[1] || 0, 10) * 3600) + (parseInt(match[2] || 0, 10) * 60) + parseInt(match[3] || 0, 10)
 }
 
-/**
- * 🎯 API 코스트 최적화: 재생 시간 및 조회수(viewCount)를 50개 단위로 일괄 배치(Batch) 조회
- */
 const fetchAndUpdateVideoDetails = async (videoList) => {
   if (!videoList || videoList.length === 0 || API_KEYS.length === 0) return videoList
   const targetVideos = videoList.filter(v => !v.duration || v.duration === 0 || !v.views || v.views === 0)
@@ -3017,7 +3025,7 @@ const fetchMoreComments = async (youtubeId) => {
             const rAuthorChannelId = rSnippet.authorChannelId?.value
             moreParsedComments.push({
               id: replyItem.id,
-              author: rSnippet.authorDisplayName,
+              author: replyItem.id,
               authorProfileImageUrl: rSnippet.authorProfileImageUrl,
               authorChannelId: rAuthorChannelId,
               text: rSnippet.textDisplay,
@@ -3141,9 +3149,6 @@ const unsubscribeCreator = async (creator) => {
   if (selectedCreator.value?.id === creator.id) selectDiscoverHeart()
 }
 
-/**
- * 🎯 API 코스트 최적화: 채널 목록을 50개 단위로 일괄 배치(Batch) 조회하도록 개선
- */
 const fetchChannelVideosParallel = async (targetCreators) => {
   if (!targetCreators || targetCreators.length === 0 || API_KEYS.length === 0) return
   
