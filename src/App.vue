@@ -78,7 +78,7 @@
               size="small"
               variant="text"
               color="accent"
-              title="조회/검색 실행"
+              title="최신 영상 동기화 / 검색 실행"
               @click.stop="triggerTabSearchOrUpdate"
             >
               <v-icon icon="mdi-cloud-search"></v-icon>
@@ -1823,7 +1823,7 @@ const getCreatorSubCount = (creatorId, video) => {
 }
 
 /**
- * 💡 신규 기능: 검색 결과나 영상 카드에서 유튜버 명을 누르면 해당 채널 화면으로 이동
+ * 💡 유튜버 명 클릭 시 해당 채널 피드로 즉시 이동
  */
 const selectCreatorFromVideo = async (video) => {
   if (!video || !video.creatorId) return
@@ -3712,9 +3712,6 @@ const loadMoreTrendingVideos = async () => {
   }
 }
 
-/**
- * 💡 수정 완료: 구독 유튜버 채널 스크롤 시 무한 API 로딩 오류 방지 (isLoading 체크 및 nextPageToken 안전 관리)
- */
 const loadMoreChannelVideos = async (creator) => {
   if (API_KEYS.length === 0 || !creator || isLoading.value) return
   const pageToken = channelNextPageTokens.value.get(creator.id)
@@ -3803,6 +3800,9 @@ const loadMoreChannelVideos = async (creator) => {
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
+/**
+ * 💡 최신 영상 수동 동기화 / 검색 실행
+ */
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
 
@@ -4060,8 +4060,10 @@ const loadMoreSearchVideos = async () => {
   }
 }
 
-const selectDiscoverAll = async () => {
-  isLoading.value = true
+/**
+ * ⚡ [최적화 수정] 탭 전환 시 API를 매번 불러와서 느려지던 현상을 제거하고 IndexedDB 데이터로 즉시 렌더링
+ */
+const selectDiscoverAll = () => {
   selectedCreator.value = null
   currentTab.value = 'discoverAll'
   isSearchMode.value = false
@@ -4074,13 +4076,10 @@ const selectDiscoverAll = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 100))
-  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const selectDiscoverHeart = async () => {
-  isLoading.value = true
+const selectDiscoverHeart = () => {
   selectedCreator.value = null
   currentTab.value = 'discoverHeart'
   isSearchMode.value = false
@@ -4093,14 +4092,10 @@ const selectDiscoverHeart = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-
-  await new Promise(r => setTimeout(r, 100))
-  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
 const enableTrendingMode = async () => {
-  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4113,12 +4108,13 @@ const enableTrendingMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await fetchTrendingVideos()
+  if (trendingVideos.value.length === 0) {
+    await fetchTrendingVideos()
+  }
   scrollToTop(mainScrollRef.value)
 }
 
 const enableAlgorithmMode = async () => {
-  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4131,12 +4127,13 @@ const enableAlgorithmMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await fetchAlgorithmVideos()
+  if (algorithmVideos.value.length === 0) {
+    await fetchAlgorithmVideos()
+  }
   scrollToTop(mainScrollRef.value)
 }
 
-const enableFavoriteVideosMode = async () => {
-  isLoading.value = true
+const enableFavoriteVideosMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4149,13 +4146,10 @@ const enableFavoriteVideosMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 100))
-  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const enableHistoryMode = async () => {
-  isLoading.value = true
+const enableHistoryMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4168,13 +4162,10 @@ const enableHistoryMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 100))
-  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const enablePlaylistMode = async () => {
-  isLoading.value = true
+const enablePlaylistMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4188,13 +4179,10 @@ const enablePlaylistMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 100))
-  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
-const enableSearchMode = async () => {
-  isLoading.value = true
+const enableSearchMode = () => {
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = true
@@ -4211,13 +4199,10 @@ const enableSearchMode = async () => {
   activeFilterQuery.value = ''
 
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 100))
-  isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
 const enableMusicMode = async () => {
-  isLoading.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4230,12 +4215,13 @@ const enableMusicMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await fetchMusicVideos('인기 가요 믹스')
+  if (musicVideos.value.length === 0) {
+    await fetchMusicVideos('인기 가요 믹스')
+  }
   scrollToTop(mainScrollRef.value)
 }
 
 const selectCreatorFilter = async (creator) => {
-  isLoading.value = true
   selectedCreator.value = creator
   currentTab.value = ''
   isSearchMode.value = false
@@ -4248,38 +4234,17 @@ const selectCreatorFilter = async (creator) => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
+  scrollToTop(mainScrollRef.value)
 
-  try {
-    if (API_KEYS.length > 0) {
-      const channelData = await fetchWithKeyRotation((key) => 
-        `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${creator.id}&key=${key}`
-      )
-      if (channelData.items && channelData.items.length > 0) {
-        const stat = channelData.items[0].statistics
-        const rawCount = stat?.hiddenSubscriberCount ? null : parseInt(stat?.subscriberCount || 0, 10)
-        const formattedSubCount = rawCount === null ? '구독자 숨김' : (rawCount >= 10000 ? (rawCount / 10000).toFixed(1) + '만명' : rawCount + '명')
-        
-        creator.subCount = formattedSubCount
-        const db = await openDB()
-        db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(creator)))
-      }
-    }
-
-    await fetchChannelVideosParallel([creator])
-  } catch (err) {
-    console.error('크리에이터 정보 및 영상 조회 실패:', err)
-  } finally {
-    isLoading.value = false
-    scrollToTop(mainScrollRef.value)
+  // 선택한 채널의 동영상 데이터가 유효한지 백그라운드 확인 및 갱신
+  if (API_KEYS.length > 0) {
+    fetchChannelVideosParallel([creator])
   }
 }
 
-/**
- * 💡 수정 완료: 폰 바탕화면 등으로 나갔다가 들어올 때 일시정지 상태 유지 (자동 재생 방지)
- */
 const handleVisibilityChange = () => {
   if (document.visibilityState === 'visible') {
-    // 백그라운드에서 돌아올 때 일시정지 상태(state === 2)였던 경우 자동 재생하지 않고 멈춤 상태 유지
+    // 폰 바탕화면 등에서 들어올 때 일시정지 상태 유지
   } 
 }
 
@@ -4306,7 +4271,7 @@ onMounted(async () => {
   await loadDataFromDB()
   
   if (creators.value.length > 0) {
-    await fetchChannelVideosParallel(creators.value)
+    fetchChannelVideosParallel(creators.value)
   }
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
