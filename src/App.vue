@@ -324,7 +324,7 @@
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
-        <v-card class="glass-banner mb-4 mb-md-6 pa-4 pa-md-6 rounded-2xl position-relative overflow-hidden">
+        <v-card class="glass-banner mb-4 mb-md-6 p-4 p-md-6 rounded-2xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3 flex-wrap">
             <div class="d-flex align-center gap-3">
@@ -1439,6 +1439,9 @@ const isMusicMode = ref(false)
 const isAlgorithmMode = ref(false)
 const isLoading = ref(false)
 
+// ⚡ 로컬 무한 스크롤(페이지네이션) 표시 개수 상태
+const visibleLimit = ref(40)
+
 const creatorFileInput = ref(null)
 const playlistFileInput = ref(null)
 const singlePlaylistFileInput = ref(null)
@@ -1567,7 +1570,10 @@ const checkMainScroll = (e) => {
 
     const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
     if (bottomReached && !isLoading.value) {
-      if (isTrendingMode.value && trendingNextPageToken.value) {
+      // ⚡ 로컬 데이터 페이징 먼저 처리 (더 보여줄 데이터가 있다면 visibleLimit 증가)
+      if (visibleLimit.value < allFilteredVideos.value.length) {
+        visibleLimit.value += 40
+      } else if (isTrendingMode.value && trendingNextPageToken.value) {
         loadMoreTrendingVideos()
       } else if (isAlgorithmMode.value && algorithmNextPageToken.value) {
         loadMoreAlgorithmVideos()
@@ -1685,9 +1691,6 @@ const formatViewCount = (viewCount) => {
   return `${count}회`
 }
 
-/**
- * 🎯 구독자 수 표기 중복 및 오류 정제 헬퍼 함수
- */
 const formatCreatorSubCount = (subCount) => {
   if (!subCount) return '구독중'
   const str = String(subCount).trim()
@@ -1822,9 +1825,6 @@ const getCreatorSubCount = (creatorId, video) => {
   return '구독중'
 }
 
-/**
- * 💡 유튜버 명 클릭 시 해당 채널 피드로 즉시 이동
- */
 const selectCreatorFromVideo = async (video) => {
   if (!video || !video.creatorId) return
   let creator = creators.value.find(c => c.id === video.creatorId)
@@ -3800,11 +3800,9 @@ const loadMoreChannelVideos = async (creator) => {
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
-/**
- * 💡 최신 영상 수동 동기화 / 검색 실행
- */
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
+  visibleLimit.value = 40 // 검색 시 페이징 리셋
 
   if (isPlaylistMode.value || isHistoryMode.value) {
     activeFilterQuery.value = query
@@ -3877,6 +3875,7 @@ const triggerTabSearchOrUpdate = async () => {
 }
 
 const handleSearch = async () => {
+  visibleLimit.value = 40
   if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || currentTab.value === 'discoverHeart' || currentTab.value === 'discoverAll') {
     await triggerTabSearchOrUpdate()
   } else {
@@ -4060,10 +4059,9 @@ const loadMoreSearchVideos = async () => {
   }
 }
 
-/**
- * ⚡ [최적화 수정] 탭 전환 시 API를 매번 불러와서 느려지던 현상을 제거하고 IndexedDB 데이터로 즉시 렌더링
- */
+// ⚡ 탭 전환 시 visibleLimit 리셋하여 40개씩 가볍게 렌더링 시작
 const selectDiscoverAll = () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = 'discoverAll'
   isSearchMode.value = false
@@ -4080,6 +4078,7 @@ const selectDiscoverAll = () => {
 }
 
 const selectDiscoverHeart = () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = 'discoverHeart'
   isSearchMode.value = false
@@ -4096,6 +4095,7 @@ const selectDiscoverHeart = () => {
 }
 
 const enableTrendingMode = async () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4115,6 +4115,7 @@ const enableTrendingMode = async () => {
 }
 
 const enableAlgorithmMode = async () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4134,6 +4135,7 @@ const enableAlgorithmMode = async () => {
 }
 
 const enableFavoriteVideosMode = () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4150,6 +4152,7 @@ const enableFavoriteVideosMode = () => {
 }
 
 const enableHistoryMode = () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4166,6 +4169,7 @@ const enableHistoryMode = () => {
 }
 
 const enablePlaylistMode = () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4183,6 +4187,7 @@ const enablePlaylistMode = () => {
 }
 
 const enableSearchMode = () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = true
@@ -4203,6 +4208,7 @@ const enableSearchMode = () => {
 }
 
 const enableMusicMode = async () => {
+  visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4222,6 +4228,7 @@ const enableMusicMode = async () => {
 }
 
 const selectCreatorFilter = async (creator) => {
+  visibleLimit.value = 40
   selectedCreator.value = creator
   currentTab.value = ''
   isSearchMode.value = false
@@ -4236,7 +4243,6 @@ const selectCreatorFilter = async (creator) => {
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
 
-  // 선택한 채널의 동영상 데이터가 유효한지 백그라운드 확인 및 갱신
   if (API_KEYS.length > 0) {
     fetchChannelVideosParallel([creator])
   }
@@ -4303,7 +4309,8 @@ const getHeaderTitle = computed(() => {
   return '구독 피드 모음 (하트 크리에이터)'
 })
 
-const displayedVideos = computed(() => {
+// ⚡ 전체 필터링된 비디오 목록
+const allFilteredVideos = computed(() => {
   let result = videos.value
 
   if (isAlgorithmMode.value) {
@@ -4352,6 +4359,11 @@ const displayedVideos = computed(() => {
   }
 
   return result
+})
+
+// ⚡ 화면에 보여줄 갯수만큼만 슬라이스 (로컬 무한 스크롤 페이지네이션 적용)
+const displayedVideos = computed(() => {
+  return allFilteredVideos.value.slice(0, visibleLimit.value)
 })
 
 const isAllSelected = computed({
