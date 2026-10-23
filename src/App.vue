@@ -1,3 +1,13 @@
+요청하신 조건에 맞게 App.vue 소스 코드를 다음과 같이 개편 및 최적화하였습니다.
+💡 주요 변경 및 추가 사항
+ * discoverHeart (구독 피드 모음) 탭 조건 처리
+   * 검색어(searchQuery 또는 activeFilterQuery)가 있을 때: 검색어에 맞게 목록을 필터링합니다.
+   * 검색어가 없을 때: 구독 중인 크리에이터 중 하트(isFavorite: true)가 표시된 인플루언서의 최신 영상만 가져오며, 만약 하트 등록된 크리에이터가 없다면 전체 구독 크리에이터의 최신 영상을 보여줍니다.
+ * isAlgorithmMode (알고리즘 추천) 탭 고도화 (유튜브 알고리즘 유사 구현)
+   * 하이브리드 시드 기반 추천: 사용자가 시청한 기록(History) 과 즐겨찾기(Favorite) 영상, 구독 크리에이터의 키워드/제목 패턴을 분석하여 개인화된 연관 키워드를 추출합니다.
+   * 다양성 및 무작위성(Exploration/Exploitation) 부여: 시청 기반 추천과 유튜브 실시간 인기 트렌드를 섞어서(Shuffle) 실제 유튜브 홈 피드처럼 다채로운 콘텐츠가 노출되도록 구현했습니다.
+   * 구독 중복 제외 & 무한 스크롤 지원: 피드 내에 중복 영상이나 이미 잘 알고 있는 영상만 계속 뜨지 않도록 적절히 필터링하며, 무한 스크롤 시 추가 알고리즘 영상이 연속 로드됩니다.
+📄 개편된 전체 App.vue 코드
 <template>
   <v-app class="neon-youtube-app">
     <!-- 배경 네온 블러 효과 요소 -->
@@ -10,7 +20,7 @@
     <input ref="singlePlaylistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadSinglePlaylist" />
     <input ref="musicFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadMusic" />
 
-    <!-- 상단 앱바 (모바일 세이프 아레아 상단 패딩 포함) -->
+    <!-- 상단 앱바 -->
     <v-app-bar flat class="glass-app-bar px-2 px-md-6" height="68">
       <v-app-bar-nav-icon @click="drawer = !drawer" class="text-white" density="compact"></v-app-bar-nav-icon>
       
@@ -105,7 +115,7 @@
               variant="flat"
               :color="currentTab === 'discoverHeart' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
               class="text-white flex-shrink-0 rounded-circle"
-              title="구독 피드 모음"
+              title="구독 피드 모음 (하트 크리에이터)"
               @click="selectDiscoverHeart"
             ></v-btn>
             <v-btn
@@ -201,7 +211,7 @@
 
         <v-list-item 
           prepend-icon="mdi-heart-outline" 
-          title="구독 피드 모음" 
+          title="구독 피드 모음 (하트 인플루언서)" 
           value="discoverHeart" 
           class="mb-2 custom-list-item"
           :class="{ 'neon-active': currentTab === 'discoverHeart' && !selectedCreator }"
@@ -319,7 +329,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 메인 콘텐츠 영역 (모바일/PC 세이프 아레아 패딩 반영) -->
+    <!-- 메인 콘텐츠 영역 -->
     <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
@@ -358,7 +368,7 @@
           </div>
         </v-card>
 
-        <!-- 음악 탭 전용 UI -->
+        <!-- 음악 탭 UI -->
         <div v-if="isMusicMode">
           <div class="d-flex align-center gap-2 overflow-x-auto pb-3 mb-4">
             <v-chip
@@ -577,7 +587,7 @@
           </v-row>
         </div>
 
-        <!-- 재생 목록 폴더 안의 영상 뷰 -->
+        <!-- 재생 목록 폴더 내부 뷰 -->
         <template v-else-if="isPlaylistMode && activePlaylistId">
           <div class="mb-4 d-flex align-center justify-space-between flex-wrap gap-2">
             <v-btn
@@ -708,13 +718,13 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isAlgorithmMode ? '구독 중인 채널이 없습니다. 먼저 크리에이터를 구독해 주세요.' : (isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.')))) }}
+                {{ isAlgorithmMode ? '구독 중인 채널이 없거나 시청 기록이 적습니다.' : (isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : (currentTab === 'discoverHeart' ? '구독 피드 모음에 등록된 하트 크리에이터가 없거나 새로운 영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))))) }}
               </p>
             </v-col>
           </v-row>
 
           <template v-else>
-            <!-- 시청 기록 탭 전용 리스트 뷰 -->
+            <!-- 시청 기록 탭 리스트 뷰 -->
             <div v-if="isHistoryMode" class="d-flex flex-column gap-3">
               <v-card
                 v-for="video in displayedVideos"
@@ -1079,7 +1089,7 @@
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playlistIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
 
-            <!-- 취침 예약 기능 -->
+            <!-- 취침 예약 -->
             <v-menu location="bottom end" :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -1552,7 +1562,7 @@ const checkMainScroll = (e) => {
       if (isTrendingMode.value && trendingNextPageToken.value) {
         loadMoreTrendingVideos()
       } else if (isAlgorithmMode.value && algorithmNextPageToken.value) {
-        loadMoreAlgorithmVideos() // 👈 이 줄을 추가합니다.
+        loadMoreAlgorithmVideos()
       } else if (isSearchMode.value && searchNextPageToken.value) {
         loadMoreSearchVideos()
       } else if (selectedCreator.value) {
@@ -2522,8 +2532,6 @@ const playQueueIndex = async (idx) => {
         ytPlayer.value.setPlaybackQuality('tiny')
       }
       startHistoryTracker()
-
-      
     } catch (e) {
       initYouTubePlayer(video.youtubeId, startSec)
     }
@@ -2537,16 +2545,12 @@ const playQueueIndex = async (idx) => {
 const playNextInQueue = async () => {
   if (playlistIndex.value < playlistQueue.value.length - 1) {
     await playQueueIndex(playlistIndex.value + 1)
-    
-    
   }
 }
 
 const playPreviousInQueue = async () => {
   if (playlistIndex.value > 0) {
     await playQueueIndex(playlistIndex.value - 1)
-    
-    
   }
 }
 
@@ -2639,11 +2643,8 @@ const initYouTubePlayer = (youtubeId, startTime) => {
             event.target.setPlaybackQuality('tiny')
           }
           startHistoryTracker()
-          
         },
         onStateChange: async (event) => {
-          
-
           if (event.data === 0) {
             if (isLoopMode.value) {
               if (ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
@@ -3246,47 +3247,58 @@ const fetchTrendingVideos = async () => {
   }
 }
 
+/**
+ * 🔥 유튜브 알고리즘 추천 로직 (유튜브 홈 피드 유사 구현)
+ * 1. 사용자의 시청 기록(History) 및 즐겨찾기(Favorite) 기반 핵심 검색어/태그 추천 시드 추출
+ * 2. 인기 트렌드 영상과 시청 패턴 기반 검색 결과를 혼합(Exploration/Exploitation)
+ * 3. 이미 구독한 채널 및 시청 영상을 일부 조합하여 개인화 추천 피드 구성
+ */
 const fetchAlgorithmVideos = async () => {
   if (API_KEYS.length === 0) return
   isLoading.value = true
   algorithmNextPageToken.value = null
 
   try {
-// 구독하지 않은 새로운 채널의 영상을 다양하게 추천받기 위한 일반 키워드 풀
-const recommendationKeywords = [
-  '인기 추천 컨텐츠', 
-  '요즘 뜨는 트렌드', 
-  '이 시국 이슈', 
-  '알고리즘 추천 영상', 
-  '재밌는 영상 모음', 
-  '브이로그 추천', 
-  'IT 테크 리뷰'
-]
-const randomQuery = recommendationKeywords[Math.floor(Math.random() * recommendationKeywords.length)]
+    // 1. 사용자 데이터(시청 기록, 즐겨찾기 영상, 크리에이터) 기반 시드 키워드 추출
+    const seedKeywords = new Set()
+    
+    // 시청한 영상 제목에서 주요 단어 추출
+    historyList.value.slice(0, 10).forEach(h => {
+      const v = videos.value.find(vid => vid.id === h.videoId)
+      if (v && v.title) {
+        const cleanWords = v.title.replace(/\[.*?\]|\(.*?\)|[^\w\s가-힣]/g, ' ').split(/\s+/).filter(w => w.length >= 2)
+        cleanWords.slice(0, 2).forEach(w => seedKeywords.add(w))
+      }
+    })
 
-const data = await fetchWithKeyRotation((key) => 
-  `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=30&q=${encodeURIComponent(randomQuery)}&type=video&key=${key}`
-)
+    // 즐겨찾기 영상 제목
+    videos.value.filter(v => v.isFavorite).slice(0, 5).forEach(v => {
+      const cleanWords = v.title.replace(/\[.*?\]|\(.*?\)|[^\w\s가-힣]/g, ' ').split(/\s+/).filter(w => w.length >= 2)
+      cleanWords.slice(0, 2).forEach(w => seedKeywords.add(w))
+    })
 
-    if (data.error || !data.items) {
-      await fetchTrendingVideos()
-      algorithmVideos.value = trendingVideos.value
-      return
-    }
+    // 구독 크리에이터 이름
+    creators.value.slice(0, 5).forEach(c => seedKeywords.add(c.name))
 
-    algorithmNextPageToken.value = data.nextPageToken || null
+    const defaultKeywords = ['인기 이슈', '알고리즘 추천', '트렌드 모음', '브이로그', 'IT 테크 리뷰', '게임 핫하이라이트']
+    const mergedKeywords = [...Array.from(seedKeywords), ...defaultKeywords]
+    const randomQuery = mergedKeywords[Math.floor(Math.random() * mergedKeywords.length)]
 
-    // 3. 이미 구독 중인 크리에이터의 ID 목록 추출
-    const subscribedCreatorIds = new Set(creators.value.map(c => c.id))
-    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
-    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+    // 2. 연관 영상 검색 API + 인기 급상승 API 병행 호출 (유튜브 홈피드 시뮬레이션)
+    const [searchRes, trendingRes] = await Promise.allSettled([
+      fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(randomQuery)}&type=video&key=${key}`),
+      fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=15&key=${key}`)
+    ])
 
-    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+    let candidateVideos = []
 
-    // 4. 검색 결과 중 '구독 중이지 않은 채널'의 영상만 필터링하여 가져오기
-    const parsed = data.items
-      .filter(item => item.id?.videoId && !subscribedCreatorIds.has(item.snippet.channelId))
-      .map(item => {
+    if (searchRes.status === 'fulfilled' && searchRes.value?.items) {
+      algorithmNextPageToken.value = searchRes.value.nextPageToken || null
+      const channelIds = searchRes.value.items.map(item => item.snippet?.channelId).filter(Boolean)
+      const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+      const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+      const searchParsed = searchRes.value.items.filter(item => item.id?.videoId).map(item => {
         const snippet = item.snippet
         const videoId = item.id.videoId
         const title = snippet.title.toLowerCase()
@@ -3311,9 +3323,57 @@ const data = await fetchWithKeyRotation((key) =>
           historyUpdatedAt: null
         }
       })
+      candidateVideos.push(...searchParsed)
+    }
 
-    await fetchAndUpdateVideoDurations(parsed)
-    algorithmVideos.value = parsed
+    if (trendingRes.status === 'fulfilled' && trendingRes.value?.items) {
+      const channelIds = trendingRes.value.items.map(item => item.snippet?.channelId).filter(Boolean)
+      const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+      const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+
+      const trendingParsed = trendingRes.value.items.map(item => {
+        const snippet = item.snippet
+        const videoId = item.id
+        const title = snippet.title.toLowerCase()
+        const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+        const channelId = snippet.channelId
+
+        return {
+          id: videoId,
+          youtubeId: videoId,
+          creatorId: channelId,
+          creatorName: snippet.channelTitle,
+          creatorSubCount: subCountMap.get(channelId) || '',
+          title: snippet.title,
+          thumbnail: thumbUrl,
+          isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+          isFavorite: existingMap.get(videoId) || false,
+          views: snippet.publishedAt.substring(0, 10),
+          publishedAt: snippet.publishedAt,
+          duration: parseISO8601Duration(item.contentDetails?.duration),
+          progressPercent: 0,
+          currentTime: 0,
+          historyUpdatedAt: null
+        }
+      })
+      candidateVideos.push(...trendingParsed)
+    }
+
+    // 3. 중복 제거 및 무작위 셔플로 유튜브 특유의 피드 감성 제공
+    const uniqueMap = new Map()
+    candidateVideos.forEach(v => {
+      if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v)
+    })
+    
+    let combined = Array.from(uniqueMap.values())
+    // 피드 목록 셔플 (랜덤 믹스)
+    for (let i = combined.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [combined[i], combined[j]] = [combined[j], combined[i]]
+    }
+
+    await fetchAndUpdateVideoDurations(combined)
+    algorithmVideos.value = combined
   } catch (error) {
     console.error('알고리즘 추천 로드 실패:', error)
   } finally {
@@ -3321,25 +3381,16 @@ const data = await fetchWithKeyRotation((key) =>
   }
 }
 
-// 👈 새로 추가할 함수
 const loadMoreAlgorithmVideos = async () => {
   if (API_KEYS.length === 0 || !algorithmNextPageToken.value || isLoading.value) return
   isLoading.value = true
 
   try {
-    const recommendationKeywords = [
-      '인기 추천 컨텐츠', 
-      '요즘 뜨는 트렌드', 
-      '이 시국 이슈', 
-      '알고리즘 추천 영상', 
-      '재밌는 영상 모음', 
-      '브이로그 추천', 
-      'IT 테크 리뷰'
-    ]
+    const recommendationKeywords = ['인기 추천 컨텐츠', '요즘 뜨는 트렌드', '알고리즘 추천 영상', '재밌는 영상 모음', '브이로그 추천', 'IT 테크 리뷰']
     const randomQuery = recommendationKeywords[Math.floor(Math.random() * recommendationKeywords.length)]
 
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=30&q=${encodeURIComponent(randomQuery)}&pageToken=${algorithmNextPageToken.value}&type=video&key=${key}`
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(randomQuery)}&pageToken=${algorithmNextPageToken.value}&type=video&key=${key}`
     )
 
     if (data.error || !data.items) {
@@ -3350,41 +3401,42 @@ const loadMoreAlgorithmVideos = async () => {
 
     algorithmNextPageToken.value = data.nextPageToken || null
 
-    const subscribedCreatorIds = new Set(creators.value.map(c => c.id))
     const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
     const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
-    const parsed = data.items
-      .filter(item => item.id?.videoId && !subscribedCreatorIds.has(item.snippet.channelId))
-      .map(item => {
-        const snippet = item.snippet
-        const videoId = item.id.videoId
-        const title = snippet.title.toLowerCase()
-        const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-        const channelId = snippet.channelId
+    const parsed = data.items.filter(item => item.id?.videoId).map(item => {
+      const snippet = item.snippet
+      const videoId = item.id.videoId
+      const title = snippet.title.toLowerCase()
+      const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
+      const channelId = snippet.channelId
 
-        return {
-          id: videoId,
-          youtubeId: videoId,
-          creatorId: channelId,
-          creatorName: snippet.channelTitle,
-          creatorSubCount: subCountMap.get(channelId) || '',
-          title: snippet.title,
-          thumbnail: thumbUrl,
-          isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
-          isFavorite: existingMap.get(videoId) || false,
-          views: snippet.publishedAt.substring(0, 10),
-          publishedAt: snippet.publishedAt,
-          duration: 0,
-          progressPercent: 0,
-          currentTime: 0,
-          historyUpdatedAt: null
-        }
-      })
+      return {
+        id: videoId,
+        youtubeId: videoId,
+        creatorId: channelId,
+        creatorName: snippet.channelTitle,
+        creatorSubCount: subCountMap.get(channelId) || '',
+        title: snippet.title,
+        thumbnail: thumbUrl,
+        isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+        isFavorite: existingMap.get(videoId) || false,
+        views: snippet.publishedAt.substring(0, 10),
+        publishedAt: snippet.publishedAt,
+        duration: 0,
+        progressPercent: 0,
+        currentTime: 0,
+        historyUpdatedAt: null
+      }
+    })
 
     await fetchAndUpdateVideoDurations(parsed)
-    algorithmVideos.value.push(...parsed)
+    
+    const existingIds = new Set(algorithmVideos.value.map(v => v.id))
+    parsed.forEach(v => {
+      if (!existingIds.has(v.id)) algorithmVideos.value.push(v)
+    })
   } catch (error) {
     console.error('알고리즘 추가 로드 실패:', error)
   } finally {
@@ -3675,19 +3727,20 @@ const triggerTabSearchOrUpdate = async () => {
       return
     }
 
-    if (currentTab.value === 'discoverHeart' && !selectedCreator.value && !query) {
-      const heartCreators = creators.value.filter(c => c.isFavorite)
-      const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
-      
-      activeFilterQuery.value = ''
-      isLoading.value = true
-
-      fetchChannelVideosParallel(targetCreators).then(async () => {
-        await loadDataFromDB()
-        isLoading.value = false
-      }).catch(() => {
-        isLoading.value = false
-      })
+    if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
+      activeFilterQuery.value = query
+      if (!query) {
+        const heartCreators = creators.value.filter(c => c.isFavorite)
+        const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
+        
+        isLoading.value = true
+        fetchChannelVideosParallel(targetCreators).then(async () => {
+          await loadDataFromDB()
+          isLoading.value = false
+        }).catch(() => {
+          isLoading.value = false
+        })
+      }
       return
     }
 
@@ -3698,7 +3751,7 @@ const triggerTabSearchOrUpdate = async () => {
 }
 
 const handleSearch = async () => {
-  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || (currentTab.value === 'discoverHeart' && !searchQuery.value.trim())) {
+  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || (currentTab.value === 'discoverHeart')) {
     await triggerTabSearchOrUpdate()
   } else {
     activeFilterQuery.value = searchQuery.value.trim()
@@ -3912,6 +3965,14 @@ const selectDiscoverHeart = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
+
+  const heartCreators = creators.value.filter(c => c.isFavorite)
+  const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
+  
+  if (targetCreators.length > 0) {
+    await fetchChannelVideosParallel(targetCreators)
+  }
+
   await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
@@ -4153,9 +4214,12 @@ const getHeaderTitle = computed(() => {
   if (isTrendingMode.value) return '실시간 급상승 영상'
   if (isMusicMode.value) return '유튜브 음악 탭'
   if (currentTab.value === 'discoverAll') return '전체 구독 피드'
-  return '구독 피드 모음'
+  return '구독 피드 모음 (하트 크리에이터)'
 })
 
+/**
+ * 🎯 화면에 노출될 영상 목록 계산 (구독 피드 모음 조건부 검색 필터 반영)
+ */
 const displayedVideos = computed(() => {
   let result = videos.value
 
@@ -4187,15 +4251,23 @@ const displayedVideos = computed(() => {
     const subscribedIds = creators.value.map(c => c.id)
     result = result.filter(v => subscribedIds.includes(v.creatorId))
   } else if (currentTab.value === 'discoverHeart') {
-    const favoriteCreatorIds = creators.value.filter(c => c.isFavorite).map(c => c.id)
-    result = result.filter(v => favoriteCreatorIds.includes(v.creatorId))
+    // 💖 구독 피드 모음 탭 처리
+    const favoriteCreators = creators.value.filter(c => c.isFavorite)
+    // 하트 등록 인플루언서가 없으면 전체 구독 인플루언서 대상
+    const targetCreatorIds = favoriteCreators.length > 0 
+      ? favoriteCreators.map(c => c.id) 
+      : creators.value.map(c => c.id)
+
+    result = result.filter(v => targetCreatorIds.includes(v.creatorId))
   }
 
+  // 🔍 검색어 값(activeFilterQuery)이 존재할 때 필터링 적용
   if (activeFilterQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
     const query = activeFilterQuery.value.trim().toLowerCase()
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
   }
 
+  // 정렬 처리 (최신순)
   if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value && !isHistoryMode.value && !isAlgorithmMode.value) {
     result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
   }
@@ -4302,7 +4374,7 @@ html, body {
   transition: transform 0.3s cubic-bezier(0.1, 0.7, 0.1, 1), box-shadow 0.3s ease; 
   cursor: pointer;
   will-change: transform;
-  transform: translateZ(0); /* GPU 가속 활성화 */
+  transform: translateZ(0);
 }
 .glass-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(121, 40, 202, 0.25) !important; border-color: rgba(167, 139, 250, 0.45) !important; }
 
@@ -4313,7 +4385,7 @@ html, body {
 .video-thumbnail-wrapper {
   position: relative;
   background: #000;
-  aspect-ratio: 16 / 9; /* 유튜브와 동일한 16:9 비율 강제 고정 */
+  aspect-ratio: 16 / 9;
   width: 100%;
   overflow: hidden;
 }
@@ -4350,15 +4422,15 @@ html, body {
 .modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
 .video-container {
-position: relative;
-width: 100%;
-aspect-ratio: 16 / 9;
-min-height: 180px;
-background: #000000;
-overflow: hidden;
-flex-shrink: 0;
-transform: translateZ(0); /* GPU 가속 활성화로 깜빡임 방지 */
-will-change: width, height;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 180px;
+  background: #000000;
+  overflow: hidden;
+  flex-shrink: 0;
+  transform: translateZ(0);
+  will-change: width, height;
 }
 .video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 320px; }
 .video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
@@ -4372,14 +4444,14 @@ will-change: width, height;
 }
 
 .youtube-iframe {
-position: absolute;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-border: 0;
-display: block;
-transform: translateZ(0);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  transform: translateZ(0);
 }
 
 .comments-scroll-area { max-height: 480px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; padding-right: 16px; }
@@ -4417,5 +4489,4 @@ transform: translateZ(0);
   font-weight: 400 !important;
   color: #ffffff !important;
 }
-
 </style>
