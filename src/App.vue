@@ -3238,10 +3238,7 @@ const fetchTrendingVideos = async () => {
 }
 
 /**
- * 🔥 유튜브 알고리즘 추천 로직 (유튜브 홈 피드 유사 구현)
- * 1. 사용자의 시청 기록(History) 및 즐겨찾기(Favorite) 기반 핵심 검색어/태그 추천 시드 추출
- * 2. 인기 트렌드 영상과 시청 패턴 기반 검색 결과를 혼합(Exploration/Exploitation)
- * 3. 이미 구독한 채널 및 시청 영상을 일부 조합하여 개인화 추천 피드 구성
+ * 🔥 유튜브 알고리즘 추천 로직
  */
 const fetchAlgorithmVideos = async () => {
   if (API_KEYS.length === 0) return
@@ -3249,10 +3246,8 @@ const fetchAlgorithmVideos = async () => {
   algorithmNextPageToken.value = null
 
   try {
-    // 1. 사용자 데이터(시청 기록, 즐겨찾기 영상, 크리에이터) 기반 시드 키워드 추출
     const seedKeywords = new Set()
     
-    // 시청한 영상 제목에서 주요 단어 추출
     historyList.value.slice(0, 10).forEach(h => {
       const v = videos.value.find(vid => vid.id === h.videoId)
       if (v && v.title) {
@@ -3261,20 +3256,17 @@ const fetchAlgorithmVideos = async () => {
       }
     })
 
-    // 즐겨찾기 영상 제목
     videos.value.filter(v => v.isFavorite).slice(0, 5).forEach(v => {
       const cleanWords = v.title.replace(/\[.*?\]|\(.*?\)|[^\w\s가-힣]/g, ' ').split(/\s+/).filter(w => w.length >= 2)
       cleanWords.slice(0, 2).forEach(w => seedKeywords.add(w))
     })
 
-    // 구독 크리에이터 이름
     creators.value.slice(0, 5).forEach(c => seedKeywords.add(c.name))
 
     const defaultKeywords = ['인기 이슈', '알고리즘 추천', '트렌드 모음', '브이로그', 'IT 테크 리뷰', '게임 핫하이라이트']
     const mergedKeywords = [...Array.from(seedKeywords), ...defaultKeywords]
     const randomQuery = mergedKeywords[Math.floor(Math.random() * mergedKeywords.length)]
 
-    // 2. 연관 영상 검색 API + 인기 급상승 API 병행 호출 (유튜브 홈피드 시뮬레이션)
     const [searchRes, trendingRes] = await Promise.allSettled([
       fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(randomQuery)}&type=video&key=${key}`),
       fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=15&key=${key}`)
@@ -3349,14 +3341,12 @@ const fetchAlgorithmVideos = async () => {
       candidateVideos.push(...trendingParsed)
     }
 
-    // 3. 중복 제거 및 무작위 셔플로 유튜브 특유의 피드 감성 제공
     const uniqueMap = new Map()
     candidateVideos.forEach(v => {
       if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v)
     })
     
     let combined = Array.from(uniqueMap.values())
-    // 피드 목록 셔플 (랜덤 믹스)
     for (let i = combined.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [combined[i], combined[j]] = [combined[j], combined[i]]
@@ -3717,19 +3707,18 @@ const triggerTabSearchOrUpdate = async () => {
       return
     }
 
+    // 🎯 구독 피드 모음 탭에서 조회/검색 실행
     if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
       activeFilterQuery.value = query
+      // 🌟 핵심: 검색어 값이 없으면 YouTube API를 직접 호출하여 최신 영상 가져오기
       if (!query) {
         const heartCreators = creators.value.filter(c => c.isFavorite)
         const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
         
-        isLoading.value = true
-        fetchChannelVideosParallel(targetCreators).then(async () => {
+        if (targetCreators.length > 0) {
+          await fetchChannelVideosParallel(targetCreators)
           await loadDataFromDB()
-          isLoading.value = false
-        }).catch(() => {
-          isLoading.value = false
-        })
+        }
       }
       return
     }
@@ -3941,6 +3930,9 @@ const selectDiscoverAll = async () => {
   scrollToTop(mainScrollRef.value)
 }
 
+/**
+ * 🎯 구독 피드 모음 (하트 인플루언서) 탭 선택시 실행
+ */
 const selectDiscoverHeart = async () => {
   isLoading.value = true
   selectedCreator.value = null
@@ -3956,14 +3948,15 @@ const selectDiscoverHeart = async () => {
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
+  // 🌟 하트(isFavorite: true) 인플루언서의 최신 동영상을 YouTube API로 병렬 호출하여 가져오기
   const heartCreators = creators.value.filter(c => c.isFavorite)
   const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
   
   if (targetCreators.length > 0) {
     await fetchChannelVideosParallel(targetCreators)
+    await loadDataFromDB()
   }
 
-  await new Promise(r => setTimeout(r, 200))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -4208,7 +4201,7 @@ const getHeaderTitle = computed(() => {
 })
 
 /**
- * 🎯 화면에 노출될 영상 목록 계산 (구독 피드 모음 조건부 검색 필터 반영)
+ * 🎯 화면에 노출될 영상 목록 계산
  */
 const displayedVideos = computed(() => {
   let result = videos.value
@@ -4241,9 +4234,8 @@ const displayedVideos = computed(() => {
     const subscribedIds = creators.value.map(c => c.id)
     result = result.filter(v => subscribedIds.includes(v.creatorId))
   } else if (currentTab.value === 'discoverHeart') {
-    // 💖 구독 피드 모음 탭 처리
+    // 💖 구독 피드 모음 탭: 하트 등록 인플루언서만 추출
     const favoriteCreators = creators.value.filter(c => c.isFavorite)
-    // 하트 등록 인플루언서가 없으면 전체 구독 인플루언서 대상
     const targetCreatorIds = favoriteCreators.length > 0 
       ? favoriteCreators.map(c => c.id) 
       : creators.value.map(c => c.id)
@@ -4251,7 +4243,7 @@ const displayedVideos = computed(() => {
     result = result.filter(v => targetCreatorIds.includes(v.creatorId))
   }
 
-  // 🔍 검색어 값(activeFilterQuery)이 존재할 때 필터링 적용
+  // 🔍 검색어 값(activeFilterQuery)이 존재할 때만 로컬 데이터베이스 필터링 적용
   if (activeFilterQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
     const query = activeFilterQuery.value.trim().toLowerCase()
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
