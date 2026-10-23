@@ -1471,6 +1471,7 @@ const playlistItems = ref([])
 const activePlaylistId = ref(null)
 
 const playlistResumeStates = reactive({})
+const currentPlayingPlaylistId = ref(null)
 
 const loadPlaylistResumeStates = () => {
   playlists.value.forEach(pl => {
@@ -2349,6 +2350,7 @@ const deletePlaylist = async (playlist) => {
   tx.oncomplete = async () => {
     if (activePlaylistId.value === playlist.id) activePlaylistId.value = null
     localStorage.removeItem(`neontube_playlist_resume_${playlist.id}`)
+    localStorage.removeItem(`neontube_playlist_last_index_${playlist.id}`)
     await loadDataFromDB()
   }
 }
@@ -2500,8 +2502,11 @@ const confirmSaveToPlaylists = async () => {
 
 const selectPlaylistFolder = (playlist) => { activePlaylistId.value = playlist.id }
 
-const playPlaylistFolder = async (playlist) => {
-  const itemsInPlaylist = playlistItems.value.filter(i => i.playlistId === playlist.id)
+const playPlaylistFolder = async (playlistInput) => {
+  const playlistId = playlistInput.id || playlistInput
+  const playlist = playlists.value.find(p => p.id === playlistId) || { id: playlistId }
+
+  const itemsInPlaylist = playlistItems.value.filter(i => i.playlistId === playlistId)
   const targetVideos = []
   itemsInPlaylist.forEach(item => {
     const v = videos.value.find(video => video.id === item.videoId)
@@ -2510,13 +2515,27 @@ const playPlaylistFolder = async (playlist) => {
 
   if (targetVideos.length === 0) return
 
-  if (playlist.id in playlistResumeStates) {
-    enableResume.value = playlistResumeStates[playlist.id]
+  currentPlayingPlaylistId.value = playlistId
+
+  const isResumeOn = playlistResumeStates[playlistId] ?? true
+  if (playlistId in playlistResumeStates) {
+    enableResume.value = playlistResumeStates[playlistId]
+  }
+
+  let startIndex = 0
+  if (isResumeOn) {
+    const savedIdx = localStorage.getItem(`neontube_playlist_last_index_${playlistId}`)
+    if (savedIdx !== null) {
+      const parsed = parseInt(savedIdx, 10)
+      if (!isNaN(parsed) && parsed >= 0 && parsed < targetVideos.length) {
+        startIndex = parsed
+      }
+    }
   }
 
   playlistQueue.value = targetVideos
-  playlistIndex.value = 0
-  await playQueueIndex(0)
+  playlistIndex.value = startIndex
+  await playQueueIndex(startIndex)
 }
 
 const playVideo = async (video) => {
@@ -2572,6 +2591,13 @@ const playQueueIndex = async (idx) => {
   if (idx < 0 || idx >= playlistQueue.value.length) return
   playlistIndex.value = idx
   isQueueModalOpen.value = false
+
+  if (currentPlayingPlaylistId.value) {
+    const isResumeOn = playlistResumeStates[currentPlayingPlaylistId.value] ?? true
+    if (isResumeOn) {
+      localStorage.setItem(`neontube_playlist_last_index_${currentPlayingPlaylistId.value}`, idx)
+    }
+  }
 
   const video = playlistQueue.value[idx]
   activeVideo.value = video
@@ -2664,6 +2690,7 @@ const closePlayer = () => {
   
   isPlayerOpen.value = false
   saveCurrentHistoryToDB()
+  currentPlayingPlaylistId.value = null
 
   if (!isPopStateTriggered) window.history.back()
   isPopStateTriggered = false
