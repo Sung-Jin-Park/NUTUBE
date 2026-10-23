@@ -23,7 +23,7 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isAlgorithmMode ? '알고리즘 추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 전체 피드 내 검색어 입력 후 엔터...')))))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isAlgorithmMode ? '알고리즘 추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 피드 내 검색어 입력 후 엔터 또는 돋보기 버튼 클릭...')))))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1 mx-2"
         hide-details
@@ -708,7 +708,7 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isAlgorithmMode ? '구독 중인 채널이 없거나 시청 기록이 적습니다.' : (isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : (currentTab === 'discoverHeart' ? '구독 피드 모음에 등록된 하트 크리에이터가 없거나 새로운 영상이 없습니다.' : '구독 중인 채널의 새로운 영상이 없습니다.'))))) }}
+                {{ isAlgorithmMode ? '구독 중인 채널이 없거나 시청 기록이 적습니다.' : (isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : (currentTab === 'discoverHeart' ? '구독 피드 모음에 등록된 하트 크리에이터가 없거나 저장된 영상이 없습니다. 돋보기/엔터 키로 최신 영상을 불러오세요.' : '구독 중인 채널의 저장된 영상이 없습니다. 돋보기/엔터 키로 최신 영상을 불러오세요.'))))) }}
               </p>
             </v-col>
           </v-row>
@@ -1653,6 +1653,9 @@ const formatVideoDuration = (totalSeconds) => {
   return `${minutes}:${pad(seconds)}`
 }
 
+/**
+ * 🎯 쇼츠 판별 조건 1: 이미지 세로 스냅샷 비율 감지 (높이 > 너비)
+ */
 const checkThumbnailAspectRatio = (videoList) => {
   if (!Array.isArray(videoList)) return
   videoList.forEach(video => {
@@ -1815,6 +1818,9 @@ const parseISO8601Duration = (durationStr) => {
   return (parseInt(match[1] || 0, 10) * 3600) + (parseInt(match[2] || 0, 10) * 60) + parseInt(match[3] || 0, 10)
 }
 
+/**
+ * 🎯 쇼츠 판별 조건 2: 재생 시간 120초(2분) 이하 조건 적용
+ */
 const fetchAndUpdateVideoDurations = async (videoList) => {
   if (!videoList || videoList.length === 0 || API_KEYS.length === 0) return videoList
   const targetVideos = videoList.filter(v => !v.duration || v.duration === 0)
@@ -1828,18 +1834,17 @@ const fetchAndUpdateVideoDurations = async (videoList) => {
     if (data.items) {
       const durationMap = new Map()
       data.items.forEach(item => durationMap.set(item.id, parseISO8601Duration(item.contentDetails.duration)))
-      // 영상 상세 정보(duration)를 받아온 후 쇼츠 여부를 재판별
-videoList.forEach(v => {
-  if (durationMap.has(v.youtubeId)) {
-    const dur = durationMap.get(v.youtubeId)
-    v.duration = dur
-    
-    if (dur > 0 && dur <= 120) {
-      v.isShorts = true
-    }
-  }
-})
-
+      
+      videoList.forEach(v => {
+        if (durationMap.has(v.youtubeId)) {
+          const dur = durationMap.get(v.youtubeId)
+          v.duration = dur
+          
+          if (dur > 0 && dur <= 120) {
+            v.isShorts = true
+          }
+        }
+      })
     }
   } catch (err) { console.error(err) }
   return videoList
@@ -1889,7 +1894,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
             const videoId = item.id
             const title = snippet.title.toLowerCase()
             const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-            const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+            const dur = parseISO8601Duration(item.contentDetails?.duration)
+            const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
             const channelId = snippet.channelId
             const matchedCreator = creators.value.find(c => c.id === channelId)
             const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
@@ -1906,7 +1912,7 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
               isFavorite: false,
               views: snippet.publishedAt.substring(0, 10),
               publishedAt: snippet.publishedAt,
-              duration: parseISO8601Duration(item.contentDetails?.duration),
+              duration: dur,
               progressPercent: 0,
               currentTime: 0,
               historyUpdatedAt: null
@@ -3004,8 +3010,6 @@ const loadDataFromDB = async () => {
     db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
-  // 앱 최초 구동/새로고침 시 구독 채널 영상 API 자동 호출 제거 (DB 데이터만 로드)
-
   const dbVideos = await new Promise((resolve) => {
     db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
   })
@@ -3022,7 +3026,8 @@ const loadDataFromDB = async () => {
     const videoDuration = h?.duration || v.duration || 0
     const currentTime = h?.currentTime || 0
     let percent = (currentTime > 0 && videoDuration > 0) ? Math.min(100, Math.floor((currentTime / videoDuration) * 100)) : 0
-    return { ...v, duration: videoDuration, currentTime, progressPercent: percent, historyUpdatedAt: h?.updatedAt || null }
+    const isShorts = v.isShorts || (videoDuration > 0 && videoDuration <= 120)
+    return { ...v, duration: videoDuration, currentTime, progressPercent: percent, historyUpdatedAt: h?.updatedAt || null, isShorts }
   }).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
   checkThumbnailAspectRatio(videos.value)
@@ -3217,7 +3222,8 @@ const fetchTrendingVideos = async () => {
       const videoId = item.id
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+      const dur = parseISO8601Duration(item.contentDetails?.duration)
+      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
       const channelId = snippet.channelId
       const matchedCreator = creators.value.find(c => c.id === channelId)
       const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
@@ -3234,7 +3240,7 @@ const fetchTrendingVideos = async () => {
         isFavorite: existingMap.get(videoId) || false,
         views: snippet.publishedAt.substring(0, 10),
         publishedAt: snippet.publishedAt,
-        duration: parseISO8601Duration(item.contentDetails?.duration),
+        duration: dur,
         progressPercent: 0,
         currentTime: 0,
         historyUpdatedAt: null
@@ -3344,6 +3350,7 @@ const fetchAlgorithmVideos = async () => {
         const title = snippet.title.toLowerCase()
         const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
         const channelId = snippet.channelId
+        const dur = parseISO8601Duration(item.contentDetails?.duration)
 
         return {
           id: videoId,
@@ -3353,11 +3360,11 @@ const fetchAlgorithmVideos = async () => {
           creatorSubCount: subCountMap.get(channelId) || '',
           title: snippet.title,
           thumbnail: thumbUrl,
-          isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+          isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120),
           isFavorite: existingMap.get(videoId) || false,
           views: snippet.publishedAt.substring(0, 10),
           publishedAt: snippet.publishedAt,
-          duration: parseISO8601Duration(item.contentDetails?.duration),
+          duration: dur,
           progressPercent: 0,
           currentTime: 0,
           historyUpdatedAt: null
@@ -3562,7 +3569,8 @@ const loadMoreTrendingVideos = async () => {
       const videoId = item.id
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+      const dur = parseISO8601Duration(item.contentDetails?.duration)
+      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
       const channelId = snippet.channelId
       const matchedCreator = creators.value.find(c => c.id === channelId)
       const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
@@ -3579,7 +3587,7 @@ const loadMoreTrendingVideos = async () => {
         isFavorite: existingMap.get(videoId) || false,
         views: snippet.publishedAt.substring(0, 10),
         publishedAt: snippet.publishedAt,
-        duration: parseISO8601Duration(item.contentDetails?.duration),
+        duration: dur,
         progressPercent: 0,
         currentTime: 0,
         historyUpdatedAt: null
@@ -3688,6 +3696,9 @@ const loadMoreChannelVideos = async (creator) => {
   } catch (error) { console.error(error) } finally { isLoading.value = false }
 }
 
+/**
+ * 🎯 구독 피드 모드(discoverAll/discoverHeart)는 검색어가 없는 상태에서 돋보기버튼/엔터 입력 시만 API 호출
+ */
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
 
@@ -3696,17 +3707,36 @@ const triggerTabSearchOrUpdate = async () => {
     return
   }
 
-  // 🎯 검색 버튼이나 조회 버튼을 누를 때 전체 구독 피드 갱신
-  if (!query && currentTab.value === 'discoverAll' && !selectedCreator.value && creators.value.length > 0) {
-    activeFilterQuery.value = ''
-    isLoading.value = true
+  // 🎯 구독 전체 피드 모드에서 돋보기 아이콘을 누르거나 엔터 입력 시 API 조회
+  if (currentTab.value === 'discoverAll' && !selectedCreator.value) {
+    activeFilterQuery.value = query
+    if (creators.value.length > 0) {
+      isLoading.value = true
+      try {
+        await fetchChannelVideosParallel(creators.value)
+        await loadDataFromDB()
+      } finally {
+        isLoading.value = false
+      }
+    }
+    return
+  }
+
+  // 🎯 구독 피드 모음(하트) 탭에서 돋보기 아이콘을 누르거나 엔터 입력 시 API 조회
+  if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
+    activeFilterQuery.value = query
+    const heartCreators = creators.value.filter(c => c.isFavorite)
+    const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
     
-    fetchChannelVideosParallel(creators.value).then(async () => {
-      await loadDataFromDB()
-      isLoading.value = false
-    }).catch(() => {
-      isLoading.value = false
-    })
+    if (targetCreators.length > 0) {
+      isLoading.value = true
+      try {
+        await fetchChannelVideosParallel(targetCreators)
+        await loadDataFromDB()
+      } finally {
+        isLoading.value = false
+      }
+    }
     return
   }
 
@@ -3738,19 +3768,6 @@ const triggerTabSearchOrUpdate = async () => {
       return
     }
 
-    // 🎯 구독 피드 모음 탭에서 조회/검색 버튼을 눌렀을 때만 YouTube API 호출
-    if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
-      activeFilterQuery.value = query
-      const heartCreators = creators.value.filter(c => c.isFavorite)
-      const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
-      
-      if (targetCreators.length > 0) {
-        await fetchChannelVideosParallel(targetCreators)
-        await loadDataFromDB()
-      }
-      return
-    }
-
     activeFilterQuery.value = query
   } finally {
     isLoading.value = false
@@ -3758,7 +3775,7 @@ const triggerTabSearchOrUpdate = async () => {
 }
 
 const handleSearch = async () => {
-  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || (currentTab.value === 'discoverHeart')) {
+  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || currentTab.value === 'discoverHeart' || currentTab.value === 'discoverAll') {
     await triggerTabSearchOrUpdate()
   } else {
     activeFilterQuery.value = searchQuery.value.trim()
@@ -3941,6 +3958,9 @@ const loadMoreSearchVideos = async () => {
   }
 }
 
+/**
+ * 🎯 구독 전체 피드 탭 이동 시 API 자동 요청 제거 (DB 데이터만 빠른 렌더링)
+ */
 const selectDiscoverAll = async () => {
   isLoading.value = true
   selectedCreator.value = null
@@ -3955,13 +3975,13 @@ const selectDiscoverAll = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise(r => setTimeout(r, 100))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
 
 /**
- * 🎯 구독 피드 모음 (하트 인플루언서) 탭 선택시 실행 (API 호출 제거, DB 데이터만 렌더링)
+ * 🎯 구독 피드 모음 (하트) 탭 이동 시 API 자동 요청 제거 (DB 데이터만 빠른 렌더링)
  */
 const selectDiscoverHeart = async () => {
   isLoading.value = true
@@ -3978,7 +3998,7 @@ const selectDiscoverHeart = async () => {
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
 
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise(r => setTimeout(r, 100))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -4033,7 +4053,7 @@ const enableFavoriteVideosMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise(r => setTimeout(r, 100))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -4052,7 +4072,7 @@ const enableHistoryMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise(r => setTimeout(r, 100))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -4072,7 +4092,7 @@ const enablePlaylistMode = async () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise(r => setTimeout(r, 100))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -4095,7 +4115,7 @@ const enableSearchMode = async () => {
   activeFilterQuery.value = ''
 
   if (window.innerWidth < 960) drawer.value = false
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise(r => setTimeout(r, 100))
   isLoading.value = false
   scrollToTop(mainScrollRef.value)
 }
@@ -4418,6 +4438,7 @@ html, body {
 .modal-vertical-container::-webkit-scrollbar { width: 8px; }
 .modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
+/* 동영상 깜빡임 방지 및 렌더링 최적화 CSS */
 .video-container {
   position: relative;
   width: 100%;
@@ -4426,8 +4447,12 @@ html, body {
   background: #000000;
   overflow: hidden;
   flex-shrink: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transform: translateZ(0);
-  will-change: width, height;
+  -webkit-transform: translateZ(0);
+  will-change: aspect-ratio;
+  transition: aspect-ratio 0.2s ease-in-out;
 }
 .video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 320px; }
 .video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
@@ -4448,6 +4473,7 @@ html, body {
   height: 100%;
   border: 0;
   display: block;
+  backface-visibility: hidden;
   transform: translateZ(0);
 }
 
