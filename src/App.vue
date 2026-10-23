@@ -1828,9 +1828,18 @@ const fetchAndUpdateVideoDurations = async (videoList) => {
     if (data.items) {
       const durationMap = new Map()
       data.items.forEach(item => durationMap.set(item.id, parseISO8601Duration(item.contentDetails.duration)))
-      videoList.forEach(v => {
-        if (durationMap.has(v.youtubeId)) v.duration = durationMap.get(v.youtubeId)
-      })
+      // 영상 상세 정보(duration)를 받아온 후 쇼츠 여부를 재판별
+videoList.forEach(v => {
+  if (durationMap.has(v.youtubeId)) {
+    const dur = durationMap.get(v.youtubeId)
+    v.duration = dur
+    
+    if (dur > 0 && dur <= 120) {
+      v.isShorts = true
+    }
+  }
+})
+
     }
   } catch (err) { console.error(err) }
   return videoList
