@@ -438,7 +438,8 @@
                 <div class="overflow-hidden flex-grow-1">
                   <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                    {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                    <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                     <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                   </p>
                 </div>
@@ -658,7 +659,8 @@
                 <div class="overflow-hidden flex-grow-1">
                   <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                    {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                    <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                     <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                   </p>
                 </div>
@@ -738,7 +740,8 @@
                     <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                     <div class="d-flex align-center gap-2 flex-wrap">
                       <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                        {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                        <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                        <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                         <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                       </p>
                       <span class="text-grey-darken-1 text-caption">• 시청일: {{ formatRelativeTime(video.historyUpdatedAt) }}</span>
@@ -804,7 +807,8 @@
                       <div class="d-flex flex-column gap-1">
                         <div class="d-flex justify-space-between align-center">
                           <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                            {{ video.creatorName }} <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                            <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                            <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                           </p>
                           <div class="d-flex align-center">
                             <v-btn
@@ -871,7 +875,8 @@
                           <div class="flex-grow-1 overflow-hidden">
                             <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 mb-1 text-truncate-2" v-html="video.title"></h3>
                             <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                              {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                              <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                              <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                             </p>
                           </div>
                           <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 95px;">
@@ -1193,7 +1198,8 @@
               </div>
               <div class="d-flex align-center gap-2 mt-2">
                 <p class="text-grey-lighten-1 text-caption mb-0">
-                  {{ activeVideo?.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(activeVideo?.creatorId, activeVideo) }})</span>
+                  <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(activeVideo)" title="이 채널로 이동">{{ activeVideo?.creatorName }}</span> 
+                  <span class="text-accent font-weight-medium">({{ getCreatorSubCount(activeVideo?.creatorId, activeVideo) }})</span>
                   <span v-if="activeVideo?.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(activeVideo.views) }}</span>
                 </p>
                 <div class="d-flex align-center gap-1">
@@ -1401,7 +1407,8 @@
                 <div class="overflow-hidden flex-grow-1">
                   <h4 class="text-white text-caption text-md-body-2 font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
                   <p class="text-grey-darken-1 text-caption mb-0">
-                    {{ video.creatorName }} <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                    <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                     <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                   </p>
                 </div>
@@ -1813,6 +1820,24 @@ const getCreatorSubCount = (creatorId, video) => {
     return formatCreatorSubCount(foundCreator.subCount)
   }
   return '구독중'
+}
+
+/**
+ * 💡 신규 기능: 검색 결과나 영상 카드에서 유튜버 명을 누르면 해당 채널 화면으로 이동
+ */
+const selectCreatorFromVideo = async (video) => {
+  if (!video || !video.creatorId) return
+  let creator = creators.value.find(c => c.id === video.creatorId)
+  if (!creator) {
+    creator = {
+      id: video.creatorId,
+      name: video.creatorName,
+      subCount: video.creatorSubCount || '',
+      avatar: video.thumbnail || 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
+      isFavorite: false
+    }
+  }
+  await selectCreatorFilter(creator)
 }
 
 const fetchSubscriberCountsForChannelIds = async (channelIds) => {
@@ -3176,7 +3201,6 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         const targetCreator = chunk.find(c => c.id === item.id)
         if (targetCreator) {
           targetCreator.subCount = formattedSubCount
-          // DB에도 갱신된 구독자 수 반영
           openDB().then(db => {
             db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(targetCreator)))
           })
@@ -3199,6 +3223,8 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         if (!data.error && data.items) {
           if (data.nextPageToken) {
             channelNextPageTokens.value.set(creator.id, data.nextPageToken)
+          } else {
+            channelNextPageTokens.value.delete(creator.id)
           }
 
           const db = await openDB()
@@ -3686,8 +3712,11 @@ const loadMoreTrendingVideos = async () => {
   }
 }
 
+/**
+ * 💡 수정 완료: 구독 유튜버 채널 스크롤 시 무한 API 로딩 오류 방지 (isLoading 체크 및 nextPageToken 안전 관리)
+ */
 const loadMoreChannelVideos = async (creator) => {
-  if (API_KEYS.length === 0 || !creator) return
+  if (API_KEYS.length === 0 || !creator || isLoading.value) return
   const pageToken = channelNextPageTokens.value.get(creator.id)
   if (!pageToken) return
   isLoading.value = true
@@ -3696,16 +3725,26 @@ const loadMoreChannelVideos = async (creator) => {
     const channelData = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${creator.id}&key=${key}`
     )
-    if (channelData.error || !channelData.items || channelData.items.length === 0) return
+    if (channelData.error || !channelData.items || channelData.items.length === 0) {
+      isLoading.value = false
+      return
+    }
     const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
 
     const data = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&pageToken=${pageToken}&key=${key}`
     )
-    if (data.error || !data.items) return
+    if (data.error || !data.items) {
+      channelNextPageTokens.value.delete(creator.id)
+      isLoading.value = false
+      return
+    }
 
-    if (data.nextPageToken) channelNextPageTokens.value.set(creator.id, data.nextPageToken)
-    else channelNextPageTokens.value.delete(creator.id)
+    if (data.nextPageToken) {
+      channelNextPageTokens.value.set(creator.id, data.nextPageToken)
+    } else {
+      channelNextPageTokens.value.delete(creator.id)
+    }
 
     const db = await openDB()
     const dbHistory = await new Promise((resolve) => {
@@ -4235,18 +4274,12 @@ const selectCreatorFilter = async (creator) => {
   }
 }
 
+/**
+ * 💡 수정 완료: 폰 바탕화면 등으로 나갔다가 들어올 때 일시정지 상태 유지 (자동 재생 방지)
+ */
 const handleVisibilityChange = () => {
   if (document.visibilityState === 'visible') {
-    if (ytPlayer.value && typeof ytPlayer.value.getPlayerState === 'function') {
-      try {
-        const state = ytPlayer.value.getPlayerState()
-        if (state === 2 && isPlayerOpen.value) {
-          ytPlayer.value.playVideo()
-        }
-      } catch (e) {
-        console.debug(e)
-      }
-    }
+    // 백그라운드에서 돌아올 때 일시정지 상태(state === 2)였던 경우 자동 재생하지 않고 멈춤 상태 유지
   } 
 }
 
@@ -4272,7 +4305,6 @@ onMounted(async () => {
   await getActiveApiKeyIndex()
   await loadDataFromDB()
   
-  // 💡 수정 핵심: 앱 초기 구동 시 저장된 구독 크리에이터들의 구독자 수 및 최신 영상 자동 동기화
   if (creators.value.length > 0) {
     await fetchChannelVideosParallel(creators.value)
   }
@@ -4569,6 +4601,8 @@ html, body {
 
 .comment-text-content a { color: #a78bfa !important; text-decoration: underline !important; font-weight: 500; }
 .creator-author-badge { background: rgba(167, 139, 250, 0.28); color: #c4b5fd !important; padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.4); }
+.creator-name-link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.creator-name-link:hover { color: #a78bfa !important; }
 .v-checkbox .v-selection-control__label,
 .v-selection-control__wrapper + .v-label {
   font-size: 13.5px !important;
