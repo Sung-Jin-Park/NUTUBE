@@ -562,7 +562,20 @@
                   ></v-checkbox>
                 </div>
 
-                <div class="d-flex justify-end mt-4">
+                <div class="d-flex justify-space-between align-center mt-4" @click.stop>
+                  <v-btn
+                    v-if="playlistResumeStates[playlist.id] && hasPlaylistResumeMemory(playlist.id)"
+                    size="x-small"
+                    variant="text"
+                    color="accent"
+                    class="pa-0 text-caption font-weight-bold"
+                    @click="clearPlaylistResumeMemory(playlist.id)"
+                    title="기억된 이어보기 위치 초기화"
+                  >
+                    이어보기 초기화
+                  </v-btn>
+                  <div v-else></div>
+
                   <v-btn
                     size="small"
                     variant="flat"
@@ -1471,7 +1484,6 @@ const playlistItems = ref([])
 const activePlaylistId = ref(null)
 
 const playlistResumeStates = reactive({})
-const currentPlayingPlaylistId = ref(null)
 
 const loadPlaylistResumeStates = () => {
   playlists.value.forEach(pl => {
@@ -1483,6 +1495,15 @@ const loadPlaylistResumeStates = () => {
 const savePlaylistResumeState = (playlistId) => {
   const val = playlistResumeStates[playlistId] ?? true
   localStorage.setItem(`neontube_playlist_resume_${playlistId}`, val)
+}
+
+const hasPlaylistResumeMemory = (playlistId) => {
+  return localStorage.getItem(`neontube_playlist_last_index_${playlistId}`) !== null
+}
+
+const clearPlaylistResumeMemory = (playlistId) => {
+  localStorage.removeItem(`neontube_playlist_last_index_${playlistId}`)
+  alert('해당 재생 목록의 이어보기 위치가 초기화되었습니다.')
 }
 
 const isPlaylistDialogVisible = ref(false)
@@ -2502,11 +2523,8 @@ const confirmSaveToPlaylists = async () => {
 
 const selectPlaylistFolder = (playlist) => { activePlaylistId.value = playlist.id }
 
-const playPlaylistFolder = async (playlistInput) => {
-  const playlistId = playlistInput.id || playlistInput
-  const playlist = playlists.value.find(p => p.id === playlistId) || { id: playlistId }
-
-  const itemsInPlaylist = playlistItems.value.filter(i => i.playlistId === playlistId)
+const playPlaylistFolder = async (playlist) => {
+  const itemsInPlaylist = playlistItems.value.filter(i => i.playlistId === playlist.id)
   const targetVideos = []
   itemsInPlaylist.forEach(item => {
     const v = videos.value.find(video => video.id === item.videoId)
@@ -2515,25 +2533,23 @@ const playPlaylistFolder = async (playlistInput) => {
 
   if (targetVideos.length === 0) return
 
-  currentPlayingPlaylistId.value = playlistId
+  activePlaylistId.value = playlist.id
+  const resumeEnabled = playlistResumeStates[playlist.id] ?? true
+  enableResume.value = resumeEnabled
 
-  const isResumeOn = playlistResumeStates[playlistId] ?? true
-  if (playlistId in playlistResumeStates) {
-    enableResume.value = playlistResumeStates[playlistId]
-  }
+  playlistQueue.value = targetVideos
 
   let startIndex = 0
-  if (isResumeOn) {
-    const savedIdx = localStorage.getItem(`neontube_playlist_last_index_${playlistId}`)
-    if (savedIdx !== null) {
-      const parsed = parseInt(savedIdx, 10)
-      if (!isNaN(parsed) && parsed >= 0 && parsed < targetVideos.length) {
-        startIndex = parsed
+  if (resumeEnabled) {
+    const savedIndexStr = localStorage.getItem(`neontube_playlist_last_index_${playlist.id}`)
+    if (savedIndexStr !== null) {
+      const parsedIdx = parseInt(savedIndexStr, 10)
+      if (!isNaN(parsedIdx) && parsedIdx >= 0 && parsedIdx < targetVideos.length) {
+        startIndex = parsedIdx
       }
     }
   }
 
-  playlistQueue.value = targetVideos
   playlistIndex.value = startIndex
   await playQueueIndex(startIndex)
 }
@@ -2592,11 +2608,9 @@ const playQueueIndex = async (idx) => {
   playlistIndex.value = idx
   isQueueModalOpen.value = false
 
-  if (currentPlayingPlaylistId.value) {
-    const isResumeOn = playlistResumeStates[currentPlayingPlaylistId.value] ?? true
-    if (isResumeOn) {
-      localStorage.setItem(`neontube_playlist_last_index_${currentPlayingPlaylistId.value}`, idx)
-    }
+  // 재생 목록 폴더이고 '이 폴더 이어보기'가 켜져 있는 경우에만 현재 재생 인덱스 기억
+  if (activePlaylistId.value && (playlistResumeStates[activePlaylistId.value] ?? true)) {
+    localStorage.setItem(`neontube_playlist_last_index_${activePlaylistId.value}`, idx)
   }
 
   const video = playlistQueue.value[idx]
@@ -2690,7 +2704,6 @@ const closePlayer = () => {
   
   isPlayerOpen.value = false
   saveCurrentHistoryToDB()
-  currentPlayingPlaylistId.value = null
 
   if (!isPopStateTriggered) window.history.back()
   isPopStateTriggered = false
@@ -2789,6 +2802,11 @@ const initYouTubePlayer = (youtubeId, startTime) => {
 
             if (playlistIndex.value < playlistQueue.value.length - 1) {
               await playNextInQueue()
+            } else {
+              // 재생 목록의 마지막 영상까지 모두 재생 완료 시 해당 폴더의 이어보기 메모리 초기화
+              if (activePlaylistId.value) {
+                localStorage.removeItem(`neontube_playlist_last_index_${activePlaylistId.value}`)
+              }
             }
           }
         }
