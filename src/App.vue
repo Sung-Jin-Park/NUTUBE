@@ -4548,7 +4548,7 @@ html, body {
 .safe-player-dialog { margin: 8px !important; max-height: 96vh !important; }
 @media (max-width: 600px) { .safe-player-dialog { margin: 0 !important; max-height: 100vh !important; } }
 
-.main-content { overflow-y: auto !important; max-height: calc(100vh - 68px); }
+.main-content { overflow-y: auto !important; height: calc(100dvh - 68px); }
 .loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
 .loading-card { border: 1px solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
 
