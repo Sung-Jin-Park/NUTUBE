@@ -510,7 +510,7 @@
                     <v-list-item-title class="text-body-2">{{ group.name }}</v-list-item-title>
                     <template v-slot:append>
                       <v-btn
-                        v-if="group.id !== 'g_default'"
+                        v-if="group.id !== 'g_default' && group.id !== 'g_music'"
                         icon="mdi-delete"
                         size="x-small"
                         variant="text"
@@ -567,6 +567,23 @@
                       <div class="d-flex justify-space-between align-start mb-3">
                         <v-icon icon="mdi-folder-music" color="accent" size="40"></v-icon>
                         <div class="d-flex align-center gap-1" @click.stop>
+                          <!-- 그룹 이동 메뉴 -->
+                          <v-menu location="bottom end">
+                            <template v-slot:activator="{ props }">
+                              <v-btn v-bind="props" icon="mdi-folder-move" size="x-small" variant="text" color="accent" title="다른 카테고리 그룹으로 이동"></v-btn>
+                            </template>
+                            <v-list density="compact" class="glass-modal rounded-xl py-1" width="160">
+                              <v-list-item
+                                v-for="g in playlistGroups"
+                                :key="g.id"
+                                @click="movePlaylistToGroup(playlist, g.id)"
+                                :class="{ 'text-accent': playlist.groupId === g.id }"
+                              >
+                                <v-list-item-title class="text-body-2 text-white">{{ g.name }}</v-list-item-title>
+                              </v-list-item>
+                            </v-list>
+                          </v-menu>
+
                           <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
                           <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
                           <v-btn
@@ -1024,7 +1041,7 @@
     <!-- 재생 목록 생성/수정 다이얼로그 -->
     <v-dialog v-model="isPlaylistDialogVisible" max-width="400px">
       <v-card class="glass-modal rounded-2xl pa-5 text-white">
-        <h3 class="text-subtitle-1 font-weight-bold mb-3">{{ editingPlaylist ? '재생 목록 폴더 이름 수정' : `새 재생 목록 폴더 생성 (${getCurrentGroupName()})` }}</h3>
+        <h3 class="text-subtitle-1 font-weight-bold mb-3">{{ editingPlaylist ? '재생 목록 폴더 이름 및 그룹 수정' : '새 재생 목록 폴더 생성' }}</h3>
         <v-text-field
           v-model="playlistFormName"
           label="폴더 이름"
@@ -1033,6 +1050,16 @@
           class="mb-3"
           @keydown.enter="savePlaylistFolder"
         ></v-text-field>
+        <v-select
+          v-model="playlistFormGroupId"
+          :items="playlistGroups"
+          item-title="name"
+          item-value="id"
+          label="카테고리 그룹 선택"
+          variant="outlined"
+          density="compact"
+          class="mb-3 text-white"
+        ></v-select>
         <div class="d-flex justify-end gap-2">
           <v-btn variant="text" color="grey-lighten-1" size="small" @click="isPlaylistDialogVisible = false">취소</v-btn>
           <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold rounded-pill px-4" @click="savePlaylistFolder">저장</v-btn>
@@ -1511,6 +1538,9 @@ const isMusicMode = ref(false)
 const isAlgorithmMode = ref(false)
 const isLoading = ref(false)
 
+// ⚡ 네비게이션(뒤로가기) 히스토리 스택
+const navHistory = ref([])
+
 // ⚡ 로컬 무한 스크롤(페이지네이션) 표시 개수 상태
 const visibleLimit = ref(40)
 
@@ -1538,7 +1568,10 @@ const musicCategories = [
   { title: '재즈 / 어쿠스틱', value: 'jazz' }
 ]
 
-const playlistGroups = ref([{ id: 'g_default', name: '기본', order: 0 }])
+const playlistGroups = ref([
+  { id: 'g_default', name: '기본', order: 0 },
+  { id: 'g_music', name: '음악', order: 1 }
+])
 const activeGroupId = ref('g_default')
 const isGroupDialogVisible = ref(false)
 const groupFormName = ref('')
@@ -1572,6 +1605,7 @@ const clearPlaylistResumeMemory = (playlistId) => {
 
 const isPlaylistDialogVisible = ref(false)
 const playlistFormName = ref('')
+const playlistFormGroupId = ref('g_default')
 const editingPlaylist = ref(null)
 
 const isSaveToPlaylistDialogVisible = ref(false)
@@ -1627,10 +1661,48 @@ const searchNextPageToken = ref(null)
 const draggedIndex = ref(null)
 
 // ⚡ 스마트 백워드 (내부 페이지 돌아가기 기능)
+const getCurrentPageState = () => ({
+  currentTab: currentTab.value,
+  selectedCreator: selectedCreator.value,
+  isSearchMode: isSearchMode.value,
+  isTrendingMode: isTrendingMode.value,
+  isFavoriteVideosMode: isFavoriteVideosMode.value,
+  isHistoryMode: isHistoryMode.value,
+  isPlaylistMode: isPlaylistMode.value,
+  activePlaylistId: activePlaylistId.value,
+  isMusicMode: isMusicMode.value,
+  isAlgorithmMode: isAlgorithmMode.value,
+  activeGroupId: activeGroupId.value,
+  searchQuery: searchQuery.value,
+  activeFilterQuery: activeFilterQuery.value
+})
+
+const restorePageState = (state) => {
+  currentTab.value = state.currentTab
+  selectedCreator.value = state.selectedCreator
+  isSearchMode.value = state.isSearchMode
+  isTrendingMode.value = state.isTrendingMode
+  isFavoriteVideosMode.value = state.isFavoriteVideosMode
+  isHistoryMode.value = state.isHistoryMode
+  isPlaylistMode.value = state.isPlaylistMode
+  activePlaylistId.value = state.activePlaylistId
+  isMusicMode.value = state.isMusicMode
+  isAlgorithmMode.value = state.isAlgorithmMode
+  activeGroupId.value = state.activeGroupId || 'g_default'
+  searchQuery.value = state.searchQuery || ''
+  activeFilterQuery.value = state.activeFilterQuery || ''
+}
+
+const pushNavHistory = () => {
+  const currentState = getCurrentPageState()
+  const last = navHistory.value[navHistory.value.length - 1]
+  if (!last || JSON.stringify(last) !== JSON.stringify(currentState)) {
+    navHistory.value.push(currentState)
+  }
+}
+
 const smartBackAvailable = computed(() => {
-  if (isPlaylistMode.value && activePlaylistId.value) return true
-  if (selectedCreator.value) return true
-  return false
+  return navHistory.value.length > 0 || (isPlaylistMode.value && activePlaylistId.value) || selectedCreator.value
 })
 
 const smartBackward = () => {
@@ -1640,9 +1712,14 @@ const smartBackward = () => {
   }
   if (selectedCreator.value) {
     selectedCreator.value = null
-    selectDiscoverHeart()
     return
   }
+  if (navHistory.value.length > 0) {
+    const prevState = navHistory.value.pop()
+    restorePageState(prevState)
+    return
+  }
+  selectDiscoverHeart()
 }
 
 const handlePopState = () => {
@@ -1650,14 +1727,7 @@ const handlePopState = () => {
     closePlayer()
     return
   }
-  if (isPlaylistMode.value && activePlaylistId.value) {
-    activePlaylistId.value = null
-    return
-  }
-  if (selectedCreator.value) {
-    selectedCreator.value = null
-    return
-  }
+  smartBackward()
 }
 
 const jumpMinutes = ref(0)
@@ -1868,7 +1938,7 @@ const getActiveApiKeyIndex = async () => {
       currentApiKeyNumber.value = idx + 1
       resolve(idx)
     }
-    req.onerror = () => resolve(0) // 수정됨: 사용하지 않는 e 파라미터 제거
+    req.onerror = () => resolve(0)
   })
 }
 
@@ -2417,8 +2487,8 @@ const createPlaylistGroup = async () => {
 }
 
 const deletePlaylistGroup = async (group) => {
-  if (group.id === 'g_default') {
-    alert('기본 그룹은 삭제할 수 없습니다.')
+  if (group.id === 'g_default' || group.id === 'g_music') {
+    alert('기본 그룹 및 음악 그룹은 삭제할 수 없습니다.')
     return
   }
   if (!confirm(`'${group.name}' 그룹을 삭제하시겠습니까? (소속된 재생 목록 폴더들은 '기본' 그룹으로 이동됩니다)`)) return
@@ -2446,6 +2516,19 @@ const deletePlaylistGroup = async (group) => {
   }
 }
 
+const movePlaylistToGroup = async (playlist, targetGroupId) => {
+  if (playlist.groupId === targetGroupId) return
+  playlist.groupId = targetGroupId
+  const db = await openDB()
+  const tx = db.transaction('playlists', 'readwrite')
+  tx.objectStore('playlists').put(playlist)
+  tx.oncomplete = async () => {
+    await loadDataFromDB()
+    const targetGroup = playlistGroups.value.find(g => g.id === targetGroupId)
+    alert(`"${playlist.name}" 폴더가 "${targetGroup ? targetGroup.name : '선택한'}" 그룹으로 성공적으로 이동되었습니다.`)
+  }
+}
+
 const getCurrentGroupName = () => {
   const g = playlistGroups.value.find(item => item.id === activeGroupId.value)
   return g ? g.name : '기본'
@@ -2458,12 +2541,14 @@ const filteredPlaylists = computed(() => {
 const openCreatePlaylistDialog = () => {
   editingPlaylist.value = null
   playlistFormName.value = ''
+  playlistFormGroupId.value = activeGroupId.value
   isPlaylistDialogVisible.value = true
 }
 
 const openEditPlaylistDialog = (playlist) => {
   editingPlaylist.value = playlist
   playlistFormName.value = playlist.name
+  playlistFormGroupId.value = playlist.groupId || activeGroupId.value
   isPlaylistDialogVisible.value = true
 }
 
@@ -2471,9 +2556,10 @@ const savePlaylistFolder = async () => {
   const name = playlistFormName.value.trim()
   if (!name) { alert('폴더 이름을 입력해 주세요.'); return }
 
-  const isDuplicateName = playlists.value.some(p => p.name === name && p.id !== editingPlaylist.value?.id)
+  const targetGroupId = playlistFormGroupId.value || activeGroupId.value
+  const isDuplicateName = playlists.value.some(p => p.name === name && p.groupId === targetGroupId && p.id !== editingPlaylist.value?.id)
   if (isDuplicateName) {
-    alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
+    alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 해당 그룹에 존재합니다!`)
     return
   }
 
@@ -2483,12 +2569,13 @@ const savePlaylistFolder = async () => {
 
   if (editingPlaylist.value) {
     editingPlaylist.value.name = name
+    editingPlaylist.value.groupId = targetGroupId
     store.put(editingPlaylist.value)
   } else {
     store.put({ 
       id: 'pl_' + Date.now(), 
       name: name, 
-      groupId: activeGroupId.value, 
+      groupId: targetGroupId, 
       order: playlists.value.length 
     })
   }
@@ -2503,7 +2590,7 @@ const quickCreateAndSelectPlaylist = async () => {
   const name = quickNewPlaylistName.value.trim()
   if (!name) { alert('새 폴더 이름을 입력해 주세요.'); return }
 
-  const isDuplicateName = playlists.value.some(p => p.name === name)
+  const isDuplicateName = playlists.value.some(p => p.name === name && p.groupId === activeGroupId.value)
   if (isDuplicateName) {
     alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
     return
@@ -3293,16 +3380,25 @@ const loadDataFromDB = async () => {
     db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
-  const dbGroups = await new Promise((resolve) => {
+  let dbGroups = await new Promise((resolve) => {
     db.transaction('playlistGroups', 'readonly').objectStore('playlistGroups').getAll().onsuccess = (e) => resolve(e.target.result)
   })
-  if (dbGroups && dbGroups.length > 0) {
-    playlistGroups.value = dbGroups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-  } else {
-    playlistGroups.value = [{ id: 'g_default', name: '기본', order: 0 }]
+  if (!dbGroups || dbGroups.length === 0) {
+    dbGroups = [
+      { id: 'g_default', name: '기본', order: 0 },
+      { id: 'g_music', name: '음악', order: 1 }
+    ]
     const tx = db.transaction('playlistGroups', 'readwrite')
-    tx.objectStore('playlistGroups').put({ id: 'g_default', name: '기본', order: 0 })
+    dbGroups.forEach(g => tx.objectStore('playlistGroups').put(g))
+  } else {
+    if (!dbGroups.some(g => g.name === '음악')) {
+      const musicGroup = { id: 'g_music', name: '음악', order: dbGroups.length }
+      dbGroups.push(musicGroup)
+      const tx = db.transaction('playlistGroups', 'readwrite')
+      tx.objectStore('playlistGroups').put(musicGroup)
+    }
   }
+  playlistGroups.value = dbGroups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
   const dbVideos = await new Promise((resolve) => {
     db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
@@ -3329,6 +3425,16 @@ const loadDataFromDB = async () => {
   const rawPlaylists = (await new Promise((resolve) => {
     db.transaction('playlists', 'readonly').objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || [])
+
+  const musicGroupObj = playlistGroups.value.find(g => g.name === '음악')
+  const defaultGroupObj = playlistGroups.value.find(g => g.name === '기본' || g.id === 'g_default')
+
+  rawPlaylists.forEach(pl => {
+    if (musicGroupObj && defaultGroupObj && pl.groupId === defaultGroupObj.id && (pl.name.includes('음악') || pl.name === '음악')) {
+      pl.groupId = musicGroupObj.id
+      db.transaction('playlists', 'readwrite').objectStore('playlists').put(pl)
+    }
+  })
 
   playlists.value = rawPlaylists.map(pl => ({
     ...pl,
@@ -4292,6 +4398,7 @@ const loadMoreSearchVideos = async () => {
 }
 
 const selectDiscoverAll = () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4310,6 +4417,7 @@ const selectDiscoverAll = () => {
 }
 
 const selectDiscoverHeart = () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4328,6 +4436,7 @@ const selectDiscoverHeart = () => {
 }
 
 const enableTrendingMode = async () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4349,6 +4458,7 @@ const enableTrendingMode = async () => {
 }
 
 const enableAlgorithmMode = async () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4370,6 +4480,7 @@ const enableAlgorithmMode = async () => {
 }
 
 const enableFavoriteVideosMode = () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4388,6 +4499,7 @@ const enableFavoriteVideosMode = () => {
 }
 
 const enableHistoryMode = () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4406,6 +4518,7 @@ const enableHistoryMode = () => {
 }
 
 const enablePlaylistMode = () => {
+  pushNavHistory()
   visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
@@ -4424,6 +4537,7 @@ const enablePlaylistMode = () => {
 }
 
 const enableSearchMode = () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4446,6 +4560,7 @@ const enableSearchMode = () => {
 }
 
 const enableMusicMode = async () => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4467,6 +4582,7 @@ const enableMusicMode = async () => {
 }
 
 const selectCreatorFilter = async (creator) => {
+  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = creator
