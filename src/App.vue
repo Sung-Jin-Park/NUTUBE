@@ -328,17 +328,6 @@
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3 flex-wrap">
             <div class="d-flex align-center gap-3">
-              <v-btn
-                v-if="smartBackAvailable"
-                icon="mdi-arrow-left"
-                size="small"
-                variant="flat"
-                color="deep-purple-darken-2"
-                class="text-white"
-                title="이전 페이지로 돌아가기"
-                @click="smartBackward"
-              ></v-btn>
-
               <v-checkbox
                 v-if="(!isPlaylistMode || activePlaylistId) && !isHistoryMode"
                 v-model="isAllSelected"
@@ -577,7 +566,7 @@
                                 v-for="g in playlistGroups"
                                 :key="g.id"
                                 @click="movePlaylistToGroup(playlist, g.id)"
-                                :class="{ 'text-accent': playlist.groupId === g.id }"
+                                :class="{ 'text-accent': (playlist.groupId || 'g_default') === g.id }"
                               >
                                 <v-list-item-title class="text-body-2 text-white">{{ g.name }}</v-list-item-title>
                               </v-list-item>
@@ -591,7 +580,7 @@
                             size="x-small"
                             variant="text"
                             color="accent"
-                            title="폴더 이름 수정"
+                            title="폴더 이름 및 그룹 수정"
                             @click="openEditPlaylistDialog(playlist)"
                           ></v-btn>
                           <v-btn
@@ -661,7 +650,7 @@
               size="small"
               prepend-icon="mdi-arrow-left"
               class="font-weight-bold"
-              @click="smartBackward"
+              @click="activePlaylistId = null"
             >
               재생 목록 폴더 목록으로 돌아가기
             </v-btn>
@@ -1538,9 +1527,6 @@ const isMusicMode = ref(false)
 const isAlgorithmMode = ref(false)
 const isLoading = ref(false)
 
-// ⚡ 네비게이션(뒤로가기) 히스토리 스택
-const navHistory = ref([])
-
 // ⚡ 로컬 무한 스크롤(페이지네이션) 표시 개수 상태
 const visibleLimit = ref(40)
 
@@ -1660,74 +1646,13 @@ let currentPlayingTime = 0
 const searchNextPageToken = ref(null)
 const draggedIndex = ref(null)
 
-// ⚡ 스마트 백워드 (내부 페이지 돌아가기 기능)
-const getCurrentPageState = () => ({
-  currentTab: currentTab.value,
-  selectedCreator: selectedCreator.value,
-  isSearchMode: isSearchMode.value,
-  isTrendingMode: isTrendingMode.value,
-  isFavoriteVideosMode: isFavoriteVideosMode.value,
-  isHistoryMode: isHistoryMode.value,
-  isPlaylistMode: isPlaylistMode.value,
-  activePlaylistId: activePlaylistId.value,
-  isMusicMode: isMusicMode.value,
-  isAlgorithmMode: isAlgorithmMode.value,
-  activeGroupId: activeGroupId.value,
-  searchQuery: searchQuery.value,
-  activeFilterQuery: activeFilterQuery.value
-})
-
-const restorePageState = (state) => {
-  currentTab.value = state.currentTab
-  selectedCreator.value = state.selectedCreator
-  isSearchMode.value = state.isSearchMode
-  isTrendingMode.value = state.isTrendingMode
-  isFavoriteVideosMode.value = state.isFavoriteVideosMode
-  isHistoryMode.value = state.isHistoryMode
-  isPlaylistMode.value = state.isPlaylistMode
-  activePlaylistId.value = state.activePlaylistId
-  isMusicMode.value = state.isMusicMode
-  isAlgorithmMode.value = state.isAlgorithmMode
-  activeGroupId.value = state.activeGroupId || 'g_default'
-  searchQuery.value = state.searchQuery || ''
-  activeFilterQuery.value = state.activeFilterQuery || ''
-}
-
-const pushNavHistory = () => {
-  const currentState = getCurrentPageState()
-  const last = navHistory.value[navHistory.value.length - 1]
-  if (!last || JSON.stringify(last) !== JSON.stringify(currentState)) {
-    navHistory.value.push(currentState)
-  }
-}
-
-const smartBackAvailable = computed(() => {
-  return navHistory.value.length > 0 || (isPlaylistMode.value && activePlaylistId.value) || selectedCreator.value
-})
-
-const smartBackward = () => {
-  if (isPlaylistMode.value && activePlaylistId.value) {
-    activePlaylistId.value = null
-    return
-  }
-  if (selectedCreator.value) {
-    selectedCreator.value = null
-    return
-  }
-  if (navHistory.value.length > 0) {
-    const prevState = navHistory.value.pop()
-    restorePageState(prevState)
-    return
-  }
-  selectDiscoverHeart()
-}
-
+// ⚡ 브라우저 뒤로가기 시 구독 피드로 이동 (히스토리 스택 제거 및 단순화)
 const handlePopState = () => {
   if (isPlayerOpen.value) {
     closePlayer()
     return
   }
-  smartBackward()
+  selectDiscoverHeart()
 }
 
 const jumpMinutes = ref(0)
@@ -2516,12 +2441,15 @@ const deletePlaylistGroup = async (group) => {
   }
 }
 
+// ⚡ 수정: 그룹 이동 시 정상 반영 및 저장되도록 보완
 const movePlaylistToGroup = async (playlist, targetGroupId) => {
-  if (playlist.groupId === targetGroupId) return
+  if ((playlist.groupId || 'g_default') === targetGroupId) return
   playlist.groupId = targetGroupId
+  
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
-  tx.objectStore('playlists').put(playlist)
+  tx.objectStore('playlists').put(JSON.parse(JSON.stringify(playlist)))
+
   tx.oncomplete = async () => {
     await loadDataFromDB()
     const targetGroup = playlistGroups.value.find(g => g.id === targetGroupId)
@@ -2570,7 +2498,7 @@ const savePlaylistFolder = async () => {
   if (editingPlaylist.value) {
     editingPlaylist.value.name = name
     editingPlaylist.value.groupId = targetGroupId
-    store.put(editingPlaylist.value)
+    store.put(JSON.parse(JSON.stringify(editingPlaylist.value)))
   } else {
     store.put({ 
       id: 'pl_' + Date.now(), 
@@ -4398,7 +4326,6 @@ const loadMoreSearchVideos = async () => {
 }
 
 const selectDiscoverAll = () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4417,7 +4344,6 @@ const selectDiscoverAll = () => {
 }
 
 const selectDiscoverHeart = () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4436,7 +4362,6 @@ const selectDiscoverHeart = () => {
 }
 
 const enableTrendingMode = async () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4458,7 +4383,6 @@ const enableTrendingMode = async () => {
 }
 
 const enableAlgorithmMode = async () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4480,7 +4404,6 @@ const enableAlgorithmMode = async () => {
 }
 
 const enableFavoriteVideosMode = () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4499,7 +4422,6 @@ const enableFavoriteVideosMode = () => {
 }
 
 const enableHistoryMode = () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4518,7 +4440,6 @@ const enableHistoryMode = () => {
 }
 
 const enablePlaylistMode = () => {
-  pushNavHistory()
   visibleLimit.value = 40
   selectedCreator.value = null
   currentTab.value = ''
@@ -4537,7 +4458,6 @@ const enablePlaylistMode = () => {
 }
 
 const enableSearchMode = () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4560,7 +4480,6 @@ const enableSearchMode = () => {
 }
 
 const enableMusicMode = async () => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4582,7 +4501,6 @@ const enableMusicMode = async () => {
 }
 
 const selectCreatorFilter = async (creator) => {
-  pushNavHistory()
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = creator
