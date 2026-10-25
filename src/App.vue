@@ -328,6 +328,17 @@
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3 flex-wrap">
             <div class="d-flex align-center gap-3">
+              <v-btn
+                v-if="smartBackAvailable"
+                icon="mdi-arrow-left"
+                size="small"
+                variant="flat"
+                color="deep-purple-darken-2"
+                class="text-white"
+                title="이전 페이지로 돌아가기"
+                @click="smartBackward"
+              ></v-btn>
+
               <v-checkbox
                 v-if="(!isPlaylistMode || activePlaylistId) && !isHistoryMode"
                 v-model="isAllSelected"
@@ -467,127 +478,159 @@
           </div>
         </div>
 
-        <!-- 재생 목록 폴더 목록 뷰 -->
+        <!-- 재생 목록 폴더 및 카테고리 그룹 뷰 -->
         <div v-else-if="isPlaylistMode && !activePlaylistId">
-          <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
-            <div class="d-flex align-center gap-2">
-              <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">내 재생 목록 폴더</h2>
-              <div class="d-flex align-center gap-1">
-                <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="전체 재생 목록 백업" @click="downloadPlaylistsBackup"></v-btn>
-                <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="전체 재생 목록 불러오기" @click="triggerUploadPlaylists"></v-btn>
-              </div>
-            </div>
-            <v-btn
-              color="deep-purple-darken-2"
-              variant="flat"
-              size="small"
-              prepend-icon="mdi-folder-plus"
-              class="text-white font-weight-bold rounded-pill px-4"
-              @click="openCreatePlaylistDialog"
-            >
-              새 폴더 만들기
-            </v-btn>
-          </div>
-
-          <v-row v-if="playlists.length === 0" justify="center" align="center" style="min-height: 200px;">
-            <v-col cols="12" class="text-center">
-              <v-icon icon="mdi-folder-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
-              <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">생성된 재생 목록 폴더가 없습니다</h3>
-              <p class="text-caption text-grey-darken-1 mt-1">상단의 '새 폴더 만들기' 버튼을 눌러 재생 목록을 만들어 보세요.</p>
-            </v-col>
-          </v-row>
-
-          <v-row v-else>
-            <v-col v-for="(playlist, index) in playlists" :key="playlist.id" cols="12" sm="6" md="4" lg="3">
-              <v-card 
-                class="glass-card rounded-2xl pa-4 h-100 d-flex flex-column justify-space-between position-relative" 
-                elevation="0"
-                @click="selectPlaylistFolder(playlist)"
-              >
-                <div>
-                  <div class="d-flex justify-space-between align-start mb-3">
-                    <v-icon icon="mdi-folder-music" color="accent" size="40"></v-icon>
-                    <div class="d-flex align-center gap-1" @click.stop>
-                      <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
-                      <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
+          <v-row>
+            <!-- 왼쪽 카테고리 그룹 패널 -->
+            <v-col cols="12" md="3">
+              <v-card class="glass-card rounded-2xl pa-4 h-100" elevation="0">
+                <div class="d-flex justify-space-between align-center mb-3">
+                  <h3 class="text-subtitle-2 font-weight-bold text-white ma-0">카테고리 그룹</h3>
+                  <v-btn
+                    icon="mdi-plus"
+                    size="x-small"
+                    variant="flat"
+                    color="deep-purple-darken-2"
+                    title="새 그룹 추가"
+                    @click="openCreateGroupDialog"
+                  ></v-btn>
+                </div>
+                <v-divider class="border-opacity-25 mb-3"></v-divider>
+                <v-list density="compact" class="bg-transparent text-white nav-group-list">
+                  <v-list-item
+                    v-for="group in playlistGroups"
+                    :key="group.id"
+                    class="custom-list-item mb-1"
+                    :class="{ 'neon-active': activeGroupId === group.id }"
+                    @click="activeGroupId = group.id"
+                  >
+                    <template v-slot:prepend>
+                      <v-icon icon="mdi-folder" size="18" class="mr-2 text-accent"></v-icon>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ group.name }}</v-list-item-title>
+                    <template v-slot:append>
                       <v-btn
-                        icon="mdi-arrow-up"
-                        size="x-small"
-                        variant="text"
-                        color="white"
-                        :disabled="index === 0"
-                        title="위로 이동"
-                        @click="movePlaylistOrder(index, -1)"
-                      ></v-btn>
-                      <v-btn
-                        icon="mdi-arrow-down"
-                        size="x-small"
-                        variant="text"
-                        color="white"
-                        :disabled="index === playlists.length - 1"
-                        title="아래로 이동"
-                        @click="movePlaylistOrder(index, 1)"
-                      ></v-btn>
-                      <v-btn
-                        icon="mdi-pencil"
-                        size="x-small"
-                        variant="text"
-                        color="accent"
-                        title="폴더 이름 수정"
-                        @click="openEditPlaylistDialog(playlist)"
-                      ></v-btn>
-                      <v-btn
+                        v-if="group.id !== 'g_default'"
                         icon="mdi-delete"
                         size="x-small"
                         variant="text"
                         color="red-lighten-2"
-                        title="폴더 삭제"
-                        @click="deletePlaylist(playlist)"
+                        title="그룹 삭제"
+                        @click.stop="deletePlaylistGroup(group)"
                       ></v-btn>
-                    </div>
-                  </div>
-                  <h3 class="text-white font-weight-bold text-subtitle-1 mb-1 text-truncate">{{ playlist.name }}</h3>
-                  <p class="text-grey-lighten-1 text-caption mb-0">동영상 {{ getPlaylistVideoCount(playlist.id) }}개</p>
-                </div>
-                
-                <div class="mt-3" @click.stop>
-                  <v-checkbox
-                    v-model="playlistResumeStates[playlist.id]"
-                    color="accent"
-                    label="이 폴더 이어보기"
-                    density="compact"
-                    hide-details
-                    class="text-caption ma-0 pa-0 text-white"
-                    @change="savePlaylistResumeState(playlist.id)"
-                  ></v-checkbox>
-                </div>
-
-                <div class="d-flex justify-space-between align-center mt-4" @click.stop>
-                  <v-btn
-                    v-if="playlistResumeStates[playlist.id] && hasPlaylistResumeMemory(playlist.id)"
-                    size="x-small"
-                    variant="text"
-                    color="accent"
-                    class="pa-0 text-caption font-weight-bold"
-                    @click="clearPlaylistResumeMemory(playlist.id)"
-                    title="기억된 이어보기 위치 초기화"
-                  >
-                    이어보기 초기화
-                  </v-btn>
-                  <div v-else></div>
-
-                  <v-btn
-                    size="small"
-                    variant="flat"
-                    color="deep-purple-darken-2"
-                    class="text-white font-weight-bold rounded-pill px-4"
-                    @click.stop="playPlaylistFolder(playlist)"
-                    :disabled="getPlaylistVideoCount(playlist.id) === 0"
-                  >
-                    전체 재생
-                  </v-btn>
-                </div>
+                    </template>
+                  </v-list-item>
+                </v-list>
               </v-card>
+            </v-col>
+
+            <!-- 오른쪽 재생 목록 폴더 목록 -->
+            <v-col cols="12" md="9">
+              <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+                <div class="d-flex align-center gap-2">
+                  <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">
+                    [{{ getCurrentGroupName() }}] 재생 목록 폴더
+                  </h2>
+                  <div class="d-flex align-center gap-1">
+                    <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="전체 재생 목록 백업" @click="downloadPlaylistsBackup"></v-btn>
+                    <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="전체 재생 목록 불러오기" @click="triggerUploadPlaylists"></v-btn>
+                  </div>
+                </div>
+                <v-btn
+                  color="deep-purple-darken-2"
+                  variant="flat"
+                  size="small"
+                  prepend-icon="mdi-folder-plus"
+                  class="text-white font-weight-bold rounded-pill px-4"
+                  @click="openCreatePlaylistDialog"
+                >
+                  현재 그룹에 새 폴더 만들기
+                </v-btn>
+              </div>
+
+              <v-row v-if="filteredPlaylists.length === 0" justify="center" align="center" style="min-height: 200px;">
+                <v-col cols="12" class="text-center">
+                  <v-icon icon="mdi-folder-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
+                  <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">이 그룹에 생성된 재생 목록 폴더가 없습니다</h3>
+                  <p class="text-caption text-grey-darken-1 mt-1">상단의 '현재 그룹에 새 폴더 만들기' 버튼을 눌러 만들어 보세요.</p>
+                </v-col>
+              </v-row>
+
+              <v-row v-else>
+                <v-col v-for="(playlist, index) in filteredPlaylists" :key="playlist.id" cols="12" sm="6" md="4">
+                  <v-card 
+                    class="glass-card rounded-2xl pa-4 h-100 d-flex flex-column justify-space-between position-relative" 
+                    elevation="0"
+                    @click="selectPlaylistFolder(playlist)"
+                  >
+                    <div>
+                      <div class="d-flex justify-space-between align-start mb-3">
+                        <v-icon icon="mdi-folder-music" color="accent" size="40"></v-icon>
+                        <div class="d-flex align-center gap-1" @click.stop>
+                          <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
+                          <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
+                          <v-btn
+                            icon="mdi-pencil"
+                            size="x-small"
+                            variant="text"
+                            color="accent"
+                            title="폴더 이름 수정"
+                            @click="openEditPlaylistDialog(playlist)"
+                          ></v-btn>
+                          <v-btn
+                            icon="mdi-delete"
+                            size="x-small"
+                            variant="text"
+                            color="red-lighten-2"
+                            title="폴더 삭제"
+                            @click="deletePlaylist(playlist)"
+                          ></v-btn>
+                        </div>
+                      </div>
+                      <h3 class="text-white font-weight-bold text-subtitle-1 mb-1 text-truncate">{{ playlist.name }}</h3>
+                      <p class="text-grey-lighten-1 text-caption mb-0">동영상 {{ getPlaylistVideoCount(playlist.id) }}개</p>
+                    </div>
+                    
+                    <div class="mt-3" @click.stop>
+                      <v-checkbox
+                        v-model="playlistResumeStates[playlist.id]"
+                        color="accent"
+                        label="이 폴더 이어보기"
+                        density="compact"
+                        hide-details
+                        class="text-caption ma-0 pa-0 text-white"
+                        @change="savePlaylistResumeState(playlist.id)"
+                      ></v-checkbox>
+                    </div>
+
+                    <div class="d-flex justify-space-between align-center mt-4" @click.stop>
+                      <v-btn
+                        v-if="playlistResumeStates[playlist.id] && hasPlaylistResumeMemory(playlist.id)"
+                        size="x-small"
+                        variant="text"
+                        color="accent"
+                        class="pa-0 text-caption font-weight-bold"
+                        @click="clearPlaylistResumeMemory(playlist.id)"
+                        title="기억된 이어보기 위치 초기화"
+                      >
+                        이어보기 초기화
+                      </v-btn>
+                      <div v-else></div>
+
+                      <v-btn
+                        size="small"
+                        variant="flat"
+                        color="deep-purple-darken-2"
+                        class="text-white font-weight-bold rounded-pill px-4"
+                        @click.stop="playPlaylistFolder(playlist)"
+                        :disabled="getPlaylistVideoCount(playlist.id) === 0"
+                      >
+                        전체 재생
+                      </v-btn>
+                    </div>
+                  </v-card>
+                </v-col>
+              </v-row>
             </v-col>
           </v-row>
         </div>
@@ -601,7 +644,7 @@
               size="small"
               prepend-icon="mdi-arrow-left"
               class="font-weight-bold"
-              @click="activePlaylistId = null"
+              @click="smartBackward"
             >
               재생 목록 폴더 목록으로 돌아가기
             </v-btn>
@@ -959,10 +1002,29 @@
       </div>
     </div>
 
+    <!-- 재생 목록 그룹 생성 다이얼로그 -->
+    <v-dialog v-model="isGroupDialogVisible" max-width="380px">
+      <v-card class="glass-modal rounded-2xl pa-5 text-white">
+        <h3 class="text-subtitle-1 font-weight-bold mb-3">새 카테고리 그룹 생성</h3>
+        <v-text-field
+          v-model="groupFormName"
+          label="그룹 이름"
+          variant="outlined"
+          density="compact"
+          class="mb-3"
+          @keydown.enter="createPlaylistGroup"
+        ></v-text-field>
+        <div class="d-flex justify-end gap-2">
+          <v-btn variant="text" color="grey-lighten-1" size="small" @click="isGroupDialogVisible = false">취소</v-btn>
+          <v-btn color="deep-purple-darken-2" variant="flat" size="small" class="text-white font-weight-bold rounded-pill px-4" @click="createPlaylistGroup">생성</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
     <!-- 재생 목록 생성/수정 다이얼로그 -->
     <v-dialog v-model="isPlaylistDialogVisible" max-width="400px">
       <v-card class="glass-modal rounded-2xl pa-5 text-white">
-        <h3 class="text-subtitle-1 font-weight-bold mb-3">{{ editingPlaylist ? '재생 목록 폴더 이름 수정' : '새 재생 목록 폴더 생성' }}</h3>
+        <h3 class="text-subtitle-1 font-weight-bold mb-3">{{ editingPlaylist ? '재생 목록 폴더 이름 수정' : `새 재생 목록 폴더 생성 (${getCurrentGroupName()})` }}</h3>
         <v-text-field
           v-model="playlistFormName"
           label="폴더 이름"
@@ -1076,7 +1138,7 @@
     </v-dialog>
 
     <!-- 시네마틱 영상 재생 모달 -->
-    <v-dialog v-model="isPlayerOpen" :max-width="isLandscapeMode ? '95vw' : '880px'" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
+    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-2xl overflow-hidden pa-0">
         <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
           <div class="d-flex align-center overflow-hidden pr-2">
@@ -1172,9 +1234,6 @@
               <v-icon :icon="isAudioOnlyMode ? 'mdi-radio-handheld' : 'mdi-radio-tower'" size="20"></v-icon>
             </v-btn>
 
-            <v-btn icon variant="text" size="small" color="accent" class="mr-2" @click="toggleLandscapeMode" title="화면 크기 변경">
-              <v-icon :icon="isLandscapeMode ? 'mdi-crop-portrait' : 'mdi-crop-landscape'" size="20"></v-icon>
-            </v-btn>
             <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
           </div>
         </div>
@@ -1182,7 +1241,7 @@
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
           <div 
             class="video-container" 
-            :class="{ 'landscape-expanded': isLandscapeMode, 'audio-only-hidden': isAudioOnlyMode }"
+            :class="{ 'audio-only-hidden': isAudioOnlyMode }"
           >
             <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
@@ -1479,6 +1538,11 @@ const musicCategories = [
   { title: '재즈 / 어쿠스틱', value: 'jazz' }
 ]
 
+const playlistGroups = ref([{ id: 'g_default', name: '기본', order: 0 }])
+const activeGroupId = ref('g_default')
+const isGroupDialogVisible = ref(false)
+const groupFormName = ref('')
+
 const playlists = ref([])
 const playlistItems = ref([])
 const activePlaylistId = ref(null)
@@ -1544,7 +1608,6 @@ const saveResumeSetting = () => {
   localStorage.setItem('neontube_enable_resume', enableResume.value)
 }
 
-const isLandscapeMode = ref(false)
 const isAudioOnlyMode = ref(false) 
 const isLoopMode = ref(false)
 
@@ -1560,15 +1623,40 @@ const ytPlayer = ref(null)
 let historyInterval = null   
 let currentPlayingTime = 0   
 
-let isPopStateTriggered = false
 const searchNextPageToken = ref(null)
-
 const draggedIndex = ref(null)
 
-const handlePopState = () => {
+// ⚡ 스마트 백워드 (내부 페이지 돌아가기 기능)
+const smartBackAvailable = computed(() => {
+  if (isPlaylistMode.value && activePlaylistId.value) return true
+  if (selectedCreator.value) return true
+  return false
+})
+
+const smartBackward = () => {
+  if (isPlaylistMode.value && activePlaylistId.value) {
+    activePlaylistId.value = null
+    return
+  }
+  if (selectedCreator.value) {
+    selectedCreator.value = null
+    selectDiscoverHeart()
+    return
+  }
+}
+
+const handlePopState = (e) => {
   if (isPlayerOpen.value) {
-    isPopStateTriggered = true
     closePlayer()
+    return
+  }
+  if (isPlaylistMode.value && activePlaylistId.value) {
+    activePlaylistId.value = null
+    return
+  }
+  if (selectedCreator.value) {
+    selectedCreator.value = null
+    return
   }
 }
 
@@ -1632,10 +1720,6 @@ const scrollToTop = (el) => {
   } else if (targetElement) {
     targetElement.scrollTop = 0
   }
-}
-
-const toggleLandscapeMode = () => {
-  isLandscapeMode.value = !isLandscapeMode.value
 }
 
 const toggleAudioOnlyMode = () => {
@@ -1736,7 +1820,7 @@ const checkThumbnailAspectRatio = (videoList) => {
 }
 
 const DB_NAME = 'NeonTubeDB_Clean'
-const DB_VERSION = 4
+const DB_VERSION = 5
 
 const openDB = () => {
   return new Promise((resolve, reject) => {
@@ -1751,6 +1835,7 @@ const openDB = () => {
       if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'videoId' })
       if (!db.objectStoreNames.contains('playlists')) db.createObjectStore('playlists', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('playlistItems')) db.createObjectStore('playlistItems', { keyPath: 'id', autoIncrement: true })
+      if (!db.objectStoreNames.contains('playlistGroups')) db.createObjectStore('playlistGroups', { keyPath: 'id' })
     }
   })
 }
@@ -2082,6 +2167,7 @@ const handleUploadCreators = async (event) => {
 
 const downloadPlaylistsBackup = () => {
   const backupData = {
+    playlistGroups: playlistGroups.value,
     playlists: playlists.value,
     playlistItems: playlistItems.value
   }
@@ -2112,8 +2198,17 @@ const handleUploadPlaylists = async (event) => {
       const allItemVideoIds = imported.playlistItems ? imported.playlistItems.map(i => i.videoId) : []
       await fetchAndSaveMissingVideos(db, allItemVideoIds)
 
-      const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
+      const tx = db.transaction(['playlistGroups', 'playlists', 'playlistItems'], 'readwrite')
       
+      if (imported.playlistGroups && Array.isArray(imported.playlistGroups)) {
+        const groupStore = tx.objectStore('playlistGroups')
+        imported.playlistGroups.forEach(g => {
+          if (!playlistGroups.value.some(pg => pg.id === g.id)) {
+            groupStore.put(g)
+          }
+        })
+      }
+
       let addedPlCount = 0
       if (imported.playlists && Array.isArray(imported.playlists)) {
         const plStore = tx.objectStore('playlists')
@@ -2200,7 +2295,7 @@ const handleUploadSinglePlaylist = async (event) => {
 
       if (!targetFolder) {
         const newPlId = 'pl_' + Date.now()
-        const newPl = { id: newPlId, name: importedName, order: playlists.value.length }
+        const newPl = { id: newPlId, name: importedName, groupId: activeGroupId.value, order: playlists.value.length }
         
         const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
         tx.objectStore('playlists').put(newPl)
@@ -2291,6 +2386,75 @@ const handleUploadMusic = async (event) => {
   reader.readAsText(file)
 }
 
+// 카테고리 그룹 관리 함수들
+const openCreateGroupDialog = () => {
+  groupFormName.value = ''
+  isGroupDialogVisible.value = true
+}
+
+const createPlaylistGroup = async () => {
+  const name = groupFormName.value.trim()
+  if (!name) { alert('그룹 이름을 입력해 주세요.'); return }
+
+  const isDuplicate = playlistGroups.value.some(g => g.name === name)
+  if (isDuplicate) {
+    alert(`오류: 이미 동일한 이름("${name}")의 그룹이 존재합니다!`)
+    return
+  }
+
+  const newGroupId = 'group_' + Date.now()
+  const newGroup = { id: newGroupId, name, order: playlistGroups.value.length }
+
+  const db = await openDB()
+  const tx = db.transaction('playlistGroups', 'readwrite')
+  tx.objectStore('playlistGroups').put(newGroup)
+
+  tx.oncomplete = async () => {
+    isGroupDialogVisible.value = false
+    await loadDataFromDB()
+    activeGroupId.value = newGroupId
+  }
+}
+
+const deletePlaylistGroup = async (group) => {
+  if (group.id === 'g_default') {
+    alert('기본 그룹은 삭제할 수 없습니다.')
+    return
+  }
+  if (!confirm(`'${group.name}' 그룹을 삭제하시겠습니까? (소속된 재생 목록 폴더들은 '기본' 그룹으로 이동됩니다)`)) return
+
+  const db = await openDB()
+  const tx = db.transaction(['playlistGroups', 'playlists'], 'readwrite')
+  tx.objectStore('playlistGroups').delete(group.id)
+
+  const plStore = tx.objectStore('playlists')
+  plStore.openCursor().onsuccess = (e) => {
+    const cursor = e.target.result
+    if (cursor) {
+      const pl = cursor.value
+      if (pl.groupId === group.id) {
+        pl.groupId = 'g_default'
+        cursor.update(pl)
+      }
+      cursor.continue()
+    }
+  }
+
+  tx.oncomplete = async () => {
+    activeGroupId.value = 'g_default'
+    await loadDataFromDB()
+  }
+}
+
+const getCurrentGroupName = () => {
+  const g = playlistGroups.value.find(item => item.id === activeGroupId.value)
+  return g ? g.name : '기본'
+}
+
+const filteredPlaylists = computed(() => {
+  return playlists.value.filter(p => (p.groupId || 'g_default') === activeGroupId.value)
+})
+
 const openCreatePlaylistDialog = () => {
   editingPlaylist.value = null
   playlistFormName.value = ''
@@ -2321,7 +2485,12 @@ const savePlaylistFolder = async () => {
     editingPlaylist.value.name = name
     store.put(editingPlaylist.value)
   } else {
-    store.put({ id: 'pl_' + Date.now(), name: name, order: playlists.value.length })
+    store.put({ 
+      id: 'pl_' + Date.now(), 
+      name: name, 
+      groupId: activeGroupId.value, 
+      order: playlists.value.length 
+    })
   }
 
   tx.oncomplete = async () => {
@@ -2343,7 +2512,7 @@ const quickCreateAndSelectPlaylist = async () => {
   const newId = 'pl_' + Date.now()
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
-  tx.objectStore('playlists').put({ id: newId, name: name, order: playlists.value.length })
+  tx.objectStore('playlists').put({ id: newId, name: name, groupId: activeGroupId.value, order: playlists.value.length })
 
   tx.oncomplete = async () => {
     quickNewPlaylistName.value = ''
@@ -2373,21 +2542,6 @@ const deletePlaylist = async (playlist) => {
     localStorage.removeItem(`neontube_playlist_last_index_${playlist.id}`)
     await loadDataFromDB()
   }
-}
-
-const movePlaylistOrder = async (index, direction) => {
-  const targetIndex = index + direction
-  if (targetIndex < 0 || targetIndex >= playlists.value.length) return
-
-  const temp = playlists.value[index]
-  playlists.value[index] = playlists.value[targetIndex]
-  playlists.value[targetIndex] = temp
-  playlists.value.forEach((pl, idx) => pl.order = idx)
-
-  const db = await openDB()
-  const tx = db.transaction('playlists', 'readwrite')
-  const store = tx.objectStore('playlists')
-  playlists.value.forEach(pl => store.put(pl))
 }
 
 const movePlaylistItemOrder = async (index, direction) => {
@@ -2533,7 +2687,6 @@ const playPlaylistFolder = async (playlist) => {
   if (targetVideos.length === 0) return
 
   activePlaylistId.value = playlist.id
-  // 재생 목록 탭: 사용자 선택(체크박스) 값 적용
   const resumeEnabled = playlistResumeStates[playlist.id] ?? true
   enableResume.value = resumeEnabled
 
@@ -2555,7 +2708,6 @@ const playPlaylistFolder = async (playlist) => {
 }
 
 const playVideo = async (video) => {
-  // 재생 목록 이외의 다른 탭에서는 디폴트로 이어보기 활성화
   if (!isPlaylistMode.value) {
     enableResume.value = true
   }
@@ -2649,7 +2801,6 @@ const playQueueIndex = async (idx) => {
   } catch (err) { console.error(err) }
 
   if (!isPlayerOpen.value) {
-    isPopStateTriggered = false
     window.history.pushState({ playerOpen: true }, '')
     window.addEventListener('popstate', handlePopState)
     isPlayerOpen.value = true
@@ -2715,8 +2866,6 @@ const closePlayer = () => {
   isPlayerOpen.value = false
   saveCurrentHistoryToDB()
 
-  if (!isPopStateTriggered) window.history.back()
-  isPopStateTriggered = false
   window.removeEventListener('popstate', handlePopState)
   if ('mediaSession' in navigator) {
     navigator.mediaSession.playbackState = 'none'
@@ -2789,7 +2938,6 @@ const initYouTubePlayer = (youtubeId, startTime) => {
           startHistoryTracker()
         },
         onStateChange: async (event) => {
-          // 브레이브 모바일 앱 백그라운드 재생 시 state 1 (PLAYING), 2 (PAUSED), 0 (ENDED) 추적 강화
           if (event.data === 1) {
             if ('mediaSession' in navigator) {
               navigator.mediaSession.playbackState = 'playing'
@@ -2824,7 +2972,6 @@ const initYouTubePlayer = (youtubeId, startTime) => {
               }
             }
 
-            // 모바일 브레이브 앱 백그라운드 무한 연속 재생 트리거
             if (playlistIndex.value < playlistQueue.value.length - 1) {
               await playNextInQueue()
             } else {
@@ -3146,6 +3293,17 @@ const loadDataFromDB = async () => {
     db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
+  const dbGroups = await new Promise((resolve) => {
+    db.transaction('playlistGroups', 'readonly').objectStore('playlistGroups').getAll().onsuccess = (e) => resolve(e.target.result)
+  })
+  if (dbGroups && dbGroups.length > 0) {
+    playlistGroups.value = dbGroups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  } else {
+    playlistGroups.value = [{ id: 'g_default', name: '기본', order: 0 }]
+    const tx = db.transaction('playlistGroups', 'readwrite')
+    tx.objectStore('playlistGroups').put({ id: 'g_default', name: '기본', order: 0 })
+  }
+
   const dbVideos = await new Promise((resolve) => {
     db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
   })
@@ -3168,9 +3326,14 @@ const loadDataFromDB = async () => {
 
   checkThumbnailAspectRatio(videos.value)
 
-  playlists.value = (await new Promise((resolve) => {
+  const rawPlaylists = (await new Promise((resolve) => {
     db.transaction('playlists', 'readonly').objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
-  }) || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  }) || [])
+
+  playlists.value = rawPlaylists.map(pl => ({
+    ...pl,
+    groupId: pl.groupId || 'g_default'
+  })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
   playlistItems.value = await new Promise((resolve) => {
     db.transaction('playlistItems', 'readonly').objectStore('playlistItems').getAll().onsuccess = (e) => resolve(e.target.result)
@@ -4128,7 +4291,6 @@ const loadMoreSearchVideos = async () => {
   }
 }
 
-// 탭 전환 시 디폴트로 이어보기 상태 리셋 및 탭 전환 핸들러들
 const selectDiscoverAll = () => {
   visibleLimit.value = 40
   enableResume.value = true
@@ -4328,7 +4490,7 @@ const selectCreatorFilter = async (creator) => {
 
 const handleVisibilityChange = () => {
   if (document.visibilityState === 'visible') {
-    // 폰 바탕화면 등에서 들어올 때 일시정지 상태 유지
+    // 백그라운드 복귀 시
   } 
 }
 
@@ -4359,6 +4521,7 @@ onMounted(async () => {
   }
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('popstate', handlePopState)
 })
 
 onUnmounted(() => {
@@ -4378,7 +4541,7 @@ const getHeaderTitle = computed(() => {
       const pl = playlists.value.find(p => p.id === activePlaylistId.value)
       return pl ? `재생 목록: ${pl.name}` : '재생 목록'
     }
-    return '재생 목록'
+    return `재생 목록 (${getCurrentGroupName()})`
   }
   if (isSearchMode.value) return '유튜브 검색'
   if (isTrendingMode.value) return '실시간 급상승 영상'
@@ -4387,7 +4550,6 @@ const getHeaderTitle = computed(() => {
   return '구독 피드 모음 (하트 크리에이터)'
 })
 
-// 전체 필터링된 비디오 목록
 const allFilteredVideos = computed(() => {
   let result = videos.value
 
@@ -4439,7 +4601,6 @@ const allFilteredVideos = computed(() => {
   return result
 })
 
-// 화면에 보여줄 갯수만큼만 슬라이스
 const displayedVideos = computed(() => {
   return allFilteredVideos.value.slice(0, visibleLimit.value)
 })
@@ -4604,7 +4765,6 @@ html, body {
   will-change: aspect-ratio;
   transition: aspect-ratio 0.2s ease-in-out;
 }
-.video-container.landscape-expanded { aspect-ratio: 21 / 9; min-height: 320px; }
 .video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
 
 .radio-placeholder-card { background: rgba(121, 40, 202, 0.18); border-bottom: 1px solid rgba(167, 139, 250, 0.35); }
