@@ -423,7 +423,7 @@
 
           <div v-else class="d-flex flex-column gap-3">
             <v-card
-              v-for="(video) in displayedVideos"
+              v-for="video in displayedVideos"
               :key="video.id"
               class="glass-card rounded-2xl pa-3 d-flex align-center justify-space-between position-relative playlist-list-item"
               elevation="0"
@@ -557,7 +557,7 @@
               </v-row>
 
               <v-row v-else>
-                <v-col v-for="(playlist, index) in filteredPlaylists" :key="playlist.id" cols="12" sm="6" md="4">
+                <v-col v-for="playlist in filteredPlaylists" :key="playlist.id" cols="12" sm="6" md="4">
                   <v-card 
                     class="glass-card rounded-2xl pa-4 h-100 d-flex flex-column justify-space-between position-relative" 
                     elevation="0"
@@ -1645,7 +1645,7 @@ const smartBackward = () => {
   }
 }
 
-const handlePopState = (e) => {
+const handlePopState = () => {
   if (isPlayerOpen.value) {
     closePlayer()
     return
@@ -1868,7 +1868,7 @@ const getActiveApiKeyIndex = async () => {
       currentApiKeyNumber.value = idx + 1
       resolve(idx)
     }
-    req.onerror = () => resolve(0)
+    req.onerror = () => resolve(0) // 수정됨: 사용하지 않는 e 파라미터 제거
   })
 }
 
