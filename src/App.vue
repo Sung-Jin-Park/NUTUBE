@@ -1592,7 +1592,6 @@ const checkMainScroll = (e) => {
 
     const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
     if (bottomReached && !isLoading.value) {
-      // ⚡ 로컬 데이터 페이징 먼저 처리 (더 보여줄 데이터가 있다면 visibleLimit 증가)
       if (visibleLimit.value < allFilteredVideos.value.length) {
         visibleLimit.value += 40
       } else if (isTrendingMode.value && trendingNextPageToken.value) {
@@ -2534,6 +2533,7 @@ const playPlaylistFolder = async (playlist) => {
   if (targetVideos.length === 0) return
 
   activePlaylistId.value = playlist.id
+  // 재생 목록 탭: 사용자 선택(체크박스) 값 적용
   const resumeEnabled = playlistResumeStates[playlist.id] ?? true
   enableResume.value = resumeEnabled
 
@@ -2555,6 +2555,10 @@ const playPlaylistFolder = async (playlist) => {
 }
 
 const playVideo = async (video) => {
+  // 재생 목록 이외의 다른 탭에서는 디폴트로 이어보기 활성화
+  if (!isPlaylistMode.value) {
+    enableResume.value = true
+  }
   playlistQueue.value = [video]
   playlistIndex.value = 0
   await playQueueIndex(0)
@@ -2569,6 +2573,9 @@ const playSelectedVideos = async () => {
     .map(id => selectedList.find(v => v.id === id))
     .filter(Boolean)
 
+  if (!isPlaylistMode.value) {
+    enableResume.value = true
+  }
   playlistQueue.value = orderedList
   playlistIndex.value = 0
   selectedVideoIds.value = []
@@ -2581,6 +2588,7 @@ const playSelectedOrAllMusic = async () => {
     : displayedVideos.value
   
   if (targetList.length === 0) return
+  enableResume.value = true
   playlistQueue.value = targetList
   playlistIndex.value = 0
   selectedVideoIds.value = []
@@ -2608,7 +2616,6 @@ const playQueueIndex = async (idx) => {
   playlistIndex.value = idx
   isQueueModalOpen.value = false
 
-  // 재생 목록 폴더이고 '이 폴더 이어보기'가 켜져 있는 경우에만 현재 재생 인덱스 기억
   if (activePlaylistId.value && (playlistResumeStates[activePlaylistId.value] ?? true)) {
     localStorage.setItem(`neontube_playlist_last_index_${activePlaylistId.value}`, idx)
   }
@@ -2657,6 +2664,9 @@ const playQueueIndex = async (idx) => {
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
     try {
       ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
+      if (typeof ytPlayer.value.playVideo === 'function') {
+        ytPlayer.value.playVideo()
+      }
       if (isAudioOnlyMode.value && typeof ytPlayer.value.setPlaybackQuality === 'function') {
         ytPlayer.value.setPlaybackQuality('tiny')
       }
@@ -2727,6 +2737,8 @@ const setupMediaSession = (video) => {
       ]
     })
 
+    navigator.mediaSession.playbackState = 'playing'
+
     navigator.mediaSession.setActionHandler('play', () => {
       if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') ytPlayer.value.playVideo()
     })
@@ -2768,13 +2780,25 @@ const initYouTubePlayer = (youtubeId, startTime) => {
       events: {
         onReady: (event) => {
           if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
+          if (event.target && typeof event.target.playVideo === 'function') {
+            event.target.playVideo()
+          }
           if (isAudioOnlyMode.value && typeof event.target.setPlaybackQuality === 'function') {
             event.target.setPlaybackQuality('tiny')
           }
           startHistoryTracker()
         },
         onStateChange: async (event) => {
-          if (event.data === 0) {
+          // 브레이브 모바일 앱 백그라운드 재생 시 state 1 (PLAYING), 2 (PAUSED), 0 (ENDED) 추적 강화
+          if (event.data === 1) {
+            if ('mediaSession' in navigator) {
+              navigator.mediaSession.playbackState = 'playing'
+            }
+          } else if (event.data === 2) {
+            if ('mediaSession' in navigator) {
+              navigator.mediaSession.playbackState = 'paused'
+            }
+          } else if (event.data === 0) {
             if (isLoopMode.value) {
               if (ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
                 ytPlayer.value.seekTo(0, true)
@@ -2800,10 +2824,10 @@ const initYouTubePlayer = (youtubeId, startTime) => {
               }
             }
 
+            // 모바일 브레이브 앱 백그라운드 무한 연속 재생 트리거
             if (playlistIndex.value < playlistQueue.value.length - 1) {
               await playNextInQueue()
             } else {
-              // 재생 목록의 마지막 영상까지 모두 재생 완료 시 해당 폴더의 이어보기 메모리 초기화
               if (activePlaylistId.value) {
                 localStorage.removeItem(`neontube_playlist_last_index_${activePlaylistId.value}`)
               }
@@ -2839,7 +2863,7 @@ const startHistoryTracker = () => {
         const t = ytPlayer.value.getCurrentTime()
         const dur = ytPlayer.value.getDuration()
         if (t && t > 0 && dur && dur > 0) {
-          if (!isLoopMode.value && dur - t <= 1 && playlistIndex.value < playlistQueue.value.length - 1) {
+          if (!isLoopMode.value && dur - t <= 0.8 && playlistIndex.value < playlistQueue.value.length - 1) {
             await playNextInQueue()
             return
           }
@@ -3847,7 +3871,7 @@ const loadMoreChannelVideos = async (creator) => {
 
 const triggerTabSearchOrUpdate = async () => {
   const query = searchQuery.value.trim()
-  visibleLimit.value = 40 // 검색 시 페이징 리셋
+  visibleLimit.value = 40
 
   if (isPlaylistMode.value || isHistoryMode.value) {
     activeFilterQuery.value = query
@@ -4104,9 +4128,10 @@ const loadMoreSearchVideos = async () => {
   }
 }
 
-// ⚡ 탭 전환 시 visibleLimit 리셋하여 40개씩 가볍게 렌더링 시작
+// 탭 전환 시 디폴트로 이어보기 상태 리셋 및 탭 전환 핸들러들
 const selectDiscoverAll = () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = 'discoverAll'
   isSearchMode.value = false
@@ -4124,6 +4149,7 @@ const selectDiscoverAll = () => {
 
 const selectDiscoverHeart = () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = 'discoverHeart'
   isSearchMode.value = false
@@ -4141,6 +4167,7 @@ const selectDiscoverHeart = () => {
 
 const enableTrendingMode = async () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4161,6 +4188,7 @@ const enableTrendingMode = async () => {
 
 const enableAlgorithmMode = async () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4181,6 +4209,7 @@ const enableAlgorithmMode = async () => {
 
 const enableFavoriteVideosMode = () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4198,6 +4227,7 @@ const enableFavoriteVideosMode = () => {
 
 const enableHistoryMode = () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4233,6 +4263,7 @@ const enablePlaylistMode = () => {
 
 const enableSearchMode = () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = true
@@ -4254,6 +4285,7 @@ const enableSearchMode = () => {
 
 const enableMusicMode = async () => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
   isSearchMode.value = false
@@ -4274,6 +4306,7 @@ const enableMusicMode = async () => {
 
 const selectCreatorFilter = async (creator) => {
   visibleLimit.value = 40
+  enableResume.value = true
   selectedCreator.value = creator
   currentTab.value = ''
   isSearchMode.value = false
@@ -4354,7 +4387,7 @@ const getHeaderTitle = computed(() => {
   return '구독 피드 모음 (하트 크리에이터)'
 })
 
-// ⚡ 전체 필터링된 비디오 목록
+// 전체 필터링된 비디오 목록
 const allFilteredVideos = computed(() => {
   let result = videos.value
 
@@ -4406,7 +4439,7 @@ const allFilteredVideos = computed(() => {
   return result
 })
 
-// ⚡ 화면에 보여줄 갯수만큼만 슬라이스 (로컬 무한 스크롤 페이지네이션 적용)
+// 화면에 보여줄 갯수만큼만 슬라이스
 const displayedVideos = computed(() => {
   return allFilteredVideos.value.slice(0, visibleLimit.value)
 })
