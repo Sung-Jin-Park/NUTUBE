@@ -320,7 +320,7 @@
     </v-navigation-drawer>
 
     <!-- 메인 콘텐츠 영역 -->
-    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll">
+    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchend="onMainTouchEnd">
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
@@ -1918,6 +1918,36 @@ const showMainScrollTop = ref(false)
 const showModalScrollTop = ref(false)
 
 let scrollTimeout = null
+let searchPullStartY = null
+let searchPullWasAtBottom = false
+
+const onMainTouchStart = (e) => {
+  if (!isSearchMode.value || !e.touches?.length) {
+    searchPullStartY = null
+    searchPullWasAtBottom = false
+    return
+  }
+  const container = e.currentTarget
+  searchPullWasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 35
+  searchPullStartY = e.touches[0].clientY
+}
+
+const onMainTouchEnd = (e) => {
+  if (!isSearchMode.value || searchPullStartY === null || !searchPullWasAtBottom) {
+    searchPullStartY = null
+    searchPullWasAtBottom = false
+    return
+  }
+  const endY = e.changedTouches?.[0]?.clientY
+  const pulledUp = typeof endY === 'number' && searchPullStartY - endY >= 65
+  searchPullStartY = null
+  searchPullWasAtBottom = false
+
+  if (pulledUp && searchNextPageToken.value && !isLoading.value) {
+    loadMoreSearchVideos()
+  }
+}
+
 const checkMainScroll = (e) => {
   if (scrollTimeout) return
   scrollTimeout = setTimeout(() => {
@@ -1932,8 +1962,9 @@ const checkMainScroll = (e) => {
         loadMoreTrendingVideos()
       } else if (isAlgorithmMode.value && algorithmNextPageToken.value) {
         loadMoreAlgorithmVideos()
-      } else if (isSearchMode.value && searchNextPageToken.value) {
-        loadMoreSearchVideos()
+      } else if (isSearchMode.value) {
+        // 유튜브 전체 검색은 끝까지 스크롤해도 자동 조회하지 않고,
+        // 마지막 영역에서 위로 당기는 제스처를 했을 때만 다음 페이지를 조회합니다.
       } else if (selectedCreator.value) {
         loadMoreChannelVideos(selectedCreator.value)
       }
