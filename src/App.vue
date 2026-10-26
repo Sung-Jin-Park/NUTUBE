@@ -5345,4 +5345,108 @@ html, body {
 }
 .app-message-card { border: 1px solid rgba(167, 139, 250, 0.35); box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55); }
 .app-message-text { white-space: pre-line; line-height: 1.65; overflow-wrap: anywhere; }
+
+
+/* 모바일 Chrome/Brave 공통 플레이어 레이아웃 보정: 제목/버튼 겹침과 영상 아래 빈 공간 제거 */
+.safe-player-dialog .glass-modal.player-compact-mode {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}
+.safe-player-dialog .player-compact-mode > .mobile-tight-header {
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  z-index: 50 !important;
+  transform: none !important;
+  background: rgba(24, 24, 32, .98) !important;
+}
+.safe-player-dialog .player-compact-mode .modal-vertical-container {
+  position: relative !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+  transform: none !important;
+}
+.safe-player-dialog .player-compact-mode .video-container {
+  position: relative !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 16 / 9 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  transform: none !important;
+  transition: none !important;
+  line-height: 0 !important;
+}
+.safe-player-dialog .player-compact-mode #youtube-player-div,
+.safe-player-dialog .player-compact-mode #youtube-player-div iframe,
+.safe-player-dialog .player-compact-mode .youtube-iframe {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+.safe-player-dialog .player-compact-mode .radio-placeholder-card {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+.safe-player-dialog .player-floating-mode {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 16px) !important;
+  max-height: calc(100dvh - 16px) !important;
+  overflow: hidden !important;
+}
+.safe-player-dialog .player-floating-mode .player-floating-header,
+.safe-player-dialog .player-floating-mode .player-header-actions {
+  position: relative !important;
+  z-index: 51 !important;
+}
+@media (max-width: 600px) {
+  .safe-player-dialog .v-overlay__content {
+    left: 0 !important;
+    right: auto !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+  .safe-player-dialog .player-compact-mode .video-container {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    min-height: 0 !important;
+  }
+}
+
 </style>
