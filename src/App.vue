@@ -1153,8 +1153,8 @@
       </v-card>
     </v-dialog>
 
-    <!-- 시네마틱 영상 재생 모달 -->
-    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" scrim="black" class="safe-player-dialog" @update:model-value="onDialogModelUpdate">
+    <!-- 시네마틱 영상 재생 모달 (eager 속성 추가로 사전 렌더링 보장) -->
+    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" scrim="black" class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-2xl overflow-hidden pa-0">
         <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
           <div class="d-flex align-center overflow-hidden pr-2">
@@ -2777,7 +2777,7 @@ const shufflePlaylistQueue = () => {
   playlistIndex.value = 0
 }
 
-// ⚡ 수정: iOS/안드로이드 모두 자동재생이 완벽히 작동하도록 DB 비동기 대기를 뒤로 미루고 즉시 플레이어 실행
+// ⚡ 수정: iOS 자동재생 지원을 위해 await nextTick() 제거 및 사용자 제스처 컨텍스트 유지
 const playQueueIndex = async (idx) => {
   if (idx < 0 || idx >= playlistQueue.value.length) return
   playlistIndex.value = idx
@@ -2807,10 +2807,9 @@ const playQueueIndex = async (idx) => {
   }
 
   fetchComments(video.youtubeId)
-  
-  await nextTick()
+  setupMediaSession(video)
 
-  // 1순위: 즉시 동영상 로드 및 재생 실행 (사용자 제스처 유지로 iOS 자동재생 성공)
+  // 즉시 플레이어 실행 (iOS 제스처 연속성 보장)
   const startSec = 0 
   
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
@@ -2830,9 +2829,7 @@ const playQueueIndex = async (idx) => {
     initYouTubePlayer(video.youtubeId, startSec)
   }
 
-  setupMediaSession(video)
-
-  // 2순위: 백그라운드에서 시청 기록(이어보기) 조회 후 존재 시 위치 이동
+  // 비동기 이어보기 위치 조회
   try {
     const db = await openDB()
     const tx = db.transaction('history', 'readonly')
