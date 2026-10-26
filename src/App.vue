@@ -1162,10 +1162,10 @@
             :class="{ 'is-draggable': isPlayerCompactMode && isFloatingPlayerMode }"
             @pointerdown="startPlayerDrag"
           >
-            <span v-if="playlistQueue.length > 1" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
+            <span v-if="playlistQueue.length > 1 && !isFloatingPlayerMode" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
               [{{ playlistIndex + 1 }}/{{ playlistQueue.length }}]
             </span>
-            <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
+            <span v-if="!isFloatingPlayerMode" class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
           </div>
           <div class="d-flex align-center flex-shrink-0 player-header-actions">
             <v-btn 
@@ -1968,8 +1968,24 @@ const scrollToTop = (el) => {
   }
 }
 
+// YouTube IFrame API에 가능한 최저 화질을 요청합니다.
+// YouTube가 이 설정을 무시하고 자동 화질을 선택할 수도 있습니다.
+const applyRadioPlaybackQuality = () => {
+  if (!isAudioOnlyMode.value || !ytPlayer.value) return
+  if (typeof ytPlayer.value.setPlaybackQuality !== 'function') return
+
+  try {
+    ytPlayer.value.setPlaybackQuality('tiny')
+  } catch (error) {
+    console.debug('라디오 모드 화질 설정을 적용하지 못했습니다:', error)
+  }
+}
+
 const toggleAudioOnlyMode = () => {
   isAudioOnlyMode.value = !isAudioOnlyMode.value
+  if (isAudioOnlyMode.value) {
+    applyRadioPlaybackQuality()
+  }
 }
 
 const setSleepTimer = (minutes) => {
@@ -3068,9 +3084,7 @@ const playQueueIndex = async (idx) => {
     try {
       ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
       ytPlayer.value.playVideo()
-      if (isAudioOnlyMode.value && typeof ytPlayer.value.setPlaybackQuality === 'function') {
-        ytPlayer.value.setPlaybackQuality('tiny')
-      }
+      applyRadioPlaybackQuality()
       startHistoryTracker()
     } catch (e) {
       initYouTubePlayer(video.youtubeId, startSec)
@@ -3187,8 +3201,14 @@ const initPreloadedYouTubePlayer = () => {
         origin: window.location.origin
       },
       events: {
+        onReady: () => {
+          // 플레이어 준비 완료 시 라디오 모드라면 최저 화질을 다시 요청합니다.
+          applyRadioPlaybackQuality()
+        },
         onStateChange: async (event) => {
           if (event.data === 1) {
+            // 재생 시작/영상 전환 뒤에도 최저 화질 요청을 적용합니다.
+            applyRadioPlaybackQuality()
             if ('mediaSession' in navigator) {
               navigator.mediaSession.playbackState = 'playing'
             }
