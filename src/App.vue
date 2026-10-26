@@ -2441,7 +2441,6 @@ const deletePlaylistGroup = async (group) => {
   }
 }
 
-// ⚡ 수정: 그룹 이동 시 정상 반영 및 저장되도록 보완
 const movePlaylistToGroup = async (playlist, targetGroupId) => {
   if ((playlist.groupId || 'g_default') === targetGroupId) return
   playlist.groupId = targetGroupId
@@ -2778,6 +2777,7 @@ const shufflePlaylistQueue = () => {
   playlistIndex.value = 0
 }
 
+// ⚡ 수정: iOS/안드로이드 모두 자동재생이 완벽히 작동하도록 DB 비동기 대기를 뒤로 미루고 즉시 플레이어 실행
 const playQueueIndex = async (idx) => {
   if (idx < 0 || idx >= playlistQueue.value.length) return
   playlistIndex.value = idx
@@ -2800,21 +2800,6 @@ const playQueueIndex = async (idx) => {
   jumpMinutes.value = 0
   jumpSeconds.value = 0
 
-  try {
-    const db = await openDB()
-    const watchedTime = await new Promise((resolve) => {
-      const tx = db.transaction('history', 'readonly')
-      const req = tx.objectStore('history').get(video.id)
-      req.onsuccess = (e) => {
-        const result = e.target.result
-        resolve(result && result.currentTime ? Math.floor(result.currentTime) : 0)
-      }
-      req.onerror = () => resolve(0)
-    })
-    initialWatchedTime.value = watchedTime
-    currentPlayingTime = watchedTime
-  } catch (err) { console.error(err) }
-
   if (!isPlayerOpen.value) {
     window.history.pushState({ playerOpen: true }, '')
     window.addEventListener('popstate', handlePopState)
@@ -2825,7 +2810,8 @@ const playQueueIndex = async (idx) => {
   
   await nextTick()
 
-  const startSec = enableResume.value ? initialWatchedTime.value : 0
+  // 1순위: 즉시 동영상 로드 및 재생 실행 (사용자 제스처 유지로 iOS 자동재생 성공)
+  const startSec = 0 
   
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
     try {
@@ -2845,6 +2831,22 @@ const playQueueIndex = async (idx) => {
   }
 
   setupMediaSession(video)
+
+  // 2순위: 백그라운드에서 시청 기록(이어보기) 조회 후 존재 시 위치 이동
+  try {
+    const db = await openDB()
+    const tx = db.transaction('history', 'readonly')
+    const req = tx.objectStore('history').get(video.id)
+    req.onsuccess = (e) => {
+      const result = e.target.result
+      const watchedTime = result && result.currentTime ? Math.floor(result.currentTime) : 0
+      initialWatchedTime.value = watchedTime
+      currentPlayingTime = watchedTime
+      if (enableResume.value && watchedTime > 5 && ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
+        ytPlayer.value.seekTo(watchedTime, true)
+      }
+    }
+  } catch (err) { console.error(err) }
 }
 
 const playNextInQueue = async () => {
