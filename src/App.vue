@@ -1162,10 +1162,10 @@
             :class="{ 'is-draggable': isPlayerCompactMode && isFloatingPlayerMode }"
             @pointerdown="startPlayerDrag"
           >
-            <span v-if="playlistQueue.length > 1 && !isFloatingPlayerMode" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
+            <span v-if="playlistQueue.length > 1 && !(isPlayerCompactMode && isFloatingPlayerMode)" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
               [{{ playlistIndex + 1 }}/{{ playlistQueue.length }}]
             </span>
-            <span v-if="!isFloatingPlayerMode" class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
+            <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
           </div>
           <div class="d-flex align-center flex-shrink-0 player-header-actions">
             <v-btn 
@@ -1748,7 +1748,7 @@ const trendingNextPageToken = ref(null)
 
 const isPlayerOpen = ref(false)
 // 컴팩트 플레이어는 기본 상단 고정이며, 필요하면 자유 이동 플로팅 모드로 전환
-const isPlayerCompactMode = ref(true)
+const isPlayerCompactMode = ref(false)
 const isFloatingPlayerMode = ref(false)
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
 const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 768)
@@ -1968,12 +1968,11 @@ const scrollToTop = (el) => {
   }
 }
 
-// YouTube IFrame API에 가능한 최저 화질을 요청합니다.
-// YouTube가 이 설정을 무시하고 자동 화질을 선택할 수도 있습니다.
+// 라디오 모드에서는 가능한 최저 화질을 YouTube 플레이어에 요청합니다.
+// YouTube가 이 요청을 무시하고 자동 화질을 선택할 수 있습니다.
 const applyRadioPlaybackQuality = () => {
   if (!isAudioOnlyMode.value || !ytPlayer.value) return
   if (typeof ytPlayer.value.setPlaybackQuality !== 'function') return
-
   try {
     ytPlayer.value.setPlaybackQuality('tiny')
   } catch (error) {
@@ -1983,9 +1982,7 @@ const applyRadioPlaybackQuality = () => {
 
 const toggleAudioOnlyMode = () => {
   isAudioOnlyMode.value = !isAudioOnlyMode.value
-  if (isAudioOnlyMode.value) {
-    applyRadioPlaybackQuality()
-  }
+  if (isAudioOnlyMode.value) applyRadioPlaybackQuality()
 }
 
 const setSleepTimer = (minutes) => {
@@ -3056,7 +3053,7 @@ const playQueueIndex = async (idx) => {
 
   const video = playlistQueue.value[idx]
   activeVideo.value = video
-  showComments.value = false
+  showComments.value = true
   activeExpandedCommentId.value = null
   comments.value = []
   commentsNextPageToken.value = null
@@ -3068,7 +3065,8 @@ const playQueueIndex = async (idx) => {
   jumpSeconds.value = 0
 
   if (!isPlayerOpen.value) {
-    isPlayerCompactMode.value = true
+    isPlayerCompactMode.value = false
+    isFloatingPlayerMode.value = false
     window.history.pushState({ playerOpen: true }, '')
     window.addEventListener('popstate', handlePopState)
     isPlayerOpen.value = true
@@ -3201,13 +3199,9 @@ const initPreloadedYouTubePlayer = () => {
         origin: window.location.origin
       },
       events: {
-        onReady: () => {
-          // 플레이어 준비 완료 시 라디오 모드라면 최저 화질을 다시 요청합니다.
-          applyRadioPlaybackQuality()
-        },
         onStateChange: async (event) => {
           if (event.data === 1) {
-            // 재생 시작/영상 전환 뒤에도 최저 화질 요청을 적용합니다.
+            // 재생 시작/영상 전환 후에도 라디오 모드 화질 설정을 다시 요청합니다.
             applyRadioPlaybackQuality()
             if ('mediaSession' in navigator) {
               navigator.mediaSession.playbackState = 'playing'
@@ -5076,7 +5070,28 @@ html, body {
   overflow: visible !important;
   max-height: calc(100dvh - 16px) !important;
 }
-.player-drag-handle { min-width: 0; user-select: none; -webkit-user-select: none; }
+.mobile-tight-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 3px;
+}
+.player-drag-handle {
+  min-width: 0;
+  flex: 1 1 180px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.player-header-actions {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0;
+}
+.player-header-actions .v-btn { flex: 0 0 auto; }
 .player-drag-handle.is-draggable { cursor: move; touch-action: none; }
 .player-floating-mode .mobile-tight-header { border-radius: 12px 12px 0 0; min-height: 44px; }
 /* 좁은 플로팅 플레이어에서는 제목과 아이콘을 자동으로 여러 줄에 배치 */
