@@ -1153,7 +1153,7 @@
       </v-card>
     </v-dialog>
 
-    <!-- 시네마틱 영상 재생 모달 (eager 속성 추가로 사전 렌더링 보장) -->
+    <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
     <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" scrim="black" class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-2xl overflow-hidden pa-0">
         <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
@@ -2777,7 +2777,7 @@ const shufflePlaylistQueue = () => {
   playlistIndex.value = 0
 }
 
-// ⚡ 수정: iOS 자동재생 지원을 위해 await nextTick() 제거 및 사용자 제스처 컨텍스트 유지
+// ⚡ 근본적인 iOS 자동재생 해결: 미리 생성된 플레이어 인스턴스를 활용해 동기적 실행 보장
 const playQueueIndex = async (idx) => {
   if (idx < 0 || idx >= playlistQueue.value.length) return
   playlistIndex.value = idx
@@ -2809,15 +2809,13 @@ const playQueueIndex = async (idx) => {
   fetchComments(video.youtubeId)
   setupMediaSession(video)
 
-  // 즉시 플레이어 실행 (iOS 제스처 연속성 보장)
   const startSec = 0 
   
+  // 이미 사전 생성된 ytPlayer 인스턴스에 즉시 동기 명령 전달 (제스처 컨텍스트 유지)
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
     try {
       ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
-      if (typeof ytPlayer.value.playVideo === 'function') {
-        ytPlayer.value.playVideo()
-      }
+      ytPlayer.value.playVideo()
       if (isAudioOnlyMode.value && typeof ytPlayer.value.setPlaybackQuality === 'function') {
         ytPlayer.value.setPlaybackQuality('tiny')
       }
@@ -2868,14 +2866,14 @@ const toggleCommentsView = () => {
 const closePlayer = () => {
   stopHistoryTracker()
   
-  if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
+  // 플레이어를 파괴하지 않고 비디오만 정지하여 인스턴스 재사용성 유지
+  if (ytPlayer.value && typeof ytPlayer.value.stopVideo === 'function') {
     try { 
-      ytPlayer.value.destroy()
+      ytPlayer.value.stopVideo()
     } catch (e) { 
       console.debug(e) 
     }
   }
-  ytPlayer.value = null
   
   isPlayerOpen.value = false
   saveCurrentHistoryToDB()
@@ -2919,37 +2917,24 @@ const setupMediaSession = (video) => {
   }
 }
 
-const initYouTubePlayer = (youtubeId, startTime) => {
-  const startPos = startTime > 5 ? startTime : 0
-
+// ⚡ 앱 실행 시점에 플레이어를 미리 생성 (Pre-init)
+const initPreloadedYouTubePlayer = () => {
   const createPlayerInstance = () => {
     const playerDiv = document.getElementById('youtube-player-div')
-    if (!playerDiv) return
-
-    if (ytPlayer.value && typeof ytPlayer.value.destroy === 'function') {
-      try { ytPlayer.value.destroy() } catch (err) { console.debug(err) }
-      ytPlayer.value = null
-    }
+    if (!playerDiv || ytPlayer.value) return
 
     ytPlayer.value = new window.YT.Player('youtube-player-div', {
-      videoId: youtubeId,
+      height: '100%',
+      width: '100%',
       playerVars: { 
-        autoplay: 1, 
+        autoplay: 0, 
         playsinline: 1, 
-        start: startPos,
         enablejsapi: 1,
         origin: window.location.origin
       },
       events: {
         onReady: (event) => {
-          if (startPos > 0 && event.target) event.target.seekTo(startPos, true)
-          if (event.target && typeof event.target.playVideo === 'function') {
-            event.target.playVideo()
-          }
-          if (isAudioOnlyMode.value && typeof event.target.setPlaybackQuality === 'function') {
-            event.target.setPlaybackQuality('tiny')
-          }
-          startHistoryTracker()
+          // 플레이어가 준비됨
         },
         onStateChange: async (event) => {
           if (event.data === 1) {
@@ -3013,6 +2998,18 @@ const initYouTubePlayer = (youtubeId, startTime) => {
       }
     }
     window.onYouTubeIframeAPIReady = () => createPlayerInstance()
+  }
+}
+
+// Fallback용 기존 초기화 함수 유지
+const initYouTubePlayer = (youtubeId, startTime) => {
+  const startPos = startTime > 5 ? startTime : 0
+  if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
+    ytPlayer.value.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
+    ytPlayer.value.playVideo()
+    startHistoryTracker()
+  } else {
+    initPreloadedYouTubePlayer()
   }
 }
 
@@ -4552,6 +4549,9 @@ onMounted(async () => {
   if (creators.value.length > 0) {
     fetchChannelVideosParallel(creators.value)
   }
+
+  // ⚡ 앱 마운트 시점에 YouTube 플레이어 미리 생성 (Pre-init)
+  initPreloadedYouTubePlayer()
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
   window.addEventListener('popstate', handlePopState)
