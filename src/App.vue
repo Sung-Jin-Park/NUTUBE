@@ -320,7 +320,7 @@
     </v-navigation-drawer>
 
     <!-- 메인 콘텐츠 영역 -->
-    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode }" @scroll="checkMainScroll">
+    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll">
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
@@ -1155,9 +1155,13 @@
 
     <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
     <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
-      <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode }">
+      <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode, 'player-floating-mode': isPlayerCompactMode && isFloatingPlayerMode }" :style="isPlayerCompactMode && isFloatingPlayerMode ? floatingPlayerStyle : null">
         <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
-          <div class="d-flex align-center overflow-hidden pr-2">
+          <div
+            class="d-flex align-center overflow-hidden pr-2 player-drag-handle"
+            :class="{ 'is-draggable': isPlayerCompactMode && isFloatingPlayerMode }"
+            @pointerdown="startPlayerDrag"
+          >
             <span v-if="playlistQueue.length > 1" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
               [{{ playlistIndex + 1 }}/{{ playlistQueue.length }}]
             </span>
@@ -1250,6 +1254,50 @@
               <v-icon :icon="isAudioOnlyMode ? 'mdi-radio-handheld' : 'mdi-radio-tower'" size="20"></v-icon>
             </v-btn>
 
+            <v-menu v-if="isPlayerCompactMode && isFloatingPlayerMode" location="bottom end" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon="mdi-resize"
+                  variant="text"
+                  size="small"
+                  color="white"
+                  class="mr-1"
+                  title="플로팅 영상 크기 조절"
+                ></v-btn>
+              </template>
+              <v-card class="glass-modal rounded-xl pa-4" width="260">
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <span class="text-white text-caption font-weight-bold">영상 크기</span>
+                  <span class="text-accent text-caption font-weight-bold">{{ floatingPlayerWidth }} px</span>
+                </div>
+                <v-slider
+                  :model-value="floatingPlayerWidth"
+                  :min="floatingMinWidth"
+                  :max="floatingMaxWidth"
+                  :step="10"
+                  color="deep-purple-accent-2"
+                  density="compact"
+                  hide-details
+                  @update:model-value="setFloatingPlayerWidth"
+                ></v-slider>
+                <div class="d-flex justify-space-between text-grey-lighten-1 text-caption">
+                  <span>작게</span><span>크게</span>
+                </div>
+              </v-card>
+            </v-menu>
+
+            <v-btn
+              v-if="isPlayerCompactMode"
+              :icon="isFloatingPlayerMode ? 'mdi-dock-top' : 'mdi-picture-in-picture-bottom-right-outline'"
+              variant="text"
+              size="small"
+              color="white"
+              class="mr-1"
+              :title="isFloatingPlayerMode ? '상단 고정 모드로 돌아가기' : '자유 이동 플로팅 모드'"
+              @click="toggleFloatingPlayerMode"
+            ></v-btn>
+
             <v-btn
               :icon="isPlayerCompactMode ? 'mdi-arrow-expand' : 'mdi-arrow-collapse'"
               variant="text"
@@ -1257,7 +1305,7 @@
               color="white"
               class="mr-1"
               :title="isPlayerCompactMode ? '플레이어 상세 화면 펼치기' : '목록 스크롤 모드로 전환'"
-              @click="isPlayerCompactMode = !isPlayerCompactMode"
+              @click="togglePlayerCompactMode"
             ></v-btn>
             <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
           </div>
@@ -1269,6 +1317,16 @@
             :class="{ 'audio-only-hidden': isAudioOnlyMode }"
           >
             <div id="youtube-player-div" class="youtube-iframe"></div>
+            <div
+              v-if="isPlayerCompactMode && isFloatingPlayerMode && !isAudioOnlyMode"
+              class="floating-resize-handle"
+              role="button"
+              aria-label="영상 크기 조절"
+              title="드래그하여 영상 크기 조절"
+              @pointerdown.stop.prevent="startPlayerResize"
+            >
+              <v-icon icon="mdi-arrow-bottom-right" size="18"></v-icon>
+            </div>
           </div>
 
           <div v-if="isAudioOnlyMode" class="radio-placeholder-card pa-6 text-center d-flex flex-column align-center justify-center">
@@ -1689,8 +1747,117 @@ const channelNextPageTokens = ref(new Map())
 const trendingNextPageToken = ref(null)
 
 const isPlayerOpen = ref(false)
-// 컴팩트 플레이어를 화면 상단에 고정해 재생 중에도 본문 목록을 스크롤할 수 있게 함
+// 컴팩트 플레이어는 기본 상단 고정이며, 필요하면 자유 이동 플로팅 모드로 전환
 const isPlayerCompactMode = ref(true)
+const isFloatingPlayerMode = ref(false)
+const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
+const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 768)
+const floatingPlayerWidth = ref(Math.min(420, Math.max(240, viewportWidth.value - 24)))
+const floatingPlayerX = ref(12)
+const floatingPlayerY = ref(84)
+const floatingMinWidth = computed(() => Math.min(220, floatingMaxWidth.value))
+const floatingMaxWidth = computed(() => Math.max(180, Math.min(760, viewportWidth.value - 16)))
+const floatingPlayerStyle = computed(() => ({
+  position: 'fixed',
+  left: `${floatingPlayerX.value}px`,
+  top: `${floatingPlayerY.value}px`,
+  width: `${floatingPlayerWidth.value}px`,
+  maxWidth: 'calc(100vw - 16px)',
+  margin: '0',
+  zIndex: 2200,
+}))
+let playerPointerMode = null
+let playerPointerStartX = 0
+let playerPointerStartY = 0
+let playerPointerOriginX = 0
+let playerPointerOriginY = 0
+let playerPointerStartWidth = 0
+
+const clampFloatingPlayerPosition = () => {
+  const width = Math.min(floatingPlayerWidth.value, Math.max(180, viewportWidth.value - 16))
+  floatingPlayerWidth.value = width
+  const estimatedHeight = width * 9 / 16 + 52
+  floatingPlayerX.value = Math.max(8, Math.min(floatingPlayerX.value, viewportWidth.value - width - 8))
+  floatingPlayerY.value = Math.max(8, Math.min(floatingPlayerY.value, viewportHeight.value - Math.min(estimatedHeight, viewportHeight.value - 16) - 8))
+}
+
+const setFloatingPlayerWidth = (value) => {
+  const numericValue = Number(value)
+  if (!Number.isFinite(numericValue)) return
+  floatingPlayerWidth.value = Math.max(floatingMinWidth.value, Math.min(floatingMaxWidth.value, numericValue))
+  clampFloatingPlayerPosition()
+}
+
+const toggleFloatingPlayerMode = () => {
+  isFloatingPlayerMode.value = !isFloatingPlayerMode.value
+  if (isFloatingPlayerMode.value) {
+    viewportWidth.value = window.innerWidth
+    viewportHeight.value = window.innerHeight
+    floatingPlayerWidth.value = Math.min(floatingPlayerWidth.value, floatingMaxWidth.value)
+    floatingPlayerX.value = viewportWidth.value - floatingPlayerWidth.value - 12
+    floatingPlayerY.value = Math.max(8, viewportHeight.value - (floatingPlayerWidth.value * 9 / 16) - 96)
+    clampFloatingPlayerPosition()
+  }
+}
+
+const togglePlayerCompactMode = () => {
+  isPlayerCompactMode.value = !isPlayerCompactMode.value
+  if (!isPlayerCompactMode.value) isFloatingPlayerMode.value = false
+}
+
+const startPlayerDrag = (event) => {
+  if (!isPlayerCompactMode.value || !isFloatingPlayerMode.value || event.button !== 0) return
+  event.preventDefault()
+  playerPointerMode = 'drag'
+  playerPointerStartX = event.clientX
+  playerPointerStartY = event.clientY
+  playerPointerOriginX = floatingPlayerX.value
+  playerPointerOriginY = floatingPlayerY.value
+  window.addEventListener('pointermove', onPlayerPointerMove, { passive: false })
+  window.addEventListener('pointerup', stopPlayerPointerInteraction)
+  window.addEventListener('pointercancel', stopPlayerPointerInteraction)
+}
+
+const startPlayerResize = (event) => {
+  if (!isPlayerCompactMode.value || !isFloatingPlayerMode.value || event.button !== 0) return
+  event.preventDefault()
+  playerPointerMode = 'resize'
+  playerPointerStartX = event.clientX
+  playerPointerStartY = event.clientY
+  playerPointerStartWidth = floatingPlayerWidth.value
+  window.addEventListener('pointermove', onPlayerPointerMove, { passive: false })
+  window.addEventListener('pointerup', stopPlayerPointerInteraction)
+  window.addEventListener('pointercancel', stopPlayerPointerInteraction)
+}
+
+const onPlayerPointerMove = (event) => {
+  if (!playerPointerMode) return
+  event.preventDefault()
+  const deltaX = event.clientX - playerPointerStartX
+  const deltaY = event.clientY - playerPointerStartY
+  if (playerPointerMode === 'drag') {
+    floatingPlayerX.value = playerPointerOriginX + deltaX
+    floatingPlayerY.value = playerPointerOriginY + deltaY
+    clampFloatingPlayerPosition()
+  } else if (playerPointerMode === 'resize') {
+    setFloatingPlayerWidth(playerPointerStartWidth + deltaX)
+  }
+}
+
+const stopPlayerPointerInteraction = () => {
+  playerPointerMode = null
+  window.removeEventListener('pointermove', onPlayerPointerMove)
+  window.removeEventListener('pointerup', stopPlayerPointerInteraction)
+  window.removeEventListener('pointercancel', stopPlayerPointerInteraction)
+}
+
+const handlePlayerViewportResize = () => {
+  viewportWidth.value = window.innerWidth
+  viewportHeight.value = window.innerHeight
+  floatingPlayerWidth.value = Math.min(floatingPlayerWidth.value, floatingMaxWidth.value)
+  clampFloatingPlayerPosition()
+}
+
 const activeVideo = ref(null)
 const showComments = ref(false)
 const showReplies = ref(true)               
@@ -2961,6 +3128,8 @@ const closePlayer = () => {
   }
   
   isPlayerOpen.value = false
+  isFloatingPlayerMode.value = false
+  stopPlayerPointerInteraction()
   saveCurrentHistoryToDB()
 
   window.removeEventListener('popstate', handlePopState)
@@ -4632,12 +4801,15 @@ onMounted(async () => {
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
   window.addEventListener('popstate', handlePopState)
+  window.addEventListener('resize', handlePlayerViewportResize)
 })
 
 onUnmounted(() => {
   stopHistoryTracker()
   clearSleepTimer()
+  stopPlayerPointerInteraction()
   window.removeEventListener('popstate', handlePopState)
+  window.removeEventListener('resize', handlePlayerViewportResize)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
@@ -4878,12 +5050,41 @@ html, body {
 .safe-player-dialog .player-compact-mode .modal-vertical-container > :not(.video-container):not(.radio-placeholder-card) {
   display: none !important;
 }
+.safe-player-dialog .player-floating-mode {
+  border-radius: 12px !important;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, .72) !important;
+  overflow: visible !important;
+  max-height: calc(100dvh - 16px) !important;
+}
+.player-drag-handle { min-width: 0; user-select: none; -webkit-user-select: none; }
+.player-drag-handle.is-draggable { cursor: move; touch-action: none; }
+.player-floating-mode .mobile-tight-header { border-radius: 12px 12px 0 0; min-height: 44px; }
+.player-floating-mode .video-container { min-height: 0; }
+.floating-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(20, 20, 28, .82);
+  border-radius: 10px 0 0 0;
+  cursor: nwse-resize;
+  touch-action: none;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.22);
+}
+.floating-resize-handle:active { background: rgba(124, 58, 237, .95); }
 .main-content.player-dock-active {
   padding-top: calc(min(56.25vw, 495px) + 48px) !important;
 }
 @media (max-width: 600px) {
   .safe-player-dialog .v-overlay__content { width: 100vw !important; max-width: 100vw !important; }
   .safe-player-dialog .player-compact-mode { border-radius: 0 0 12px 12px !important; }
+  .safe-player-dialog .player-floating-mode { border-radius: 12px !important; }
   .main-content.player-dock-active { padding-top: calc(56.25vw + 44px) !important; }
 }
 
