@@ -5113,7 +5113,7 @@ html, body {
 }
 .safe-player-dialog .v-overlay__content {
   position: fixed !important;
-  top: 0 !important;
+  top: env(safe-area-inset-top, 0px) !important;
   left: 0 !important;
   right: 0 !important;
   margin: 0 auto !important;
@@ -5122,7 +5122,13 @@ html, body {
   max-width: 880px !important;
   pointer-events: none !important;
 }
-.safe-player-dialog .glass-modal { pointer-events: auto !important; }
+.safe-player-dialog .glass-modal { pointer-events: auto !important; position: relative !important; isolation: isolate; }
+/* 일부 모바일 브라우저에서 YouTube iframe의 GPU 레이어가 제목/버튼 위로 겹치는 현상 방지 */
+.safe-player-dialog .mobile-tight-header { position: relative !important; z-index: 30 !important; isolation: isolate; }
+.safe-player-dialog .modal-vertical-container { position: relative; z-index: 1; }
+.safe-player-dialog .video-container { position: relative; z-index: 1; }
+.safe-player-dialog .youtube-iframe { z-index: 0; }
+.safe-player-dialog .floating-resize-handle { z-index: 2; }
 .safe-player-dialog .player-compact-mode {
   border-radius: 0 0 14px 14px !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, .48) !important;
@@ -5135,10 +5141,16 @@ html, body {
   display: none !important;
 }
 .safe-player-dialog .player-floating-mode {
+  box-sizing: border-box !important;
   border-radius: 12px !important;
   box-shadow: 0 16px 42px rgba(0, 0, 0, .72) !important;
   overflow: visible !important;
   max-height: calc(100dvh - 16px) !important;
+  max-height: calc(100vh - 16px) !important;
+  overflow: hidden !important;
+}
+@supports (height: 100dvh) {
+  .safe-player-dialog .player-floating-mode { max-height: calc(100dvh - 16px) !important; }
 }
 .mobile-tight-header {
   display: flex;
@@ -5200,7 +5212,9 @@ html, body {
     justify-content: flex-end;
   }
 }
-.player-floating-mode .video-container { min-height: 0; }
+.player-floating-mode .video-container { min-height: 0; z-index: 1; }
+.player-floating-mode .player-floating-header { flex-shrink: 0; background: rgba(24, 24, 32, .98); }
+.player-floating-mode .youtube-iframe { z-index: 0; }
 .floating-resize-handle {
   position: absolute;
   right: 0;
@@ -5239,6 +5253,7 @@ html, body {
 
 .video-container {
   position: relative;
+  isolation: isolate;
   width: 100%;
   aspect-ratio: 16 / 9;
   min-height: 180px;
