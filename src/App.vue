@@ -1761,8 +1761,17 @@ const isPlayerOpen = ref(false)
 // 컴팩트 플레이어는 기본 상단 고정이며, 필요하면 자유 이동 플로팅 모드로 전환
 const isPlayerCompactMode = ref(false)
 const isFloatingPlayerMode = ref(false)
-const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
-const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 768)
+const getVisibleViewport = () => {
+  if (typeof window === 'undefined') return { width: 1024, height: 768 }
+  const vv = window.visualViewport
+  return {
+    width: Math.round(vv?.width || window.innerWidth),
+    height: Math.round(vv?.height || window.innerHeight),
+  }
+}
+const initialPlayerViewport = getVisibleViewport()
+const viewportWidth = ref(initialPlayerViewport.width)
+const viewportHeight = ref(initialPlayerViewport.height)
 const floatingPlayerWidth = ref(Math.min(420, Math.max(240, viewportWidth.value - 24)))
 const floatingPlayerX = ref(12)
 const floatingPlayerY = ref(84)
@@ -1802,8 +1811,9 @@ const setFloatingPlayerWidth = (value) => {
 const toggleFloatingPlayerMode = () => {
   isFloatingPlayerMode.value = !isFloatingPlayerMode.value
   if (isFloatingPlayerMode.value) {
-    viewportWidth.value = window.innerWidth
-    viewportHeight.value = window.innerHeight
+    const visibleViewport = getVisibleViewport()
+    viewportWidth.value = visibleViewport.width
+    viewportHeight.value = visibleViewport.height
     floatingPlayerWidth.value = Math.min(floatingPlayerWidth.value, floatingMaxWidth.value)
     floatingPlayerX.value = viewportWidth.value - floatingPlayerWidth.value - 12
     floatingPlayerY.value = Math.max(8, viewportHeight.value - (floatingPlayerWidth.value * 9 / 16) - 96)
@@ -1863,8 +1873,11 @@ const stopPlayerPointerInteraction = () => {
 }
 
 const handlePlayerViewportResize = () => {
-  viewportWidth.value = window.innerWidth
-  viewportHeight.value = window.innerHeight
+  // 브라우저 주소창/하단 툴바가 있는 모바일 브라우저는 innerHeight가
+  // 실제 보이는 영역과 다를 수 있어 visualViewport를 우선 사용합니다.
+  const visibleViewport = getVisibleViewport()
+  viewportWidth.value = visibleViewport.width
+  viewportHeight.value = visibleViewport.height
   floatingPlayerWidth.value = Math.min(floatingPlayerWidth.value, floatingMaxWidth.value)
   clampFloatingPlayerPosition()
 }
@@ -4886,6 +4899,8 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   window.addEventListener('popstate', handlePopState)
   window.addEventListener('resize', handlePlayerViewportResize)
+  window.visualViewport?.addEventListener('resize', handlePlayerViewportResize)
+  window.visualViewport?.addEventListener('scroll', handlePlayerViewportResize)
 })
 
 onUnmounted(() => {
@@ -4894,6 +4909,8 @@ onUnmounted(() => {
   stopPlayerPointerInteraction()
   window.removeEventListener('popstate', handlePopState)
   window.removeEventListener('resize', handlePlayerViewportResize)
+  window.visualViewport?.removeEventListener('resize', handlePlayerViewportResize)
+  window.visualViewport?.removeEventListener('scroll', handlePlayerViewportResize)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
@@ -5145,8 +5162,8 @@ html, body {
   border-radius: 12px !important;
   box-shadow: 0 16px 42px rgba(0, 0, 0, .72) !important;
   overflow: visible !important;
-  max-height: calc(100dvh - 16px) !important;
   max-height: calc(100vh - 16px) !important;
+  max-height: calc(100dvh - 16px) !important;
   overflow: hidden !important;
 }
 @supports (height: 100dvh) {
@@ -5243,7 +5260,7 @@ html, body {
   .main-content.player-dock-active { padding-top: calc(56.25vw + 44px) !important; }
 }
 
-.main-content { overflow-y: auto !important; height: calc(100dvh - 68px); }
+.main-content { overflow-y: auto !important; height: calc(100vh - 68px); height: calc(100dvh - 68px); }
 .loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
 .loading-card { border: 1px solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
 
