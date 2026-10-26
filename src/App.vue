@@ -6,7 +6,8 @@
 
     <!-- 숨겨진 파일 업로드 인풋들 -->
     <input ref="creatorFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadCreators" />
-    <input ref="playlistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadPlaylists" />
+    <input ref="playlistFileInput" 
+type="file" accept="application/json,.json" style="display: none;" @change="handleUploadPlaylists" />
     <input ref="singlePlaylistFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadSinglePlaylist" />
     <input ref="musicFileInput" type="file" accept="application/json,.json" style="display: none;" @change="handleUploadMusic" />
 
@@ -15,7 +16,8 @@
       <v-app-bar-nav-icon @click="drawer = !drawer" class="text-white" density="compact"></v-app-bar-nav-icon>
       
       <div class="d-flex align-center ml-1 mr-3 gap-1 flex-shrink-0">
-        <v-icon icon="mdi-play-box-multiple" class="text-accent" size="28"></v-icon>
+        <v-icon icon="mdi-play-box-multiple" class="text-accent" size="28"></
+v-icon>
         <span class="text-accent text-caption font-weight-bold ml-1" title="현재 사용 중인 YouTube API 키 번호">#{{ currentApiKeyNumber }}</span>
       </div>
       
@@ -23,7 +25,8 @@
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isAlgorithmMode ? '알고리즘 추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 피드 내 검색어 입력 후 엔터 또는 돋보기 버튼 클릭...')))))))"
+        :placeholder="selectedCreator ? `${selectedCreator.name} 내 검색어 입력 후 엔터...` : (isAlgorithmMode ? '알고리즘 
+추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 피드 내 검색어 입력 후 엔터 또는 돋보기 버튼 클릭...')))))))"
         prepend-inner-icon="mdi-magnify"
         class="search-bar flex-grow-1 mx-2"
         hide-details
@@ -47,7 +50,8 @@
                   :content="selectedVideoIds.length"
                   offset-x="-2"
                   offset-y="-2"
-                >
+                
+>
                   <v-icon icon="mdi-playlist-play" size="20" color="accent"></v-icon>
                 </v-badge>
               </template>
@@ -59,7 +63,8 @@
               size="small"
               variant="flat"
               color="deep-purple-accent-2"
-              title="선택한 영상을 재생 목록에 저장"
+              title="선택한 영상을 재생 
+목록에 저장"
               @click.stop="openSaveToPlaylistDialog(null)"
             ></v-btn>
 
@@ -103,7 +108,8 @@
               icon="mdi-heart-outline"
               size="small"
               variant="flat"
-              :color="currentTab === 'discoverHeart' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
+              :color="currentTab 
+=== 'discoverHeart' && !selectedCreator ? 'deep-purple-darken-2' : 'transparent'"
               class="text-white flex-shrink-0 rounded-circle"
               title="구독 피드 모음 (하트 크리에이터)"
               @click="selectDiscoverHeart"
@@ -112,7 +118,8 @@
               icon="mdi-brain"
               size="small"
               variant="flat"
-              :color="isAlgorithmMode ? 'deep-purple-darken-2' : 'transparent'"
+              :color="isAlgorithmMode ? 'deep-purple-darken-2' : 
+'transparent'"
               class="text-white flex-shrink-0 rounded-circle"
               title="알고리즘 추천탭"
               @click="enableAlgorithmMode"
@@ -195,7 +202,8 @@
           title="구독 크리에이터 전체 피드" 
           value="discoverAll" 
           class="mb-2 custom-list-item"
-          :class="{ 'neon-active': currentTab === 'discoverAll' && !selectedCreator }"
+          :class="{ 'neon-active': 
+currentTab === 'discoverAll' && !selectedCreator }"
           @click="selectDiscoverAll"
         ></v-list-item>
 
@@ -205,7 +213,8 @@
           value="discoverHeart" 
           class="mb-2 custom-list-item"
           :class="{ 'neon-active': currentTab === 'discoverHeart' && !selectedCreator }"
-          @click="selectDiscoverHeart"
+          @click=
+"selectDiscoverHeart"
         ></v-list-item>
 
         <v-list-item 
@@ -218,7 +227,8 @@
         ></v-list-item>
 
         <v-list-item 
-          prepend-icon="mdi-heart-multiple" 
+          prepend-icon="mdi-heart-
+multiple" 
           title="즐겨찾기 영상" 
           value="favoriteVideos" 
           class="mb-2 custom-list-item"
@@ -230,7 +240,8 @@
           prepend-icon="mdi-playlist-music" 
           title="재생 목록" 
           value="playlistMode" 
-          class="mb-2 custom-list-item"
+          class="mb-2 
+custom-list-item"
           :class="{ 'neon-active': isPlaylistMode }"
           @click="enablePlaylistMode"
         ></v-list-item>
@@ -241,7 +252,8 @@
           value="historyMode" 
           class="mb-2 custom-list-item"
           :class="{ 'neon-active': isHistoryMode }"
-          @click="enableHistoryMode"
+          @click=
+"enableHistoryMode"
         ></v-list-item>
         
         <v-list-item 
@@ -266,7 +278,8 @@
           prepend-icon="mdi-music-box-outline" 
           title="음악 탭" 
           value="musicMode" 
-          class="mb-2 custom-list-item"
+          class="mb-2 
+custom-list-item"
           :class="{ 'neon-active': isMusicMode }"
           @click="enableMusicMode"
         ></v-list-item>
@@ -274,7 +287,8 @@
         <v-divider class="border-opacity-25 my-4"></v-divider>
         
         <div class="px-3 d-flex align-center justify-space-between mb-2">
-          <span class="text-subtitle-2 text-grey-lighten-1 font-weight-bold">구독 크리에이터</span>
+          <span class="text-subtitle-2 text-grey-lighten-1 font-weight-bold">구독 
+크리에이터</span>
           <div class="d-flex align-center gap-1">
             <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="구독 목록 백업 (내려받기)" @click="downloadCreatorsBackup"></v-btn>
             <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="구독 목록 불러오기 (올리기)" @click="triggerUploadCreators"></v-btn>
@@ -299,7 +313,8 @@
             <div class="d-flex align-center">
               <v-btn
                 icon="mdi-heart"
-                size="small"
+                
+size="small"
                 variant="text"
                 :color="creator.isFavorite ? 'pink' : 'grey'"
                 :title="creator.isFavorite ? '하트 해제' : '구독 피드 모음에 추가 (하트)'"
@@ -308,7 +323,8 @@
               <v-btn
                 icon="mdi-account-minus"
                 size="small"
-                variant="text"
+                
+variant="text"
                 color="red-lighten-2"
                 title="구독 취소"
                 @click.stop="unsubscribeCreator(creator)"
@@ -320,14 +336,16 @@
     </v-navigation-drawer>
 
     <!-- 메인 콘텐츠 영역 -->
-    <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
+    <v-main ref="mainScrollRef" class="main-content position-relative" 
+@scroll="checkMainScroll">
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
         <v-card class="glass-banner mb-4 mb-md-6 p-4 p-md-6 rounded-2xl position-relative overflow-hidden">
           <div class="banner-glow"></div>
           <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3 flex-wrap">
-            <div class="d-flex align-center gap-3">
+            <div class="d-flex align-center 
+gap-3">
               <v-checkbox
                 v-if="(!isPlaylistMode || activePlaylistId) && !isHistoryMode"
                 v-model="isAllSelected"
@@ -338,7 +356,8 @@
                 class="ma-0 pa-0"
                 title="현재 표시된 모든 영상 선택/해제"
                 @change="toggleSelectAll"
-              ></v-checkbox>
+              
+></v-checkbox>
               <h1 class="text-subtitle-1 text-md-h4 font-weight-black text-white ma-0">
                 {{ getHeaderTitle }} <span v-if="selectedVideoIds.length > 0" class="text-accent text-subtitle-2">({{ selectedVideoIds.length }}개 선택됨)</span>
               </h1>
@@ -347,7 +366,8 @@
             <v-btn
               v-if="isAlgorithmMode"
               size="small"
-              variant="flat"
+              
+variant="flat"
               color="deep-purple-darken-2"
               prepend-icon="mdi-refresh"
               class="text-white font-weight-bold rounded-pill px-4"
@@ -360,7 +380,8 @@
 
         <!-- 음악 탭 UI -->
         <div v-if="isMusicMode">
-          <div class="d-flex align-center gap-2 overflow-x-auto pb-3 mb-4">
+          <div class="d-flex 
+align-center gap-2 overflow-x-auto pb-3 mb-4">
             <v-chip
               v-for="cat in musicCategories"
               :key="cat.value"
@@ -369,14 +390,16 @@
               @click="selectMusicCategory(cat.value)"
             >
               {{ cat.title }}
-            </v-chip>
+            
+</v-chip>
           </div>
 
           <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
             <div class="d-flex align-center gap-2">
               <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">🎵 추천 및 검색된 음악 트랙</h2>
               <div class="d-flex align-center gap-1">
-                <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="음악 탭 데이터 백업" @click="downloadMusicBackup"></v-btn>
+                <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="음악 
+탭 데이터 백업" @click="downloadMusicBackup"></v-btn>
                 <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="음악 탭 데이터 불러오기" @click="triggerUploadMusic"></v-btn>
               </div>
             </div>
@@ -406,7 +429,8 @@
             <v-col cols="12" class="text-center">
               <v-icon icon="mdi-music-note-off" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 음악이 없습니다</h3>
-              <p class="text-caption text-grey-darken-1 mt-1">상단 검색창에 가수나 곡명을 입력하고 엔터를 쳐서 검색해 보세요.</p>
+              <p class="text-caption text-grey-darken-1 mt-1">상단 
+검색창에 가수나 곡명을 입력하고 엔터를 쳐서 검색해 보세요.</p>
             </v-col>
           </v-row>
 
@@ -438,7 +462,8 @@
                 <div class="overflow-hidden flex-grow-1">
                   <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                    <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                    <span class="text-white creator-name-link 
+font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
                     <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                     <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                   </p>
@@ -468,7 +493,8 @@
         </div>
 
         <!-- 재생 목록 폴더 및 카테고리 그룹 뷰 -->
-        <div v-else-if="isPlaylistMode && !activePlaylistId">
+        <div 
+v-else-if="isPlaylistMode && !activePlaylistId">
           <v-row>
             <!-- 왼쪽 카테고리 그룹 패널 -->
             <v-col cols="12" md="3">
@@ -505,7 +531,8 @@
                         variant="text"
                         color="red-lighten-2"
                         title="그룹 삭제"
-                        @click.stop="deletePlaylistGroup(group)"
+                        @click.stop=
+"deletePlaylistGroup(group)"
                       ></v-btn>
                     </template>
                   </v-list-item>
@@ -530,7 +557,8 @@
                   variant="flat"
                   size="small"
                   prepend-icon="mdi-folder-plus"
-                  class="text-white font-weight-bold rounded-pill px-4"
+                  class="text-white 
+font-weight-bold rounded-pill px-4"
                   @click="openCreatePlaylistDialog"
                 >
                   현재 그룹에 새 폴더 만들기
@@ -559,21 +587,24 @@
                           <!-- 그룹 이동 메뉴 -->
                           <v-menu location="bottom end">
                             <template v-slot:activator="{ props }">
-                              <v-btn v-bind="props" icon="mdi-folder-move" size="x-small" variant="text" color="accent" title="다른 카테고리 그룹으로 이동"></v-btn>
+                              <v-btn v-bind="props" 
+icon="mdi-folder-move" size="x-small" variant="text" color="accent" title="다른 카테고리 그룹으로 이동"></v-btn>
                             </template>
                             <v-list density="compact" class="glass-modal rounded-xl py-1" width="160">
                               <v-list-item
                                 v-for="g in playlistGroups"
                                 :key="g.id"
                                 @click="movePlaylistToGroup(playlist, g.id)"
-                                :class="{ 'text-accent': (playlist.groupId || 'g_default') === g.id }"
+                                :class="{ 'tex
+t-accent': (playlist.groupId || 'g_default') === g.id }"
                               >
                                 <v-list-item-title class="text-body-2 text-white">{{ g.name }}</v-list-item-title>
                               </v-list-item>
                             </v-list>
                           </v-menu>
 
-                          <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v-btn>
+                          <v-btn icon="mdi-download" size="x-small" variant="text" color="accent" title="이 폴더 개별 백업" @click="downloadSinglePlaylistBackup(playlist)"></v
+-btn>
                           <v-btn icon="mdi-upload" size="x-small" variant="text" color="accent" title="이 폴더로 개별 불러오기" @click="triggerUploadSinglePlaylist(playlist)"></v-btn>
                           <v-btn
                             icon="mdi-pencil"
@@ -593,7 +624,8 @@
                           ></v-btn>
                         </div>
                       </div>
-                      <h3 class="text-white font-weight-bold text-subtitle-1 mb-1 text-truncate">{{ playlist.name }}</h3>
+                      <h3 class="text-white font-weight-bold text-subtitle-1 mb-1 text-truncate">{{ playlist.name }}</
+h3>
                       <p class="text-grey-lighten-1 text-caption mb-0">동영상 {{ getPlaylistVideoCount(playlist.id) }}개</p>
                     </div>
                     
@@ -611,7 +643,8 @@
 
                     <div class="d-flex justify-space-between align-center mt-4" @click.stop>
                       <v-btn
-                        v-if="playlistResumeStates[playlist.id] && hasPlaylistResumeMemory(playlist.id)"
+                        v-if="playlistResumeStates[playlist.id] && 
+hasPlaylistResumeMemory(playlist.id)"
                         size="x-small"
                         variant="text"
                         color="accent"
@@ -623,7 +656,8 @@
                       </v-btn>
                       <div v-else></div>
 
-                      <v-btn
+                      
+<v-btn
                         size="small"
                         variant="flat"
                         color="deep-purple-darken-2"
@@ -633,7 +667,8 @@
                       >
                         전체 재생
                       </v-btn>
-                    </div>
+                    
+</div>
                   </v-card>
                 </v-col>
               </v-row>
@@ -646,7 +681,8 @@
           <div class="mb-4 d-flex align-center justify-space-between flex-wrap gap-2">
             <v-btn
               variant="text"
-              color="accent"
+              
+color="accent"
               size="small"
               prepend-icon="mdi-arrow-left"
               class="font-weight-bold"
@@ -657,7 +693,8 @@
 
             <div class="d-flex align-center gap-3">
               <v-checkbox
-                v-model="playlistResumeStates[activePlaylistId]"
+                
+v-model="playlistResumeStates[activePlaylistId]"
                 color="accent"
                 label="이어보기 사용"
                 density="compact"
@@ -668,7 +705,8 @@
 
               <v-btn
                 color="deep-purple-darken-2"
-                variant="flat"
+                
+variant="flat"
                 size="small"
                 prepend-icon="mdi-play"
                 class="text-white font-weight-bold rounded-pill px-4"
@@ -685,7 +723,8 @@
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">이 재생 목록에 담긴 영상이 없습니다</h3>
             </v-col>
-          </v-row>
+          
+</v-row>
 
           <div v-else class="d-flex flex-column gap-3">
             <v-card
@@ -694,7 +733,8 @@
               class="glass-card rounded-2xl pa-3 d-flex align-center justify-space-between position-relative playlist-list-item"
               elevation="0"
               draggable="true"
-              @dragstart="onDragStart(index)"
+              
+@dragstart="onDragStart(index)"
               @dragover.prevent
               @drop="onDrop(index)"
               @click="playVideo(video)"
@@ -703,7 +743,8 @@
                 <v-icon icon="mdi-drag" color="grey-darken-1" size="20" class="cursor-grab flex-shrink-0" title="드래그하여 순서 변경"></v-icon>
                 
                 <v-checkbox
-                  v-model="selectedVideoIds"
+                  
+v-model="selectedVideoIds"
                   :value="video.id"
                   color="accent"
                   hide-details
@@ -714,7 +755,8 @@
 
                 <div class="playlist-thumb-wrapper position-relative bg-black rounded-xl overflow-hidden flex-shrink-0">
                   <v-img :src="video.thumbnail" width="110" height="62" cover>
-                    <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
+                    <div 
+v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
                   </v-img>
                 </div>
 
@@ -723,7 +765,8 @@
                   <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
                     <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
                     <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
-                    <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
+                    <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewC
+ount(video.views) }}</span>
                   </p>
                 </div>
               </div>
@@ -736,7 +779,8 @@
                   color="white"
                   :disabled="index === 0"
                   title="위로 이동"
-                  @click="movePlaylistItemOrder(index, -1)"
+                  @click=
+"movePlaylistItemOrder(index, -1)"
                 ></v-btn>
                 <v-btn
                   icon="mdi-arrow-down"
@@ -762,19 +806,23 @@
 
         <!-- 일반 영상 목록 뷰 -->
         <template v-else>
-          <v-row v-if="isLoading && displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
+          <v-row v-if="isLoading && 
+displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
             <v-col cols="12" class="text-center">
               <v-progress-circular indeterminate color="accent" size="48" class="mb-3"></v-progress-circular>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">영상을 불러오는 중입니다...</h3>
             </v-col>
           </v-row>
 
-          <v-row v-else-if="displayedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
+          <v-row v-else-if="dis
+playedVideos.length === 0" justify="center" align="center" style="min-height: 250px;">
             <v-col cols="12" class="text-center">
               <v-icon icon="mdi-play-box-outline" size="56" class="text-grey-darken-2 mb-2"></v-icon>
               <h3 class="text-subtitle-1 text-grey-lighten-1 font-weight-bold">표시할 콘텐츠가 없습니다</h3>
               <p class="text-caption text-grey-darken-1 mt-1">
-                {{ isAlgorithmMode ? '구독 중인 채널이 없거나 시청 기록이 적습니다.' : (isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : (currentTab === 'discoverHeart' ? '구독 피드 모음에 등록된 하트 크리에이터가 없거나 저장된 영상이 없습니다. 돋보기/엔터 키로 최신 영상을 불러오세요.' : '구독 중인 채널의 저장된 영상이 없습니다. 돋보기/엔터 키로 최신 영상을 불러오세요.'))))) }}
+                {{ isAlgorithmMode ? 
+'구독 중인 채널이 없거나 시청 기록이 적습니다.' : (isSearchMode ? '검색된 결과가 없습니다. 상단 바에 검색어를 입력하고 엔터를 쳐보세요.' : (isHistoryMode ? '시청한 기록이 없습니다. 영상을 시청해 보세요.' : (isFavoriteVideosMode ? '즐겨찾기(좋아요)한 영상이 없습니다.' : (isTrendingMode ? '실시간 급상승 영상을 불러오지 못했습니다.' : (currentTab === 'discoverHeart' ? '구독 피드 모음에 등록된 하트 크리에이터가 없거나 저장된 영상이 없습니다. 돋보기/엔터 키로 최신 영상을 불러오세요.' : '구독 중인 
+채널의 저장된 영상이 없습니다. 돋보기/엔터 키로 최신 영상을 불러오세요.'))))) }}
               </p>
             </v-col>
           </v-row>
@@ -790,21 +838,25 @@
                 @click="playVideo(video)"
               >
                 <div class="d-flex align-center gap-3 overflow-hidden flex-grow-1 pr-2">
-                  <div class="playlist-thumb-wrapper position-relative bg-black rounded-xl overflow-hidden flex-shrink-0">
+                  <div class="playlist-thumb-wrapper position-relative bg-black 
+rounded-xl overflow-hidden flex-shrink-0">
                     <v-img :src="video.thumbnail" width="110" height="62" cover>
                       <div v-if="video.duration > 0" class="video-duration-badge-small">{{ formatVideoDuration(video.duration) }}</div>
                       <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
-                        <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
+                        <div class="video-progress-bar-fill" :style="{ width: 
+video.progressPercent + '%' }"></div>
                       </div>
                     </v-img>
                   </div>
                   <div class="overflow-hidden flex-grow-1">
                     <h3 class="text-white font-weight-bold text-body-2 text-md-subtitle-1 text-truncate mb-1" v-html="video.title"></h3>
                     <div class="d-flex align-center gap-2 flex-wrap">
-                      <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
+                      <p class="text-grey-lighten-1 text-caption mb-0 
+text-truncate">
                         <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
                         <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
-                        <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
+                        <span v-if="video.views > 0" class="text-grey-darken-1 
+ml-1">• {{ formatViewCount(video.views) }}</span>
                       </p>
                       <span class="text-grey-darken-1 text-caption">• 시청일: {{ formatRelativeTime(video.historyUpdatedAt) }}</span>
                     </div>
@@ -826,14 +878,16 @@
 
             <!-- 일반 그리드 뷰 -->
             <template v-else>
-              <div v-if="shortsVideos.length > 0" class="mb-6">
+              <div 
+v-if="shortsVideos.length > 0" class="mb-6">
                 <div class="d-flex align-center mb-3">
                   <v-icon icon="mdi-lightning-bolt" color="red" class="mr-2" size="22"></v-icon>
                   <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-white ma-0">Shorts</h2>
                 </div>
                 <div class="shorts-horizontal-scroll">
                   <div 
-                    v-for="video in shortsVideos" 
+                    v-for="video in 
+shortsVideos" 
                     :key="video.id" 
                     class="shorts-card glass-card rounded-2xl overflow-hidden d-flex flex-column flex-shrink-0 position-relative"
                     @click="playVideo(video)"
@@ -852,7 +906,8 @@
 
                     <div class="shorts-thumbnail-wrapper position-relative bg-black">
                       <v-img :src="video.thumbnail" height="220" cover class="align-end">
-                        <div class="shorts-badge">Shorts</div>
+                        <div class="shorts-badge">Shorts</
+div>
                         <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
                         <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
                           <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
@@ -865,11 +920,13 @@
                       </div>
                     </div>
                     <div class="pa-3 d-flex flex-column justify-space-between flex-grow-1">
-                      <h3 class="text-white font-weight-bold text-caption text-truncate-2 mb-2" v-html="video.title"></h3>
+                      <h3 class="text-white font-weight-bold text-caption text-truncate-2 mb-2" 
+v-html="video.title"></h3>
                       <div class="d-flex flex-column gap-1">
                         <div class="d-flex justify-space-between align-center">
                           <p class="text-grey-lighten-1 text-caption mb-0 text-truncate">
-                            <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
+                            <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</
+span> 
                             <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                           </p>
                           <div class="d-flex align-center">
@@ -879,7 +936,8 @@
                               variant="text"
                               color="accent"
                               title="재생 목록에 추가"
-                              @click.stop="openSaveToPlaylistDialog(video)"
+                              @click.stop="ope
+nSaveToPlaylistDialog(video)"
                             ></v-btn>
                             <v-btn
                               icon="mdi-heart"
@@ -905,7 +963,8 @@
                 </div>
                 <v-row>
                   <v-col v-for="video in normalVideos" :key="video.id" cols="12" sm="6" md="4" lg="3">
-                    <v-card class="glass-card rounded-2xl overflow-hidden h-100 d-flex flex-column mb-3 mb-sm-0 position-relative" elevation="0" @click="playVideo(video)">
+                    <v-card class="glass-card rounded-2xl overflow-hidden h-100 d-flex flex-column mb-3 mb-sm-0 position-relative" elevation="0" 
+@click="playVideo(video)">
                       <div class="video-checkbox-wrapper">
                         <v-checkbox
                           v-model="selectedVideoIds"
@@ -918,11 +977,13 @@
                         ></v-checkbox>
                       </div>
 
-                      <div class="video-thumbnail-wrapper position-relative bg-black">
+                      <div 
+class="video-thumbnail-wrapper position-relative bg-black">
                         <v-img :src="video.thumbnail" class="video-thumb-img align-end" cover>
                           <div v-if="video.duration > 0" class="video-duration-badge-left">{{ formatVideoDuration(video.duration) }}</div>
                           <div v-if="video.progressPercent > 0" class="video-progress-bar-container">
-                            <div class="video-progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
+                            <div class="video-
+progress-bar-fill" :style="{ width: video.progressPercent + '%' }"></div>
                           </div>
                         </v-img>
                         <div class="play-overlay">
@@ -943,7 +1004,8 @@
                           </div>
                           <div class="d-flex flex-column align-end flex-shrink-0 text-right" style="min-width: 95px;">
                             <span class="text-grey-darken-1 text-caption mb-0.5">{{ formatRelativeTime(video.publishedAt) }}</span>
-                            <span v-if="video.views > 0" class="text-grey-darken-1 text-caption mb-1">{{ formatViewCount(video.views) }}</span>
+                            <span v-if="video.views > 0" class="text-grey-darken-1 text-caption mb-1">{{ formatViewCount(video.views) }}</
+span>
                             <div class="d-flex align-center">
                               <v-btn 
                                 icon="mdi-folder-plus" 
@@ -965,7 +1027,8 @@
                                 icon="mdi-account-plus" 
                                 size="x-small" 
                                 variant="text" 
-                                :color="creators.some(c => c.id === video.creatorId) ? 'accent' : 'grey'" 
+                                :color="creators.some(c => c.id 
+=== video.creatorId) ? 'accent' : 'grey'" 
                                 :title="creators.some(c => c.id === video.creatorId) ? '구독 중 (누르면 구독 취소)' : '이 채널 구독하기'"
                                 @click.stop="toggleSubscribeFromCard(video)"
                               ></v-btn>
@@ -975,7 +1038,8 @@
                       </v-card-text>
                     </v-card>
                   </v-col>
-                </v-row>
+                
+</v-row>
               </div>
             </template>
           </template>
@@ -990,7 +1054,8 @@
           size="small"
           color="deep-purple-darken-2"
           variant="flat"
-          class="main-scroll-top-fab text-white rounded-circle"
+          class="main-scroll-top-fab text-white 
+rounded-circle"
           title="최상위로 이동"
           @click="scrollToTop(mainScrollRef)"
         >
@@ -1001,7 +1066,8 @@
 
     <!-- 로딩 오버레이 -->
     <div v-if="isLoading" class="loading-overlay-container">
-      <div class="loading-card glass-modal pa-6 rounded-2xl d-flex flex-column align-center shadow-lg">
+      <div class="loading-card 
+glass-modal pa-6 rounded-2xl d-flex flex-column align-center shadow-lg">
         <v-progress-circular indeterminate color="accent" size="48" width="4" class="mb-3"></v-progress-circular>
         <h3 class="text-subtitle-1 text-white font-weight-bold mb-1">조회 중입니다...</h3>
         <p class="text-caption text-grey-lighten-1 mb-0">잠시만 기다려 주세요.</p>
@@ -1032,7 +1098,8 @@
       <v-card class="glass-modal rounded-2xl pa-5 text-white">
         <h3 class="text-subtitle-1 font-weight-bold mb-3">{{ editingPlaylist ? '재생 목록 폴더 이름 및 그룹 수정' : '새 재생 목록 폴더 생성' }}</h3>
         <v-text-field
-          v-model="playlistFormName"
+          
+v-model="playlistFormName"
           label="폴더 이름"
           variant="outlined"
           density="compact"
@@ -1061,7 +1128,8 @@
       <v-card class="glass-modal rounded-2xl pa-5 text-white">
         <h3 class="text-subtitle-1 font-weight-bold mb-3">재생 목록에 저장</h3>
         
-        <div v-if="playlists.length === 0" class="text-grey-darken-1 text-caption mb-3">
+        <div v-if="playlists.length === 0" class="text-grey-darken-1 
+text-caption mb-3">
           생성된 재생 목록 폴더가 없습니다. 아래에서 새 폴더를 만들어 보세요.
         </div>
         <v-list v-else density="compact" class="bg-transparent text-white mb-2" style="max-height: 180px; overflow-y: auto;">
@@ -1117,7 +1185,8 @@
       <v-card class="glass-modal rounded-2xl pa-5 text-white">
         <div class="d-flex justify-space-between align-center mb-3">
           <h3 class="text-subtitle-1 font-weight-bold">📋 현재 재생 리스트 ({{ playlistQueue.length }}개)</h3>
-          <div class="d-flex align-center gap-2">
+          <div class="d-flex 
+align-center gap-2">
             <v-btn
               icon="mdi-shuffle"
               size="small"
@@ -1137,13 +1206,15 @@
             :key="item.id + '_' + idx"
             class="d-flex align-center justify-space-between pa-2.5 rounded-xl cursor-pointer"
             :class="{ 'neon-active': idx === playlistIndex }"
-            @click="playQueueIndex(idx)"
+            @click=
+"playQueueIndex(idx)"
           >
             <div class="d-flex align-center gap-3 overflow-hidden">
               <span class="text-accent text-caption font-weight-bold">{{ idx + 1 }}</span>
               <v-img :src="item.thumbnail" width="68" height="38" cover class="rounded-lg flex-shrink-0 bg-black"></v-img>
               <div class="overflow-hidden">
-                <p class="text-caption text-white font-weight-bold text-truncate mb-0">{{ item.title }}</p>
+                <p class="text-caption 
+text-white font-weight-bold text-truncate mb-0">{{ item.title }}</p>
                 <p class="text-grey-lighten-1 text-caption mb-0">{{ item.creatorName }}</p>
               </div>
             </div>
@@ -1156,12 +1227,14 @@
     <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
     <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" scrim="black" class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-2xl overflow-hidden pa-0">
-        <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
+        <div class="d-flex justify-space-between 
+align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
           <div class="d-flex align-center overflow-hidden pr-2">
             <span v-if="playlistQueue.length > 1" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
               [{{ playlistIndex + 1 }}/{{ playlistQueue.length }}]
             </span>
-            <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
+            <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-trunc
+ate">{{ activeVideo?.title }}</span>
           </div>
           <div class="d-flex align-center flex-shrink-0">
             <v-btn 
@@ -1177,10 +1250,12 @@
             </v-btn>
 
             <v-btn icon="mdi-shuffle" variant="text" size="small" color="accent" class="mr-1" title="재생 리스트 무작위 섞기" @click="shufflePlaylistQueue"></v-btn>
-            <v-btn icon="mdi-playlist-music-outline" variant="text" size="small" color="white" class="mr-1" title="현재 재생 리스트 보기" @click="isQueueModalOpen = true"></v-btn>
+            <v-btn icon="mdi-playlist-music-outline" variant="text" size="small" color="white" class="mr-1" title="현재 
+재생 리스트 보기" @click="isQueueModalOpen = true"></v-btn>
 
             <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-previous" variant="text" size="small" color="white" :disabled="playlistIndex <= 0" @click="playPreviousInQueue"></v-btn>
-            <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playlistIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
+            <v-btn v-if="playlistQueue.length > 1" icon="mdi-skip-next" variant="text" size="small" color="white" :disabled="playli
+stIndex >= playlistQueue.length - 1" @click="playNextInQueue" class="mr-2"></v-btn>
 
             <!-- 취침 예약 -->
             <v-menu location="bottom end" :close-on-content-click="false">
@@ -1190,7 +1265,8 @@
                   icon
                   variant="text"
                   size="small"
-                  :color="sleepTimerSecondsLeft > 0 ? 'accent' : 'white'"
+                  :color="sleepTimerSecondsLeft > 0 ? 'accent' : 
+'white'"
                   class="mr-1"
                   title="취침 예약 설정"
                 >
@@ -1206,7 +1282,8 @@
                     {{ sleepTimerSecondsLeft > 0 ? `⏰ 남은 시간: ${formatSleepTime(sleepTimerSecondsLeft)}` : '취침 예약 설정' }}
                   </v-list-item-title>
                 </v-list-item>
-                <v-divider class="border-opacity-25 my-1"></v-divider>
+                <v-divider class="border-opacity-25 
+my-1"></v-divider>
                 
                 <v-list-item class="px-3 py-1">
                   <div class="d-flex align-center gap-1 w-100">
@@ -1226,14 +1303,16 @@
                   </div>
                 </v-list-item>
 
-                <v-divider class="border-opacity-25 my-1"></v-divider>
+                <v-divider 
+class="border-opacity-25 my-1"></v-divider>
                 <v-list-item value="10" @click="setSleepTimer(10)"><v-list-item-title class="text-body-2">10분 후</v-list-item-title></v-list-item>
                 <v-list-item value="30" @click="setSleepTimer(30)"><v-list-item-title class="text-body-2">30분 후</v-list-item-title></v-list-item>
                 <v-list-item value="60" @click="setSleepTimer(60)"><v-list-item-title class="text-body-2">1시간 후</v-list-item-title></v-list-item>
                 <v-list-item value="120" @click="setSleepTimer(120)"><v-list-item-title class="text-body-2">2시간 후</v-list-item-title></v-list-item>
                 <v-divider v-if="sleepTimerSecondsLeft > 0" class="border-opacity-25 my-1"></v-divider>
                 <v-list-item v-if="sleepTimerSecondsLeft > 0" value="off" @click="cancelSleepTimer" class="text-red-lighten-2">
-                  <v-list-item-title class="text-body-2 font-weight-bold">타이머 해제</v-list-item-title>
+                  <v-list-item-title class="text-body-2 font-weight-bold">타이머 해제</
+v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
@@ -1254,7 +1333,8 @@
           </div>
         </div>
 
-        <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
+        <div ref="modalScrollRef" 
+class="modal-vertical-container position-relative" @scroll="checkModalScroll">
           <div 
             class="video-container" 
             :class="{ 'audio-only-hidden': isAudioOnlyMode }"
@@ -1262,7 +1342,8 @@
             <div id="youtube-player-div" class="youtube-iframe"></div>
           </div>
 
-          <div v-if="isAudioOnlyMode" class="radio-placeholder-card pa-6 text-center d-flex flex-column align-center justify-center">
+          <div v-if="isAudioOnlyMode" class="radio-placeholder-card 
+pa-6 text-center d-flex flex-column align-center justify-center">
             <v-icon icon="mdi-radio-tower" size="56" color="accent" class="pulse-icon mb-3"></v-icon>
             <h3 class="text-subtitle-1 font-weight-bold text-white mb-1">📻 라디오 전용 오디오 모드 재생 중</h3>
             <p class="text-caption text-grey-lighten-1 mb-0">영상은 숨겨지고 오디오만 연속 재생 중입니다.</p>
@@ -1296,7 +1377,8 @@
                     variant="outlined"
                     color="accent"
                     class="rounded-pill"
-                    :prepend-icon="creators.some(c => c.id === activeVideo?.creatorId) ? 'mdi-check' : 'mdi-account-plus'"
+                    :prepend-icon="creators.some(c => c.id === activeVideo?.creatorId) ? 
+'mdi-check' : 'mdi-account-plus'"
                     @click="toggleSubscribeFromPlayer"
                   >
                     {{ creators.some(c => c.id === activeVideo?.creatorId) ? '구독중' : '구독' }}
@@ -1306,7 +1388,8 @@
                     variant="text"
                     color="red-lighten-2"
                     icon="mdi-open-in-new"
-                    :href="`https://www.youtube.com/channel/${activeVideo?.creatorId}`"
+                    :href="`https://www.youtube.com/channel/$
+{activeVideo?.creatorId}`"
                     target="_blank"
                     title="유튜브에서 채널 열기"
                   ></v-btn>
@@ -1328,7 +1411,8 @@
             
             <div class="d-flex align-center jump-box-container pa-2 px-3 rounded-xl">
               <span class="text-caption text-grey-lighten-1 mr-2 flex-shrink-0 font-weight-medium">시간 제어:</span>
-              <div class="d-flex align-center mr-1">
+              <div class="d-flex 
+align-center mr-1">
                 <v-text-field 
                   v-model.number="jumpMinutes" 
                   type="number" 
@@ -1340,7 +1424,8 @@
                   min="0"
                   @paste="handleTimePaste"
                 ></v-text-field>
-                <span class="text-caption text-white">분</span>
+                <span 
+class="text-caption text-white">분</span>
               </div>
               <div class="d-flex align-center mr-2">
                 <v-text-field 
@@ -1359,27 +1444,31 @@
               </div>
               <div class="d-flex align-center gap-1">
                 <v-btn color="accent" variant="flat" size="small" class="px-2 rounded-pill" @click="jumpToTime">이동</v-btn>
-                <v-btn color="blue-grey-darken-2" variant="flat" size="small" class="px-2 rounded-pill font-weight-bold" @click="cumulativeJump(-1)">- 이전</v-btn>
+                <v-btn color="blue-grey-darken-2" 
+variant="flat" size="small" class="px-2 rounded-pill font-weight-bold" @click="cumulativeJump(-1)">- 이전</v-btn>
                 <v-btn color="amber-darken-2" variant="flat" size="small" class="px-2 rounded-pill font-weight-bold" @click="cumulativeJump(1)">+ 이후</v-btn>
               </div>
             </div>
 
             <div>
-              <v-btn color="accent" variant="outlined" size="small" class="rounded-pill px-4" :prepend-icon="showComments ? 'mdi-comment-off-outline' : 'mdi-comment-multiple-outline'" @click="toggleCommentsView">
+              <v-btn color="accent" 
+variant="outlined" size="small" class="rounded-pill px-4" :prepend-icon="showComments ? 'mdi-comment-off-outline' : 'mdi-comment-multiple-outline'" @click="toggleCommentsView">
                 {{ showComments ? '댓글 숨기기' : '댓글 보기' }}
               </v-btn>
             </div>
           </div>
 
           <div v-if="showComments" class="comments-section pa-4 border-bottom-glass position-relative">
-            <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3 pb-2 border-bottom-glass">
+            <div class="d-flex 
+align-center justify-space-between flex-wrap gap-2 mb-3 pb-2 border-bottom-glass">
               <span class="text-subtitle-1 font-weight-bold text-white">
                 댓글 {{ totalCommentCount > 0 ? totalCommentCount.toLocaleString() + '개' : '' }}
               </span>
               
               <div class="d-flex align-center gap-3">
                 <v-checkbox
-                  v-model="showReplies"
+                  
+v-model="showReplies"
                   color="accent"
                   label="대댓글 표시"
                   density="compact"
@@ -1389,7 +1478,8 @@
 
                 <v-menu location="bottom left">
                   <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" variant="text" size="small" class="text-none text-white font-weight-bold px-2 rounded-pill" prepend-icon="mdi-sort-variant">정렬 기준</v-btn>
+                    <v-btn v-bind="props" variant="text" size="small" class="text-none text-white font-weight-bold px-2 
+rounded-pill" prepend-icon="mdi-sort-variant">정렬 기준</v-btn>
                   </template>
                   <v-list density="compact" class="glass-modal rounded-xl py-1">
                     <v-list-item value="relevance" :class="{ 'text-accent': commentsOrder === 'relevance' }" @click="changeCommentsOrder('relevance')">
@@ -1403,7 +1493,8 @@
               </div>
             </div>
             
-            <div ref="commentsScrollRef" class="comments-scroll-area" @scroll="checkCommentsScroll">
+            <div 
+ref="commentsScrollRef" class="comments-scroll-area" @scroll="checkCommentsScroll">
               <div v-if="comments.length === 0 && !isLoadingComments" class="text-grey-darken-1 text-caption text-center py-4">표시할 댓글이 없습니다.</div>
               
               <template v-for="(comment, index) in topLevelComments" :key="comment.id || index">
@@ -1413,16 +1504,19 @@
                       <v-img :src="comment.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
                     </v-avatar>
                     <div class="flex-grow-1 overflow-hidden">
-                      <div class="d-flex align-center flex-wrap gap-1 mb-1">
+                      <div class="d-flex align-center flex-wrap gap-1 
+mb-1">
                         <span class="text-caption font-weight-bold mr-1" :class="comment.isOwner ? 'creator-author-badge' : 'text-white'">{{ comment.author }}</span>
                         <v-chip v-if="comment.isOwner" size="x-small" color="accent" variant="flat" class="px-2 py-0 font-weight-bold text-caption rounded-pill" style="height: 18px;">채널 작성자</v-chip>
-                        <span class="text-grey-darken-1 text-caption ml-1">{{ comment.publishedAt }}</span>
+                        <span class="text-grey-darken-1 
+text-caption ml-1">{{ comment.publishedAt }}</span>
                       </div>
                       <p class="text-grey-lighten-2 text-caption mb-2 comment-text-content" v-html="comment.text"></p>
                       
                       <div class="d-flex align-center gap-2 text-caption text-grey-darken-1">
                         <div class="d-flex align-center">
-                          <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
+                          <v-icon icon="mdi-thumb-up-outline" 
+size="14" class="mr-1"></v-icon>
                           <span>{{ comment.likeCount > 0 ? comment.likeCount : '' }}</span>
                         </div>
 
@@ -1446,7 +1540,8 @@
                       <v-progress-circular indeterminate color="accent" size="18" width="2"></v-progress-circular>
                       <span class="text-grey-lighten-1 text-caption ml-2">답글 불러오는 중...</span>
                     </div>
-                    <div v-for="reply in getRepliesForComment(comment.id)" :key="reply.id" class="comment-item mb-2 pb-2">
+                    <div v-for="reply in getRepliesForComment(comment.id)" :key="reply.id" 
+class="comment-item mb-2 pb-2">
                       <div class="d-flex align-start">
                         <v-avatar :size="26" class="mr-2 mt-1 flex-shrink-0">
                           <v-img :src="reply.authorProfileImageUrl || 'https://cdn.vuetifyjs.com/images/lists/1.jpg'"></v-img>
@@ -1455,7 +1550,8 @@
                           <div class="d-flex align-center flex-wrap gap-1 mb-1">
                             <span class="text-caption font-weight-bold mr-1" :class="reply.isOwner ? 'creator-author-badge' : 'text-white'">{{ reply.author }}</span>
                             <v-chip v-if="reply.isOwner" size="x-small" color="accent" variant="flat" class="px-2 py-0 font-weight-bold text-caption rounded-pill" style="height: 18px;">채널 작성자</v-chip>
-                            <span class="text-grey-darken-1 text-caption ml-1">{{ reply.publishedAt }}</span>
+                            <span class="text-grey-darken-1 text-caption 
+ml-1">{{ reply.publishedAt }}</span>
                           </div>
                           <p class="text-grey-lighten-2 text-caption mb-1 comment-text-content" v-html="reply.text"></p>
                         </div>
@@ -1463,7 +1559,8 @@
                     </div>
 
                     <v-btn
-                      v-if="!comment.repliesLoaded && comment.replyCount > (getRepliesForComment(comment.id).length)"
+                      v-if="!comment.repliesLoaded && comment.replyCount > (getRepliesForComment(comme
+nt.id).length)"
                       variant="text"
                       size="x-small"
                       color="accent"
@@ -1476,7 +1573,8 @@
                 </div>
               </template>
 
-              <div v-if="isLoadingComments" class="text-center py-2">
+              <div v-if="isLoadingComments" 
+class="text-center py-2">
                 <v-progress-circular indeterminate color="accent" size="20" width="2"></v-progress-circular>
                 <span class="text-grey-lighten-1 text-caption ml-2">댓글 더 불러오는 중...</span>
               </div>
@@ -1484,19 +1582,23 @@
           </div>
 
           <div class="related-videos-section pa-4 position-relative">
-            <div class="text-subtitle-2 font-weight-bold text-white mb-3 d-flex align-center">
+            <div class="text-subtitle-2 
+font-weight-bold text-white mb-3 d-flex align-center">
               <v-icon icon="mdi-playlist-play" class="mr-2 text-accent" size="22"></v-icon>
               관련 영상 (비슷한 채널 및 추천)
             </div>
             <div v-if="relatedVideos.length === 0" class="text-grey-darken-1 text-caption text-center py-6">관련 영상이 없습니다.</div>
-            <div ref="relatedScrollRef" class="related-scroll-area-long" @scroll="checkRelatedScroll">
+            <div ref="relatedScrollRef" class="related-scroll-area-long" 
+@scroll="checkRelatedScroll">
               <div v-for="video in relatedVideos" :key="video.id" class="related-video-item d-flex align-center mb-2.5 pa-2.5 rounded-xl cursor-pointer" @click="playVideo(video)">
                 <v-img :src="video.thumbnail" width="130" height="74" cover class="rounded-xl mr-3 flex-shrink-0 bg-black"></v-img>
                 <div class="overflow-hidden flex-grow-1">
-                  <h4 class="text-white text-caption text-md-body-2 font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
+                  <h4 class="text-white text-caption text-md-body-2 
+font-weight-bold text-truncate-2 mb-1" v-html="video.title"></h4>
                   <p class="text-grey-darken-1 text-caption mb-0">
                     <span class="text-white creator-name-link font-weight-medium" @click.stop="selectCreatorFromVideo(video)" title="이 채널로 이동">{{ video.creatorName }}</span> 
-                    <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, video) }})</span>
+                    <span class="text-accent font-weight-medium">({{ getCreatorSubCount(video.creatorId, 
+video) }})</span>
                     <span v-if="video.views > 0" class="text-grey-darken-1 ml-1">• {{ formatViewCount(video.views) }}</span>
                   </p>
                 </div>
@@ -1520,7 +1622,8 @@ const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
 const isTrendingMode = ref(false)
-const isFavoriteVideosMode = ref(false)
+const isFavoriteVideosMode = 
+ref(false)
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
 const isMusicMode = ref(false)
@@ -1568,7 +1671,8 @@ const activePlaylistId = ref(null)
 
 const playlistResumeStates = reactive({})
 
-const loadPlaylistResumeStates = () => {
+const loadPlaylistResumeStates 
+= () => {
   playlists.value.forEach(pl => {
     const saved = localStorage.getItem(`neontube_playlist_resume_${pl.id}`)
     playlistResumeStates[pl.id] = saved !== null ? saved === 'true' : true
@@ -1584,7 +1688,8 @@ const hasPlaylistResumeMemory = (playlistId) => {
   return localStorage.getItem(`neontube_playlist_last_index_${playlistId}`) !== null
 }
 
-const clearPlaylistResumeMemory = (playlistId) => {
+const clearPlaylistResumeMemory = (playlistId) => 
+{
   localStorage.removeItem(`neontube_playlist_last_index_${playlistId}`)
   alert('해당 재생 목록의 이어보기 위치가 초기화되었습니다.')
 }
@@ -1594,7 +1699,8 @@ const playlistFormName = ref('')
 const playlistFormGroupId = ref('g_default')
 const editingPlaylist = ref(null)
 
-const isSaveToPlaylistDialogVisible = ref(false)
+const isSaveToPlaylistDialogVisible = 
+ref(false)
 const targetPlaylistIds = ref([])
 const quickNewPlaylistName = ref('')
 
@@ -1607,7 +1713,8 @@ const channelNextPageTokens = ref(new Map())
 const trendingNextPageToken = ref(null)
 
 const isPlayerOpen = ref(false)
-const activeVideo = ref(null)
+const activeVideo = 
+ref(null)
 const showComments = ref(false)
 const showReplies = ref(true)               
 const activeExpandedCommentId = ref(null)   
@@ -1617,7 +1724,8 @@ const comments = ref([])
 const commentsNextPageToken = ref(null)
 const isLoadingComments = ref(false)
 
-const totalCommentCount = ref(0)
+const totalCommentCount = 
+ref(0)
 const commentsOrder = ref('relevance')
 
 const initialWatchedTime = ref(0)
@@ -1625,7 +1733,8 @@ const savedResumeSetting = localStorage.getItem('neontube_enable_resume')
 const enableResume = ref(savedResumeSetting !== null ? savedResumeSetting === 'true' : true)
 
 const saveResumeSetting = () => {
-  localStorage.setItem('neontube_enable_resume', enableResume.value)
+  
+localStorage.setItem('neontube_enable_resume', enableResume.value)
 }
 
 const isAudioOnlyMode = ref(false) 
@@ -1636,7 +1745,8 @@ const toggleLoopMode = () => {
 }
 
 const sleepTimerSecondsLeft = ref(0)
-const customSleepMinutes = ref(null)
+const customSleepMinutes = 
+ref(null)
 let sleepTimerInterval = null
 
 const ytPlayer = ref(null)        
@@ -1650,7 +1760,8 @@ const draggedIndex = ref(null)
 const handlePopState = () => {
   if (isPlayerOpen.value) {
     closePlayer()
-    return
+    
+return
   }
   selectDiscoverHeart()
 }
@@ -1664,7 +1775,8 @@ const modalScrollRef = ref(null)
 const commentsScrollRef = ref(null)
 const relatedScrollRef = ref(null)
 const showMainScrollTop = ref(false)
-const showModalScrollTop = ref(false)
+const showModalScrollTop = 
+ref(false)
 
 let scrollTimeout = null
 const checkMainScroll = (e) => {
@@ -1675,7 +1787,8 @@ const checkMainScroll = (e) => {
 
     const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
     if (bottomReached && !isLoading.value) {
-      if (visibleLimit.value < allFilteredVideos.value.length) {
+      if (visibleLimit.value < 
+allFilteredVideos.value.length) {
         visibleLimit.value += 40
       } else if (isTrendingMode.value && trendingNextPageToken.value) {
         loadMoreTrendingVideos()
@@ -1684,7 +1797,8 @@ const checkMainScroll = (e) => {
       } else if (isSearchMode.value && searchNextPageToken.value) {
         loadMoreSearchVideos()
       } else if (selectedCreator.value) {
-        loadMoreChannelVideos(selectedCreator.value)
+        loadMoreChannelVideos(sel
+ectedCreator.value)
       }
     }
     scrollTimeout = null
@@ -1697,7 +1811,8 @@ const checkModalScroll = (e) => {
 
 const checkCommentsScroll = (e) => {
   const target = e.target
-  if (!isLoadingComments.value && commentsNextPageToken.value) {
+  if (!
+isLoadingComments.value && commentsNextPageToken.value) {
     const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 40
     if (bottomReached) {
       fetchMoreComments(activeVideo.value?.youtubeId)
@@ -1710,26 +1825,16 @@ const checkRelatedScroll = () => {}
 const scrollToTop = (el) => {
   let targetElement = el
   if (el && el.$el) targetElement = el.$el
-  
-  // v-main 내부의 실제 스크롤 컨테이너를 직접 타겟팅하도록 보완
-  if (targetElement && targetElement.classList && targetElement.classList.contains('main-content')) {
+  if (targetElement && typeof targetElement.scrollTo === 'function') {
     targetElement.scrollTo({ top: 0, behavior: 'smooth' })
-    return
-  }
-  
-  // 만약 다른 구조라면 document나 메인 영역 강제 스크롤 병행 처리
-  const mainEl = document.querySelector('.main-content')
-  if (mainEl) {
-    mainEl.scrollTo({ top: 0, behavior: 'smooth' })
-  } else if (targetElement && typeof targetElement.scrollTo === 'function') {
-    targetElement.scrollTo({ top: 0, behavior: 'smooth' })
-  } else {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } else if (targetElement) {
+    targetElement.scrollTop = 0
   }
 }
 
 const toggleAudioOnlyMode = () => {
-  isAudioOnlyMode.value = !isAudioOnlyMode.value
+  isAudioOnlyMode.value = !
+isAudioOnlyMode.value
 }
 
 const setSleepTimer = (minutes) => {
@@ -1775,7 +1880,8 @@ const formatSleepTime = (seconds) => {
 }
 
 const formatVideoDuration = (totalSeconds) => {
-  const numericSeconds = Math.floor(Number(totalSeconds) || 0)
+  const numericSeconds = Math.
+floor(Number(totalSeconds) || 0)
   if (numericSeconds <= 0) return ''
   const hours = Math.floor(numericSeconds / 3600)
   const minutes = Math.floor((numericSeconds % 3600) / 60)
@@ -1783,7 +1889,8 @@ const formatVideoDuration = (totalSeconds) => {
 
   const pad = (n) => String(n).padStart(2, '0')
   if (hours > 0) {
-    return `${hours}:${pad(minutes)}:${pad(seconds)}`
+    return `${hours}:$
+{pad(minutes)}:${pad(seconds)}`
   }
   return `${minutes}:${pad(seconds)}`
 }
@@ -1794,7 +1901,8 @@ const formatViewCount = (viewCount) => {
     return `${(count / 100000000).toFixed(1)}억회`
   }
   if (count >= 10000) {
-    return `${(count / 10000).toFixed(1)}만명`
+    return `${(count / 
+10000).toFixed(1)}만명`
   }
   if (count >= 1000) {
     return `${(count / 1000).toFixed(1)}천회`
@@ -1806,7 +1914,8 @@ const formatCreatorSubCount = (subCount) => {
   if (!subCount) return '구독중'
   const str = String(subCount).trim()
   if (str === '구독중' || str === '구독자 숨김') return str
-  if (str.includes('명') || str.includes('구독자')) return str
+  if (str.includes('명') || 
+str.includes('구독자')) return str
   return `${str} 구독자`
 }
 
@@ -1837,10 +1946,12 @@ const openDB = () => {
       const db = event.target.result
       if (!db.objectStoreNames.contains('creators')) db.createObjectStore('creators', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('videos')) db.createObjectStore('videos', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'id' })
+      if 
+(!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'videoId' })
       if (!db.objectStoreNames.contains('playlists')) db.createObjectStore('playlists', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('playlistItems')) db.createObjectStore('playlistItems', { keyPath: 'id', autoIncrement: true })
+      if (!db.objectStoreNames.contains('playlistItems')) 
+db.createObjectStore('playlistItems', { keyPath: 'id', autoIncrement: true })
       if (!db.objectStoreNames.contains('playlistGroups')) db.createObjectStore('playlistGroups', { keyPath: 'id' })
     }
   })
@@ -1848,13 +1959,15 @@ const openDB = () => {
 
 const API_KEYS = [
   process.env.VUE_APP_YOUTUBE_API_KEY_1,
-  process.env.VUE_APP_YOUTUBE_API_KEY_2,
+  
+process.env.VUE_APP_YOUTUBE_API_KEY_2,
   process.env.VUE_APP_YOUTUBE_API_KEY_3,
   process.env.VUE_APP_YOUTUBE_API_KEY_4,
   process.env.VUE_APP_YOUTUBE_API_KEY_5,
   process.env.VUE_APP_YOUTUBE_API_KEY_6,
   process.env.VUE_APP_YOUTUBE_API_KEY_7,
-  process.env.VUE_APP_YOUTUBE_API_KEY_8,
+  
+process.env.VUE_APP_YOUTUBE_API_KEY_8,
   process.env.VUE_APP_YOUTUBE_API_KEY_9
 ].filter(Boolean)
 
@@ -1865,7 +1978,8 @@ const getActiveApiKeyIndex = async () => {
   const db = await openDB()
   const today = getTodayString()
 
-  return new Promise((resolve) => {
+  return new Promise((resolve) 
+=> {
     const tx = db.transaction('meta', 'readonly')
     const req = tx.objectStore('meta').get('api_key_state')
     req.onsuccess = (e) => {
@@ -1886,7 +2000,8 @@ const saveNextApiKeyIndex = async (nextIndex) => {
   return new Promise((resolve) => {
     const tx = db.transaction('meta', 'readwrite')
     tx.objectStore('meta').put({ id: 'api_key_state', date: today, currentIndex: nextIndex })
-    tx.oncomplete = () => resolve(true)
+    tx.oncomplete = () => 
+resolve(true)
     tx.onerror = () => resolve(false)
   })
 }
@@ -1897,7 +2012,8 @@ const fetchWithKeyRotation = async (urlBuilder) => {
   let currentIndex = await getActiveApiKeyIndex()
   let attempts = 0
 
-  while (attempts < API_KEYS.length) {
+  while (attempts < API_KEYS.length) 
+{
     const apiKey = API_KEYS[currentIndex]
     if (!apiKey) {
       currentIndex = (currentIndex + 1) % API_KEYS.length
@@ -1916,7 +2032,8 @@ const fetchWithKeyRotation = async (urlBuilder) => {
 
       if (isQuotaError) {
         currentIndex = (currentIndex + 1) % API_KEYS.length
-        await saveNextApiKeyIndex(currentIndex)
+        await 
+saveNextApiKeyIndex(currentIndex)
         attempts++
         continue
       }
@@ -1928,7 +2045,8 @@ const fetchWithKeyRotation = async (urlBuilder) => {
 
 const getCreatorSubCount = (creatorId, video) => {
   if (video && video.creatorSubCount) {
-    return formatCreatorSubCount(video.creatorSubCount)
+    return 
+formatCreatorSubCount(video.creatorSubCount)
   }
   const foundCreator = creators.value.find(c => c.id === creatorId)
   if (foundCreator && foundCreator.subCount) {
@@ -1938,7 +2056,8 @@ const getCreatorSubCount = (creatorId, video) => {
 }
 
 const selectCreatorFromVideo = async (video) => {
-  if (!video || !video.creatorId) return
+  if (!video || !video.creatorId) 
+return
   let creator = creators.value.find(c => c.id === video.creatorId)
   if (!creator) {
     creator = {
@@ -1949,7 +2068,8 @@ const selectCreatorFromVideo = async (video) => {
       isFavorite: false
     }
   }
-  await selectCreatorFilter(creator)
+  await 
+selectCreatorFilter(creator)
 }
 
 const fetchSubscriberCountsForChannelIds = async (channelIds) => {
@@ -1958,7 +2078,8 @@ const fetchSubscriberCountsForChannelIds = async (channelIds) => {
   
   const subCountMap = new Map()
   for (let i = 0; i < uniqueIds.length; i += 50) {
-    const chunk = uniqueIds.slice(i, i + 50).join(',')
+    const chunk = uniqueIds.slice(i, i + 
+50).join(',')
     try {
       const data = await fetchWithKeyRotation((key) => 
         `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${chunk}&key=${key}`
@@ -1966,7 +2087,8 @@ const fetchSubscriberCountsForChannelIds = async (channelIds) => {
       if (data.items) {
         data.items.forEach(ch => {
           const rawCount = ch.statistics?.hiddenSubscriberCount ? null : parseInt(ch.statistics?.subscriberCount || 0, 10)
-          const formatted = rawCount === null 
+          const formatted = 
+rawCount === null 
             ? '구독자 숨김' 
             : rawCount >= 10000 
               ? (rawCount / 10000).toFixed(1) + '만명' 
@@ -1979,7 +2101,8 @@ const fetchSubscriberCountsForChannelIds = async (channelIds) => {
     } catch (err) {
       console.error('채널 구독자 수 일괄 조회 실패:', err)
     }
-  }
+  
+}
   return subCountMap
 }
 
@@ -1990,14 +2113,16 @@ const parseISO8601Duration = (durationStr) => {
   return (parseInt(match[1] || 0, 10) * 3600) + (parseInt(match[2] || 0, 10) * 60) + parseInt(match[3] || 0, 10)
 }
 
-const fetchAndUpdateVideoDetails = async (videoList) => {
+const 
+fetchAndUpdateVideoDetails = async (videoList) => {
   if (!videoList || videoList.length === 0 || API_KEYS.length === 0) return videoList
   const targetVideos = videoList.filter(v => !v.duration || v.duration === 0 || !v.views || v.views === 0)
   if (targetVideos.length === 0) return videoList
 
   for (let i = 0; i < targetVideos.length; i += 50) {
     const chunk = targetVideos.slice(i, i + 50)
-    const ids = chunk.map(v => v.youtubeId).join(',')
+    const ids = chunk.map(v => 
+v.youtubeId).join(',')
     try {
       const data = await fetchWithKeyRotation((key) => 
         `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${ids}&key=${key}`
@@ -2006,7 +2131,8 @@ const fetchAndUpdateVideoDetails = async (videoList) => {
         const detailMap = new Map()
         data.items.forEach(item => {
           detailMap.set(item.id, {
-            duration: parseISO8601Duration(item.contentDetails?.duration),
+            duration: 
+parseISO8601Duration(item.contentDetails?.duration),
             views: parseInt(item.statistics?.viewCount || 0, 10)
           })
         })
@@ -2017,7 +2143,8 @@ const fetchAndUpdateVideoDetails = async (videoList) => {
             v.duration = info.duration
             v.views = info.views
             
-            if (info.duration > 0 && info.duration <= 120) {
+            if (info.duration > 0 && info.duration <= 120) 
+{
               v.isShorts = true
             }
           }
@@ -2029,7 +2156,8 @@ const fetchAndUpdateVideoDetails = async (videoList) => {
 }
 
 const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
-  if (!itemVideoIds || itemVideoIds.length === 0 || API_KEYS.length === 0) return
+  if (!itemVideoIds || itemVideoIds.length === 0 || API_KEYS.length === 0) 
+return
 
   const existingVideosStore = await new Promise((resolve) => {
     db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (ev) => resolve(ev.target.result || [])
@@ -2037,7 +2165,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
   const existingVideoIds = new Set(existingVideosStore.map(v => v.id))
   const missingIds = itemVideoIds.filter(id => !existingVideoIds.has(id))
 
-  if (missingIds.length > 0) {
+  if (missingIds.length > 0) 
+{
     const channelIdsSet = new Set()
     for (let i = 0; i < missingIds.length; i += 50) {
       const chunk = missingIds.slice(i, i + 50).join(',')
@@ -2046,7 +2175,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
           `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk}&key=${key}`
         )
         if (data.items) {
-          data.items.forEach(item => {
+          data.items.forEach(item 
+=> {
             if (item.snippet?.channelId) channelIdsSet.add(item.snippet.channelId)
           })
         }
@@ -2057,7 +2187,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
 
     const subCountMap = await fetchSubscriberCountsForChannelIds([...channelIdsSet])
 
-    for (let i = 0; i < missingIds.length; i += 50) {
+    for (let i = 0; i < 
+missingIds.length; i += 50) {
       const chunk = missingIds.slice(i, i + 50).join(',')
       try {
         const data = await fetchWithKeyRotation((key) => 
@@ -2065,7 +2196,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
         )
         if (data.items) {
           const videoTx = db.transaction('videos', 'readwrite')
-          const videoStore = videoTx.objectStore('videos')
+          const videoStore = 
+videoTx.objectStore('videos')
 
           data.items.forEach(item => {
             const snippet = item.snippet
@@ -2073,7 +2205,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
             const title = snippet.title.toLowerCase()
             const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
             const dur = parseISO8601Duration(item.contentDetails?.duration)
-            const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
+            const viewsCount = 
+parseInt(item.statistics?.viewCount || 0, 10)
             const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
             const channelId = snippet.channelId
             const matchedCreator = creators.value.find(c => c.id === channelId)
@@ -2092,7 +2225,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
               views: viewsCount,
               publishedAt: snippet.publishedAt,
               duration: dur,
-              progressPercent: 0,
+              progressPercent: 
+0,
               currentTime: 0,
               historyUpdatedAt: null
             }
@@ -2104,7 +2238,8 @@ const fetchAndSaveMissingVideos = async (db, itemVideoIds) => {
           })
         }
       } catch (err) {
-        console.error('누락된 영상 저장 실패:', err)
+        console.error('누락된 영상 저장 실패:', 
+err)
       }
     }
   }
@@ -2114,7 +2249,8 @@ const downloadCreatorsBackup = () => {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creators.value, null, 2))
   const downloadAnchor = document.createElement('a')
   downloadAnchor.setAttribute("href", dataStr)
-  downloadAnchor.setAttribute("download", `neontube_creators_backup_${getTodayString()}.json`)
+  
+downloadAnchor.setAttribute("download", `neontube_creators_backup_${getTodayString()}.json`)
   document.body.appendChild(downloadAnchor)
   downloadAnchor.click()
   downloadAnchor.remove()
@@ -2124,7 +2260,8 @@ const triggerUploadCreators = () => {
   if (creatorFileInput.value) creatorFileInput.value.click()
 }
 
-const handleUploadCreators = async (event) => {
+const handleUploadCreators = 
+async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
@@ -2136,7 +2273,8 @@ const handleUploadCreators = async (event) => {
       if (!Array.isArray(importedCreators)) {
         alert('올바르지 않은 구독 백업 파일 형식입니다.')
         isLoading.value = false
-        return
+        
+return
       }
 
       const db = await openDB()
@@ -2146,7 +2284,8 @@ const handleUploadCreators = async (event) => {
       let addedCount = 0
       importedCreators.forEach(imported => {
         if (!creators.value.some(existing => existing.id === imported.id)) {
-          store.put(imported)
+          
+store.put(imported)
           creators.value.push(imported)
           addedCount++
         }
@@ -2157,7 +2296,8 @@ const handleUploadCreators = async (event) => {
         isLoading.value = false
         alert(`구독 불러오기 완료! 새로운 크리에이터 ${addedCount}명이 추가되었습니다.`)
         if (addedCount > 0) {
-          await fetchChannelVideosParallel(creators.value.filter(c => importedCreators.some(ic => ic.id === c.id)))
+          await fetchChannelVideosParallel(creators.value.filter(c => importedCreators.some(ic => 
+ic.id === c.id)))
         }
       }
     } catch (err) {
@@ -2172,7 +2312,8 @@ const handleUploadCreators = async (event) => {
 }
 
 const downloadPlaylistsBackup = () => {
-  const backupData = {
+  const backupData = 
+{
     playlistGroups: playlistGroups.value,
     playlists: playlists.value,
     playlistItems: playlistItems.value
@@ -2180,7 +2321,8 @@ const downloadPlaylistsBackup = () => {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2))
   const downloadAnchor = document.createElement('a')
   downloadAnchor.setAttribute("href", dataStr)
-  downloadAnchor.setAttribute("download", `neontube_playlists_all_backup_${getTodayString()}.json`)
+  
+downloadAnchor.setAttribute("download", `neontube_playlists_all_backup_${getTodayString()}.json`)
   document.body.appendChild(downloadAnchor)
   downloadAnchor.click()
   downloadAnchor.remove()
@@ -2190,7 +2332,8 @@ const triggerUploadPlaylists = () => {
   if (playlistFileInput.value) playlistFileInput.value.click()
 }
 
-const handleUploadPlaylists = async (event) => {
+const handleUploadPlaylists = 
+async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
@@ -2202,14 +2345,16 @@ const handleUploadPlaylists = async (event) => {
       const db = await openDB()
 
       const allItemVideoIds = imported.playlistItems ? imported.playlistItems.map(i => i.videoId) : []
-      await fetchAndSaveMissingVideos(db, allItemVideoIds)
+      await 
+fetchAndSaveMissingVideos(db, allItemVideoIds)
 
       const tx = db.transaction(['playlistGroups', 'playlists', 'playlistItems'], 'readwrite')
       
       if (imported.playlistGroups && Array.isArray(imported.playlistGroups)) {
         const groupStore = tx.objectStore('playlistGroups')
         imported.playlistGroups.forEach(g => {
-          if (!playlistGroups.value.some(pg => pg.id === g.id)) {
+          if 
+(!playlistGroups.value.some(pg => pg.id === g.id)) {
             groupStore.put(g)
           }
         })
@@ -2219,7 +2364,8 @@ const handleUploadPlaylists = async (event) => {
       if (imported.playlists && Array.isArray(imported.playlists)) {
         const plStore = tx.objectStore('playlists')
         imported.playlists.forEach(pl => {
-          const isExist = playlists.value.some(p => p.id === pl.id || p.name === pl.name)
+          const isExist = playlists.value.some(p => p.id 
+=== pl.id || p.name === pl.name)
           if (!isExist) {
             plStore.put(pl)
             addedPlCount++
@@ -2229,7 +2375,8 @@ const handleUploadPlaylists = async (event) => {
       if (imported.playlistItems && Array.isArray(imported.playlistItems)) {
         const itemStore = tx.objectStore('playlistItems')
         imported.playlistItems.forEach(item => {
-          if (!playlistItems.value.some(i => i.playlistId === item.playlistId && i.videoId === item.videoId)) {
+          if (!playlistItems.value.some(i => 
+i.playlistId === item.playlistId && i.videoId === item.videoId)) {
             const { ...rest } = item
             itemStore.add(rest)
           }
@@ -2243,7 +2390,8 @@ const handleUploadPlaylists = async (event) => {
       }
     } catch (err) {
       console.error(err)
-      isLoading.value = false
+      isLoading.value = 
+false
       alert('재생 목록 파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
@@ -2255,13 +2403,15 @@ const handleUploadPlaylists = async (event) => {
 const downloadSinglePlaylistBackup = (playlist) => {
   const items = playlistItems.value.filter(i => i.playlistId === playlist.id)
   const backupData = {
-    playlist,
+    
+playlist,
     items
   }
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2))
   const downloadAnchor = document.createElement('a')
   downloadAnchor.setAttribute("href", dataStr)
-  downloadAnchor.setAttribute("download", `neontube_playlist_${playlist.name.replace(/\s+/g, '_')}_backup.json`)
+  downloadAnchor.setAttribute("download", `neontube_playlist_${playlist.name.replace(/\s+/g, 
+'_')}_backup.json`)
   document.body.appendChild(downloadAnchor)
   downloadAnchor.click()
   downloadAnchor.remove()
@@ -2282,7 +2432,8 @@ const handleUploadSinglePlaylist = async (event) => {
     try {
       const imported = JSON.parse(e.target.result)
       
-      if (!imported.playlist || !imported.playlist.name) {
+      if (!imported.playlist || !imported.playlist.name) 
+{
         isLoading.value = false
         alert('올바르지 않은 개별 재생 목록 백업 파일 형식입니다.')
         return
@@ -2292,7 +2443,8 @@ const handleUploadSinglePlaylist = async (event) => {
       const db = await openDB()
 
       const importedItemVideoIds = imported.items ? imported.items.map(i => i.videoId) : []
-      await fetchAndSaveMissingVideos(db, importedItemVideoIds)
+      await fetchAndSaveMissingVideos(db, 
+importedItemVideoIds)
 
       let targetFolder = targetUploadPlaylistObj
       if (!targetFolder) {
@@ -2303,13 +2455,15 @@ const handleUploadSinglePlaylist = async (event) => {
         const newPlId = 'pl_' + Date.now()
         const newPl = { id: newPlId, name: importedName, groupId: activeGroupId.value, order: playlists.value.length }
         
+
         const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
         tx.objectStore('playlists').put(newPl)
 
         if (imported.items && Array.isArray(imported.items)) {
           const itemStore = tx.objectStore('playlistItems')
           imported.items.forEach(item => {
-            itemStore.add({ playlistId: newPlId, videoId: item.videoId })
+            itemStore.add({ playlistId: newPlId, videoId: item.videoId 
+})
           })
         }
 
@@ -2320,7 +2474,8 @@ const handleUploadSinglePlaylist = async (event) => {
         }
       } else {
         const tx = db.transaction(['playlistItems'], 'readwrite')
-        const itemStore = tx.objectStore('playlistItems')
+        const itemStore = 
+tx.objectStore('playlistItems')
 
         let addedCount = 0
         if (imported.items && Array.isArray(imported.items)) {
@@ -2329,7 +2484,8 @@ const handleUploadSinglePlaylist = async (event) => {
               itemStore.add({ playlistId: targetFolder.id, videoId: item.videoId })
               addedCount++
             }
-          })
+          
+})
         }
 
         tx.oncomplete = async () => {
@@ -2341,7 +2497,8 @@ const handleUploadSinglePlaylist = async (event) => {
     } catch (err) {
       console.error(err)
       isLoading.value = false
-      alert('파일을 읽는 중 오류가 발생했습니다.')
+      alert('파일을 읽는 중 오류가 
+발생했습니다.')
     } finally {
       event.target.value = ''
       targetUploadPlaylistObj = null
@@ -2352,7 +2509,8 @@ const handleUploadSinglePlaylist = async (event) => {
 
 const downloadMusicBackup = () => {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(musicVideos.value, null, 2))
-  const downloadAnchor = document.createElement('a')
+  const downloadAnchor = 
+document.createElement('a')
   downloadAnchor.setAttribute("href", dataStr)
   downloadAnchor.setAttribute("download", `neontube_music_backup_${getTodayString()}.json`)
   document.body.appendChild(downloadAnchor)
@@ -2360,7 +2518,8 @@ const downloadMusicBackup = () => {
   downloadAnchor.remove()
 }
 
-const triggerUploadMusic = () => {
+const triggerUploadMusic = () => 
+{
   if (musicFileInput.value) musicFileInput.value.click()
 }
 
@@ -2373,7 +2532,8 @@ const handleUploadMusic = async (event) => {
   reader.onload = async (e) => {
     try {
       const imported = JSON.parse(e.target.result)
-      if (Array.isArray(imported)) {
+      if (Array.isArray(imported)) 
+{
         musicVideos.value = imported
         checkThumbnailAspectRatio(musicVideos.value)
         isLoading.value = false
@@ -2385,7 +2545,8 @@ const handleUploadMusic = async (event) => {
       console.error(err)
       isLoading.value = false
       alert('음악 파일을 읽는 중 오류가 발생했습니다.')
-    } finally {
+    } finally 
+{
       event.target.value = ''
     }
   }
@@ -2399,7 +2560,8 @@ const openCreateGroupDialog = () => {
 }
 
 const createPlaylistGroup = async () => {
-  const name = groupFormName.value.trim()
+  const name = 
+groupFormName.value.trim()
   if (!name) { alert('그룹 이름을 입력해 주세요.'); return }
 
   const isDuplicate = playlistGroups.value.some(g => g.name === name)
@@ -2409,7 +2571,8 @@ const createPlaylistGroup = async () => {
   }
 
   const newGroupId = 'group_' + Date.now()
-  const newGroup = { id: newGroupId, name, order: playlistGroups.value.length }
+  const newGroup = { id: newGroupId, name, order: 
+playlistGroups.value.length }
 
   const db = await openDB()
   const tx = db.transaction('playlistGroups', 'readwrite')
@@ -2430,7 +2593,8 @@ const deletePlaylistGroup = async (group) => {
   if (!confirm(`'${group.name}' 그룹을 삭제하시겠습니까? (소속된 재생 목록 폴더들은 '기본' 그룹으로 이동됩니다)`)) return
 
   const db = await openDB()
-  const tx = db.transaction(['playlistGroups', 'playlists'], 'readwrite')
+  const tx = 
+db.transaction(['playlistGroups', 'playlists'], 'readwrite')
   tx.objectStore('playlistGroups').delete(group.id)
 
   const plStore = tx.objectStore('playlists')
@@ -2442,7 +2606,8 @@ const deletePlaylistGroup = async (group) => {
         pl.groupId = 'g_default'
         cursor.update(pl)
       }
-      cursor.continue()
+      
+cursor.continue()
     }
   }
 
@@ -2454,7 +2619,8 @@ const deletePlaylistGroup = async (group) => {
 
 const movePlaylistToGroup = async (playlist, targetGroupId) => {
   if ((playlist.groupId || 'g_default') === targetGroupId) return
-  playlist.groupId = targetGroupId
+  playlist.groupId = 
+targetGroupId
   
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
@@ -2463,7 +2629,8 @@ const movePlaylistToGroup = async (playlist, targetGroupId) => {
   tx.oncomplete = async () => {
     await loadDataFromDB()
     const targetGroup = playlistGroups.value.find(g => g.id === targetGroupId)
-    alert(`"${playlist.name}" 폴더가 "${targetGroup ? targetGroup.name : '선택한'}" 그룹으로 성공적으로 이동되었습니다.`)
+    alert(`"${playlist.name}" 폴더가 "${targetGroup ? targetGroup.name : '선택한'}" 
+그룹으로 성공적으로 이동되었습니다.`)
   }
 }
 
@@ -2473,7 +2640,8 @@ const getCurrentGroupName = () => {
 }
 
 const filteredPlaylists = computed(() => {
-  return playlists.value.filter(p => (p.groupId || 'g_default') === activeGroupId.value)
+  return playlists.value.filter(p => (p.groupId || 'g_default') === 
+activeGroupId.value)
 })
 
 const openCreatePlaylistDialog = () => {
@@ -2485,7 +2653,8 @@ const openCreatePlaylistDialog = () => {
 
 const openEditPlaylistDialog = (playlist) => {
   editingPlaylist.value = playlist
-  playlistFormName.value = playlist.name
+  playlistFormName.value = 
+playlist.name
   playlistFormGroupId.value = playlist.groupId || activeGroupId.value
   isPlaylistDialogVisible.value = true
 }
@@ -2494,7 +2663,8 @@ const savePlaylistFolder = async () => {
   const name = playlistFormName.value.trim()
   if (!name) { alert('폴더 이름을 입력해 주세요.'); return }
 
-  const targetGroupId = playlistFormGroupId.value || activeGroupId.value
+  const targetGroupId = playlistFormGroupId.value || 
+activeGroupId.value
   const isDuplicateName = playlists.value.some(p => p.name === name && p.groupId === targetGroupId && p.id !== editingPlaylist.value?.id)
   if (isDuplicateName) {
     alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 해당 그룹에 존재합니다!`)
@@ -2503,7 +2673,8 @@ const savePlaylistFolder = async () => {
 
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
-  const store = tx.objectStore('playlists')
+  const store = 
+tx.objectStore('playlists')
 
   if (editingPlaylist.value) {
     editingPlaylist.value.name = name
@@ -2516,7 +2687,8 @@ const savePlaylistFolder = async () => {
       groupId: targetGroupId, 
       order: playlists.value.length 
     })
-  }
+  
+}
 
   tx.oncomplete = async () => {
     isPlaylistDialogVisible.value = false
@@ -2537,7 +2709,8 @@ const quickCreateAndSelectPlaylist = async () => {
   const newId = 'pl_' + Date.now()
   const db = await openDB()
   const tx = db.transaction('playlists', 'readwrite')
-  tx.objectStore('playlists').put({ id: newId, name: name, groupId: activeGroupId.value, order: playlists.value.length })
+  tx.objectStore('playlists').put({ 
+id: newId, name: name, groupId: activeGroupId.value, order: playlists.value.length })
 
   tx.oncomplete = async () => {
     quickNewPlaylistName.value = ''
@@ -2546,7 +2719,8 @@ const quickCreateAndSelectPlaylist = async () => {
   }
 }
 
-const deletePlaylist = async (playlist) => {
+const deletePlaylist = async (playlist) => 
+{
   if (!confirm(`'${playlist.name}' 재생 목록을 삭제하시겠습니까?`)) return
   const db = await openDB()
   const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
@@ -2554,7 +2728,8 @@ const deletePlaylist = async (playlist) => {
   
   const itemStore = tx.objectStore('playlistItems')
   itemStore.openCursor().onsuccess = (e) => {
-    const cursor = e.target.result
+    const cursor = 
+e.target.result
     if (cursor) {
       if (cursor.value.playlistId === playlist.id) cursor.delete()
       cursor.continue()
@@ -2564,7 +2739,8 @@ const deletePlaylist = async (playlist) => {
   tx.oncomplete = async () => {
     if (activePlaylistId.value === playlist.id) activePlaylistId.value = null
     localStorage.removeItem(`neontube_playlist_resume_${playlist.id}`)
-    localStorage.removeItem(`neontube_playlist_last_index_${playlist.id}`)
+    
+localStorage.removeItem(`neontube_playlist_last_index_${playlist.id}`)
     await loadDataFromDB()
   }
 }
@@ -2574,7 +2750,8 @@ const movePlaylistItemOrder = async (index, direction) => {
   const currentList = displayedVideos.value
   if (targetIndex < 0 || targetIndex >= currentList.length) return
 
-  const temp = currentList[index]
+  const temp = 
+currentList[index]
   currentList[index] = currentList[targetIndex]
   currentList[targetIndex] = temp
 
@@ -2586,7 +2763,8 @@ const onDragStart = (index) => {
 }
 
 const onDrop = async (targetIndex) => {
-  if (draggedIndex.value === null || draggedIndex.value === targetIndex) return
+  if (draggedIndex.value === 
+null || draggedIndex.value === targetIndex) return
   const currentList = [...displayedVideos.value]
   
   const movedItem = currentList.splice(draggedIndex.value, 1)[0]
@@ -2596,7 +2774,8 @@ const onDrop = async (targetIndex) => {
   await saveActivePlaylistItemsOrder(currentList)
 }
 
-const saveActivePlaylistItemsOrder = async (newList) => {
+const 
+saveActivePlaylistItemsOrder = async (newList) => {
   const db = await openDB()
   const tx = db.transaction('playlistItems', 'readwrite')
   const store = tx.objectStore('playlistItems')
@@ -2616,7 +2795,8 @@ const saveActivePlaylistItemsOrder = async (newList) => {
 }
 
 const removeVideoFromActivePlaylist = async (video) => {
-  const targetItem = playlistItems.value.find(i => i.playlistId === activePlaylistId.value && i.videoId === video.id)
+  const targetItem = playlistItems.value.find(i => i.playlistId === 
+activePlaylistId.value && i.videoId === video.id)
   if (!targetItem) return
 
   const db = await openDB()
@@ -2628,7 +2808,8 @@ const removeVideoFromActivePlaylist = async (video) => {
   }
 }
 
-const deleteHistoryRecord = async (video) => {
+const deleteHistoryRecord = 
+async (video) => {
   const db = await openDB()
   const tx = db.transaction('history', 'readwrite')
   tx.objectStore('history').delete(video.id)
@@ -2638,7 +2819,8 @@ const deleteHistoryRecord = async (video) => {
   }
 }
 
-const getPlaylistVideoCount = (playlistId) => playlistItems.value.filter(item => item.playlistId === playlistId).length
+const getPlaylistVideoCount = (playlistId) => playlistItems.value.filter(item => item.playlistId === 
+playlistId).length
 
 const openSaveToPlaylistDialog = (video) => {
   if (video) selectedVideoIds.value = [video.id]
@@ -2656,7 +2838,8 @@ const confirmSaveToPlaylists = async () => {
 
   const db = await openDB()
   
-  const allCurrentSelectableVideos = [
+  const allCurrentSelectableVideos = 
+[
     ...videos.value,
     ...searchResultVideos.value,
     ...musicVideos.value,
@@ -2668,7 +2851,8 @@ const confirmSaveToPlaylists = async () => {
   const videoStore = videoTx.objectStore('videos')
 
   selectedVideoIds.value.forEach(videoId => {
-    const foundVideo = allCurrentSelectableVideos.find(v => v.id === videoId || v.youtubeId === videoId)
+    const foundVideo = 
+allCurrentSelectableVideos.find(v => v.id === videoId || v.youtubeId === videoId)
     if (foundVideo) {
       videoStore.put(JSON.parse(JSON.stringify(foundVideo)))
       if (!videos.value.some(v => v.id === foundVideo.id)) {
@@ -2677,7 +2861,8 @@ const confirmSaveToPlaylists = async () => {
     }
   })
 
-  const itemTx = db.transaction('playlistItems', 'readwrite')
+  const itemTx = db.transaction('playlistItems', 
+'readwrite')
   const itemStore = itemTx.objectStore('playlistItems')
 
   selectedVideoIds.value.forEach(videoId => {
@@ -2685,7 +2870,8 @@ const confirmSaveToPlaylists = async () => {
       const alreadyExists = playlistItems.value.some(
         item => item.playlistId === playlistId && item.videoId === videoId
       )
-      if (!alreadyExists) {
+      if (!alreadyExists) 
+{
         itemStore.add({ playlistId, videoId })
       }
     })
@@ -2705,7 +2891,8 @@ const playPlaylistFolder = async (playlist) => {
   const itemsInPlaylist = playlistItems.value.filter(i => i.playlistId === playlist.id)
   const targetVideos = []
   itemsInPlaylist.forEach(item => {
-    const v = videos.value.find(video => video.id === item.videoId)
+    const v = videos.value.find(video => video.id === 
+item.videoId)
     if (v && !targetVideos.some(tv => tv.id === v.id)) targetVideos.push(v)
   })
 
@@ -2715,7 +2902,8 @@ const playPlaylistFolder = async (playlist) => {
   const resumeEnabled = playlistResumeStates[playlist.id] ?? true
   enableResume.value = resumeEnabled
 
-  playlistQueue.value = targetVideos
+  playlistQueue.value = 
+targetVideos
 
   let startIndex = 0
   if (resumeEnabled) {
@@ -2726,7 +2914,8 @@ const playPlaylistFolder = async (playlist) => {
         startIndex = parsedIdx
       }
     }
-  }
+  
+}
 
   playlistIndex.value = startIndex
   await playQueueIndex(startIndex)
@@ -2741,7 +2930,8 @@ const playVideo = async (video) => {
   await playQueueIndex(0)
 }
 
-const playSelectedVideos = async () => {
+const playSelectedVideos = 
+async () => {
   if (selectedVideoIds.value.length === 0) return
   const selectedList = displayedVideos.value.filter(v => selectedVideoIds.value.includes(v.id))
   if (selectedList.length === 0) return
@@ -2750,7 +2940,8 @@ const playSelectedVideos = async () => {
     .map(id => selectedList.find(v => v.id === id))
     .filter(Boolean)
 
-  if (!isPlaylistMode.value) {
+  if (!isPlaylistMode.value) 
+{
     enableResume.value = true
   }
   playlistQueue.value = orderedList
@@ -2761,7 +2952,8 @@ const playSelectedVideos = async () => {
 
 const playSelectedOrAllMusic = async () => {
   const targetList = selectedVideoIds.value.length > 0 
-    ? displayedVideos.value.filter(v => selectedVideoIds.value.includes(v.id))
+    ? displayedVideos.value.filter(v => 
+selectedVideoIds.value.includes(v.id))
     : displayedVideos.value
   
   if (targetList.length === 0) return
@@ -2774,7 +2966,8 @@ const playSelectedOrAllMusic = async () => {
 
 const clearSelectedVideos = () => { selectedVideoIds.value = [] }
 
-const shufflePlaylistQueue = () => {
+const shufflePlaylistQueue = () => 
+{
   if (playlistQueue.value.length <= 1) return
   const currentActive = playlistQueue.value[playlistIndex.value]
   const rest = playlistQueue.value.filter((_, idx) => idx !== playlistIndex.value)
@@ -2782,7 +2975,8 @@ const shufflePlaylistQueue = () => {
   for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[rest[i], rest[j]] = [rest[j], rest[i]]
-  }
+  
+}
 
   playlistQueue.value = [currentActive, ...rest]
   playlistIndex.value = 0
@@ -2792,7 +2986,8 @@ const shufflePlaylistQueue = () => {
 const playQueueIndex = async (idx) => {
   if (idx < 0 || idx >= playlistQueue.value.length) return
   playlistIndex.value = idx
-  isQueueModalOpen.value = false
+  isQueueModalOpen.value = 
+false
 
   if (activePlaylistId.value && (playlistResumeStates[activePlaylistId.value] ?? true)) {
     localStorage.setItem(`neontube_playlist_last_index_${activePlaylistId.value}`, idx)
@@ -2801,7 +2996,8 @@ const playQueueIndex = async (idx) => {
   const video = playlistQueue.value[idx]
   activeVideo.value = video
   showComments.value = false
-  activeExpandedCommentId.value = null
+  activeExpandedCommentId.value = 
+null
   comments.value = []
   commentsNextPageToken.value = null
   totalCommentCount.value = 0
@@ -2813,7 +3009,8 @@ const playQueueIndex = async (idx) => {
 
   if (!isPlayerOpen.value) {
     window.history.pushState({ playerOpen: true }, '')
-    window.addEventListener('popstate', handlePopState)
+    
+window.addEventListener('popstate', handlePopState)
     isPlayerOpen.value = true
   }
 
@@ -2823,7 +3020,8 @@ const playQueueIndex = async (idx) => {
   const startSec = 0 
   
   // 이미 사전 생성된 ytPlayer 인스턴스에 즉시 동기 명령 전달 (제스처 컨텍스트 유지)
-  if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
+  if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') 
+{
     try {
       ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
       ytPlayer.value.playVideo()
@@ -2832,7 +3030,8 @@ const playQueueIndex = async (idx) => {
       }
       startHistoryTracker()
     } catch (e) {
-      initYouTubePlayer(video.youtubeId, startSec)
+      
+initYouTubePlayer(video.youtubeId, startSec)
     }
   } else {
     initYouTubePlayer(video.youtubeId, startSec)
@@ -2842,14 +3041,16 @@ const playQueueIndex = async (idx) => {
   try {
     const db = await openDB()
     const tx = db.transaction('history', 'readonly')
-    const req = tx.objectStore('history').get(video.id)
+    const req = 
+tx.objectStore('history').get(video.id)
     req.onsuccess = (e) => {
       const result = e.target.result
       const watchedTime = result && result.currentTime ? Math.floor(result.currentTime) : 0
       initialWatchedTime.value = watchedTime
       currentPlayingTime = watchedTime
       if (enableResume.value && watchedTime > 5 && ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
-        ytPlayer.value.seekTo(watchedTime, true)
+        
+ytPlayer.value.seekTo(watchedTime, true)
       }
     }
   } catch (err) { console.error(err) }
@@ -2870,7 +3071,8 @@ const playPreviousInQueue = async () => {
 const toggleCommentsView = () => {
   showComments.value = !showComments.value
   if (showComments.value && comments.value.length === 0 && activeVideo.value) {
-    fetchComments(activeVideo.value.youtubeId)
+    
+fetchComments(activeVideo.value.youtubeId)
   }
 }
 
@@ -2883,6 +3085,7 @@ const closePlayer = () => {
       ytPlayer.value.stopVideo()
     } catch (e) { 
       console.debug(e) 
+
     }
   }
   
@@ -2904,7 +3107,8 @@ const setupMediaSession = (video) => {
       title: video.title || 'NeonTube 재생',
       artist: video.creatorName || 'YouTube',
       album: 'NeonTube Player',
-      artwork: [
+      artwork: 
+[
         { src: video.thumbnail || '', sizes: '512x512', type: 'image/jpeg' }
       ]
     })
@@ -2912,7 +3116,8 @@ const setupMediaSession = (video) => {
     navigator.mediaSession.playbackState = 'playing'
 
     navigator.mediaSession.setActionHandler('play', () => {
-      if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') ytPlayer.value.playVideo()
+      if (ytPlayer.value && typeof ytPlayer.value.playVideo === 'function') 
+ytPlayer.value.playVideo()
     })
     navigator.mediaSession.setActionHandler('pause', () => {
       if (ytPlayer.value && typeof ytPlayer.value.pauseVideo === 'function') ytPlayer.value.pauseVideo()
@@ -2920,7 +3125,8 @@ const setupMediaSession = (video) => {
     navigator.mediaSession.setActionHandler('previoustrack', () => {
       if (playlistIndex.value > 0) playPreviousInQueue()
     })
-    navigator.mediaSession.setActionHandler('nexttrack', () => {
+    
+navigator.mediaSession.setActionHandler('nexttrack', () => {
       if (playlistIndex.value < playlistQueue.value.length - 1) playNextInQueue()
     })
   } catch (e) {
@@ -2930,7 +3136,8 @@ const setupMediaSession = (video) => {
 
 // ⚡ 앱 실행 시점에 플레이어를 미리 생성 (Pre-init)
 const initPreloadedYouTubePlayer = () => {
-  const createPlayerInstance = () => {
+  const createPlayerInstance = 
+() => {
     const playerDiv = document.getElementById('youtube-player-div')
     if (!playerDiv || ytPlayer.value) return
 
@@ -2941,7 +3148,8 @@ const initPreloadedYouTubePlayer = () => {
         autoplay: 0, 
         playsinline: 1, 
         enablejsapi: 1,
-        origin: window.location.origin
+        origin: 
+window.location.origin
       },
       events: {
         onStateChange: async (event) => {
@@ -2951,7 +3159,8 @@ const initPreloadedYouTubePlayer = () => {
             }
           } else if (event.data === 2) {
             if ('mediaSession' in navigator) {
-              navigator.mediaSession.playbackState = 'paused'
+              navigator.mediaSession.playbackState = 
+'paused'
             }
           } else if (event.data === 0) {
             if (isLoopMode.value) {
@@ -2964,7 +3173,8 @@ const initPreloadedYouTubePlayer = () => {
 
             if (activeVideo.value) {
               try {
-                const db = await openDB()
+                const db = await 
+openDB()
                 const tx = db.transaction('history', 'readwrite')
                 tx.objectStore('history').delete(activeVideo.value.id)
                 
@@ -2972,7 +3182,8 @@ const initPreloadedYouTubePlayer = () => {
                 if (targetVideo) {
                   targetVideo.currentTime = 0
                   targetVideo.progressPercent = 0
-                  targetVideo.historyUpdatedAt = null
+                  targetVideo.historyUpdatedAt 
+= null
                 }
               } catch (err) {
                 console.error('이어보기 기록 삭제 실패:', err)
@@ -2996,14 +3207,16 @@ const initPreloadedYouTubePlayer = () => {
     createPlayerInstance()
   } else {
     if (!window.onYouTubeIframeAPIReady) {
-      const tag = document.createElement('script')
+      const tag = 
+document.createElement('script')
       tag.src = 'https://www.youtube.com/iframe_api'
       const firstScriptTag = document.getElementsByTagName('script')[0]
       if (firstScriptTag && firstScriptTag.parentNode) {
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag)
       } else {
         document.head.appendChild(tag)
-      }
+      
+}
     }
     window.onYouTubeIframeAPIReady = () => createPlayerInstance()
   }
@@ -3013,7 +3226,8 @@ const initPreloadedYouTubePlayer = () => {
 const initYouTubePlayer = (youtubeId, startTime) => {
   const startPos = startTime > 5 ? startTime : 0
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
-    ytPlayer.value.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
+    
+ytPlayer.value.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
     ytPlayer.value.playVideo()
     startHistoryTracker()
   } else {
@@ -3024,7 +3238,8 @@ const initYouTubePlayer = (youtubeId, startTime) => {
 const startHistoryTracker = () => {
   stopHistoryTracker()
   historyInterval = setInterval(async () => {
-    if (ytPlayer.value && typeof ytPlayer.value.getCurrentTime === 'function' && typeof ytPlayer.value.getDuration === 'function') {
+    if (ytPlayer.value && typeof ytPlayer.value.getCurrentTime === 'function' && typeof 
+ytPlayer.value.getDuration === 'function') {
       try {
         const t = ytPlayer.value.getCurrentTime()
         const dur = ytPlayer.value.getDuration()
@@ -3033,7 +3248,8 @@ const startHistoryTracker = () => {
             currentPlayingTime = 0
             if (activeVideo.value) {
               const db = await openDB()
-              const tx = db.transaction('history', 'readwrite')
+              const tx = db.transaction('history', 
+'readwrite')
               tx.objectStore('history').delete(activeVideo.value.id)
               
               const targetVideo = videos.value.find(v => v.id === activeVideo.value.id)
@@ -3042,7 +3258,8 @@ const startHistoryTracker = () => {
                 targetVideo.progressPercent = 0
                 targetVideo.historyUpdatedAt = null
               }
-            }
+            
+}
           } else {
             currentPlayingTime = Math.floor(t)
             saveCurrentHistoryToDB()
@@ -3055,7 +3272,8 @@ const startHistoryTracker = () => {
 
 const stopHistoryTracker = () => {
   if (historyInterval) {
-    clearInterval(historyInterval)
+    
+clearInterval(historyInterval)
     historyInterval = null
   }
 }
@@ -3064,7 +3282,8 @@ const saveCurrentHistoryToDB = async () => {
   if (!activeVideo.value || currentPlayingTime <= 0) return
   const dur = (ytPlayer.value && typeof ytPlayer.value.getDuration === 'function') ? ytPlayer.value.getDuration() : (activeVideo.value.duration || 0)
 
-  try {
+  try 
+{
     const db = await openDB()
     const tx = db.transaction('history', 'readwrite')
     tx.objectStore('history').put({
@@ -3075,7 +3294,8 @@ const saveCurrentHistoryToDB = async () => {
     })
     
     const targetVideo = videos.value.find(v => v.id === activeVideo.value.id)
-    if (targetVideo) {
+    if (targetVideo) 
+{
       targetVideo.currentTime = Math.floor(currentPlayingTime)
       targetVideo.duration = dur
       targetVideo.historyUpdatedAt = new Date().toISOString()
@@ -3084,7 +3304,8 @@ const saveCurrentHistoryToDB = async () => {
   } catch (err) { console.error(err) }
 }
 
-const jumpToTime = () => {
+const jumpToTime = () => 
+{
   const totalSeconds = (Number(jumpMinutes.value) || 0) * 60 + (Number(jumpSeconds.value) || 0)
   if (totalSeconds < 0) return
   currentPlayingTime = totalSeconds
@@ -3092,7 +3313,8 @@ const jumpToTime = () => {
   if (ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') ytPlayer.value.seekTo(totalSeconds, true)
 }
 
-const cumulativeJump = (direction) => {
+const cumulativeJump = 
+(direction) => {
   const stepSeconds = (Number(jumpMinutes.value) || 0) * 60 + (Number(jumpSeconds.value) || 0)
   if (stepSeconds <= 0) return
 
@@ -3109,7 +3331,8 @@ const cumulativeJump = (direction) => {
 
 const formatRelativeTime = (dateString) => {
   if (!dateString) return ''
-  const diffSec = Math.floor((new Date() - new Date(dateString)) / 1000)
+  const diffSec = 
+Math.floor((new Date() - new Date(dateString)) / 1000)
   const diffMin = Math.floor(diffSec / 60)
   const diffHour = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHour / 24)
@@ -3125,7 +3348,8 @@ const fetchVideoCommentCount = async (youtubeId) => {
   try {
     const data = await fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${youtubeId}&key=${key}`)
     if (data.items) totalCommentCount.value = parseInt(data.items[0].statistics.commentCount || 0, 10)
-  } catch (err) { console.error(err) }
+  } catch (err) { console.error(err) 
+}
 }
 
 const changeCommentsOrder = (order) => {
@@ -3134,14 +3358,16 @@ const changeCommentsOrder = (order) => {
   comments.value = []
   commentsNextPageToken.value = null
   activeExpandedCommentId.value = null
-  if (activeVideo.value) fetchComments(activeVideo.value.youtubeId)
+  if (activeVideo.value) 
+fetchComments(activeVideo.value.youtubeId)
 }
 
 const topLevelComments = computed(() => comments.value.filter(c => !c.isReply))
 const getRepliesForComment = (parentId) => comments.value.filter(c => c.isReply && c.parentId === parentId)
 
 const fetchOrToggleReplies = async (comment) => {
-  if (activeExpandedCommentId.value === comment.id) {
+  if 
+(activeExpandedCommentId.value === comment.id) {
     activeExpandedCommentId.value = null
   } else {
     activeExpandedCommentId.value = comment.id
@@ -3158,7 +3384,8 @@ const fetchComments = async (youtubeId) => {
 
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&maxResults=15&order=${commentsOrder.value}&videoId=${youtubeId}&key=${key}`
+      
+`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&maxResults=15&order=${commentsOrder.value}&videoId=${youtubeId}&key=${key}`
     )
     if (data.items) {
       const currentCreatorId = activeVideo.value?.creatorId
@@ -3166,7 +3393,8 @@ const fetchComments = async (youtubeId) => {
 
       data.items.forEach(item => {
         const topSnippet = item.snippet.topLevelComment.snippet
-        const topAuthorChannelId = topSnippet.authorChannelId?.value
+        const topAuthorChannelId = 
+topSnippet.authorChannelId?.value
         const replyCount = item.snippet.totalReplyCount || 0
 
         parsedComments.push({
@@ -3175,7 +3403,8 @@ const fetchComments = async (youtubeId) => {
           authorProfileImageUrl: topSnippet.authorProfileImageUrl,
           authorChannelId: topAuthorChannelId,
           text: topSnippet.textDisplay,
-          publishedAt: topSnippet.publishedAt.substring(0, 10),
+          publishedAt: 
+topSnippet.publishedAt.substring(0, 10),
           likeCount: topSnippet.likeCount || 0,
           isOwner: Boolean(currentCreatorId && topAuthorChannelId === currentCreatorId),
           isReply: false,
@@ -3184,7 +3413,8 @@ const fetchComments = async (youtubeId) => {
         })
 
         if (item.replies && item.replies.comments) {
-          item.replies.comments.forEach(replyItem => {
+          
+item.replies.comments.forEach(replyItem => {
             const rSnippet = replyItem.snippet
             const rAuthorChannelId = rSnippet.authorChannelId?.value
             parsedComments.push({
@@ -3193,7 +3423,8 @@ const fetchComments = async (youtubeId) => {
               authorProfileImageUrl: rSnippet.authorProfileImageUrl,
               authorChannelId: rAuthorChannelId,
               text: rSnippet.textDisplay,
-              publishedAt: rSnippet.publishedAt.substring(0, 10),
+              publishedAt: 
+rSnippet.publishedAt.substring(0, 10),
               likeCount: rSnippet.likeCount || 0,
               isOwner: Boolean(currentCreatorId && rAuthorChannelId === currentCreatorId),
               isReply: true,
@@ -3204,7 +3435,8 @@ const fetchComments = async (youtubeId) => {
       })
 
       comments.value = parsedComments
-      commentsNextPageToken.value = data.nextPageToken || null
+      
+commentsNextPageToken.value = data.nextPageToken || null
     }
   } catch (err) { console.error(err) } finally { isLoadingComments.value = false }
 }
@@ -3214,7 +3446,8 @@ const fetchRepliesForComment = async (parentComment) => {
   isLoadingReplies.value = true
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/comments?part=snippet&parentId=${parentComment.id}&maxResults=50&key=${key}`
+      
+`https://www.googleapis.com/youtube/v3/comments?part=snippet&parentId=${parentComment.id}&maxResults=50&key=${key}`
     )
     if (data.items) {
       const currentCreatorId = activeVideo.value?.creatorId
@@ -3222,7 +3455,8 @@ const fetchRepliesForComment = async (parentComment) => {
         const rSnippet = replyItem.snippet
         const rAuthorChannelId = rSnippet.authorChannelId?.value
         return {
-          id: replyItem.id,
+          id: 
+replyItem.id,
           author: rSnippet.authorDisplayName,
           authorProfileImageUrl: rSnippet.authorProfileImageUrl,
           authorChannelId: rAuthorChannelId,
@@ -3230,7 +3464,8 @@ const fetchRepliesForComment = async (parentComment) => {
           publishedAt: rSnippet.publishedAt.substring(0, 10),
           likeCount: rSnippet.likeCount || 0,
           isOwner: Boolean(currentCreatorId && rAuthorChannelId === currentCreatorId),
-          isReply: true,
+          isReply: 
+true,
           parentId: parentComment.id
         }
       })
@@ -3239,7 +3474,8 @@ const fetchRepliesForComment = async (parentComment) => {
       const uniqueReplies = newReplies.filter(r => !existingIds.has(r.id))
 
       comments.value.push(...uniqueReplies)
-      parentComment.repliesLoaded = true
+      parentComment.repliesLoaded 
+= true
     }
   } catch (err) { console.error(err) } finally { isLoadingReplies.value = false }
 }
@@ -3249,14 +3485,16 @@ const fetchMoreComments = async (youtubeId) => {
   isLoadingComments.value = true
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&maxResults=15&order=${commentsOrder.value}&pageToken=${commentsNextPageToken.value}&videoId=${youtubeId}&key=${key}`
+      
+`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet,replies&maxResults=15&order=${commentsOrder.value}&pageToken=${commentsNextPageToken.value}&videoId=${youtubeId}&key=${key}`
     )
     if (data.items) {
       const currentCreatorId = activeVideo.value?.creatorId
       const moreParsedComments = []
 
       data.items.forEach(item => {
-        const topSnippet = item.snippet.topLevelComment.snippet
+        const topSnippet = 
+item.snippet.topLevelComment.snippet
         const topAuthorChannelId = topSnippet.authorChannelId?.value
         const replyCount = item.snippet.totalReplyCount || 0
 
@@ -3264,7 +3502,8 @@ const fetchMoreComments = async (youtubeId) => {
           id: item.id,
           author: topSnippet.authorDisplayName,
           authorProfileImageUrl: topSnippet.authorProfileImageUrl,
-          authorChannelId: topAuthorChannelId,
+          authorChannelId: 
+topAuthorChannelId,
           text: topSnippet.textDisplay,
           publishedAt: topSnippet.publishedAt.substring(0, 10),
           likeCount: topSnippet.likeCount || 0,
@@ -3282,7 +3521,8 @@ const fetchMoreComments = async (youtubeId) => {
               id: replyItem.id,
               author: replyItem.id,
               authorProfileImageUrl: rSnippet.authorProfileImageUrl,
-              authorChannelId: rAuthorChannelId,
+              authorChannelId: 
+rAuthorChannelId,
               text: rSnippet.textDisplay,
               publishedAt: rSnippet.publishedAt.substring(0, 10),
               likeCount: rSnippet.likeCount || 0,
@@ -3292,7 +3532,8 @@ const fetchMoreComments = async (youtubeId) => {
             })
           })
         }
-      })
+      
+})
 
       comments.value.push(...moreParsedComments)
       commentsNextPageToken.value = data.nextPageToken || null
@@ -3301,14 +3542,16 @@ const fetchMoreComments = async (youtubeId) => {
 }
 
 const loadDataFromDB = async () => {
-  const db = await openDB()
+  const db = await 
+openDB()
   
   creators.value = (await new Promise((resolve) => {
     db.transaction('creators', 'readonly').objectStore('creators').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []).map(c => ({ ...c, isFavorite: c.isFavorite ?? false }))
 
   let dbGroups = await new Promise((resolve) => {
-    db.transaction('playlistGroups', 'readonly').objectStore('playlistGroups').getAll().onsuccess = (e) => resolve(e.target.result)
+    db.transaction('playlistGroups', 'readonly').objectStore('playlistGroups').getAll().onsuccess = (e) 
+=> resolve(e.target.result)
   })
   if (!dbGroups || dbGroups.length === 0) {
     dbGroups = [
@@ -3318,7 +3561,8 @@ const loadDataFromDB = async () => {
     const tx = db.transaction('playlistGroups', 'readwrite')
     dbGroups.forEach(g => tx.objectStore('playlistGroups').put(g))
   } else {
-    if (!dbGroups.some(g => g.name === '음악')) {
+    if (!dbGroups.some(g => 
+g.name === '음악')) {
       const musicGroup = { id: 'g_music', name: '음악', order: dbGroups.length }
       dbGroups.push(musicGroup)
       const tx = db.transaction('playlistGroups', 'readwrite')
@@ -3327,7 +3571,8 @@ const loadDataFromDB = async () => {
   }
   playlistGroups.value = dbGroups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-  const dbVideos = await new Promise((resolve) => {
+  const dbVideos = await new 
+Promise((resolve) => {
     db.transaction('videos', 'readonly').objectStore('videos').getAll().onsuccess = (e) => resolve(e.target.result)
   })
 
@@ -3336,28 +3581,32 @@ const loadDataFromDB = async () => {
   })
   
   historyList.value = dbHistory || []
-  const historyMap = new Map(historyList.value.map(h => [h.videoId, h]))
+  const historyMap = new 
+Map(historyList.value.map(h => [h.videoId, h]))
   
   videos.value = (dbVideos || []).map(v => {
     const h = historyMap.get(v.id)
     const videoDuration = h?.duration || v.duration || 0
     const currentTime = h?.currentTime || 0
     let percent = (currentTime > 0 && videoDuration > 0) ? Math.min(100, Math.floor((currentTime / videoDuration) * 100)) : 0
-    const isShorts = v.isShorts || (videoDuration > 0 && videoDuration <= 120)
+    const isShorts = v.isShorts || (videoDuration > 0 && videoDuration <= 
+120)
     return { ...v, duration: videoDuration, currentTime, progressPercent: percent, historyUpdatedAt: h?.updatedAt || null, isShorts }
   }).sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
 
   checkThumbnailAspectRatio(videos.value)
 
   const rawPlaylists = (await new Promise((resolve) => {
-    db.transaction('playlists', 'readonly').objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
+    db.transaction('playlists', 
+'readonly').objectStore('playlists').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || [])
 
   const musicGroupObj = playlistGroups.value.find(g => g.name === '음악')
   const defaultGroupObj = playlistGroups.value.find(g => g.name === '기본' || g.id === 'g_default')
 
   rawPlaylists.forEach(pl => {
-    if (musicGroupObj && defaultGroupObj && pl.groupId === defaultGroupObj.id && (pl.name.includes('음악') || pl.name === '음악')) {
+    if (musicGroupObj && defaultGroupObj && pl.groupId === defaultGroupObj.id && (pl.name.includes('음악') || 
+pl.name === '음악')) {
       pl.groupId = musicGroupObj.id
       db.transaction('playlists', 'readwrite').objectStore('playlists').put(pl)
     }
@@ -3368,7 +3617,8 @@ const loadDataFromDB = async () => {
     groupId: pl.groupId || 'g_default'
   })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-  playlistItems.value = await new Promise((resolve) => {
+  playlistItems.value = await 
+new Promise((resolve) => {
     db.transaction('playlistItems', 'readonly').objectStore('playlistItems').getAll().onsuccess = (e) => resolve(e.target.result)
   }) || []
 
@@ -3378,7 +3628,8 @@ const loadDataFromDB = async () => {
 const toggleVideoFavorite = async (video) => {
   video.isFavorite = !video.isFavorite
   const db = await openDB()
-  db.transaction('videos', 'readwrite').objectStore('videos').put(JSON.parse(JSON.stringify(video)))
+  db.transaction('videos', 
+'readwrite').objectStore('videos').put(JSON.parse(JSON.stringify(video)))
 }
 
 const toggleCreatorFavorite = async (creator) => {
@@ -3387,7 +3638,8 @@ const toggleCreatorFavorite = async (creator) => {
   db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(creator)))
 }
 
-const toggleSubscribeFromCard = async (video) => {
+const toggleSubscribeFromCard = async (video) => 
+{
   const existingIndex = creators.value.findIndex(c => c.id === video.creatorId)
   const db = await openDB()
 
@@ -3395,7 +3647,8 @@ const toggleSubscribeFromCard = async (video) => {
     const targetCreator = creators.value[existingIndex]
     if (!confirm(`'${targetCreator.name}' 채널 구독을 취소하시겠습니까?`)) return
     creators.value.splice(existingIndex, 1)
-    db.transaction('creators', 'readwrite').objectStore('creators').delete(targetCreator.id)
+    db.transaction('creators', 
+'readwrite').objectStore('creators').delete(targetCreator.id)
     if (selectedCreator.value?.id === targetCreator.id) selectDiscoverHeart()
   } else {
     let realSubCount = '구독중'
@@ -3403,7 +3656,8 @@ const toggleSubscribeFromCard = async (video) => {
       const channelData = await fetchWithKeyRotation((key) => 
         `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${video.creatorId}&key=${key}`
       )
-      if (channelData.items && channelData.items.length > 0) {
+      if (channelData.items && channelData.items.length > 0) 
+{
         const stat = channelData.items[0].statistics
         const rawCount = stat?.hiddenSubscriberCount ? null : parseInt(stat?.subscriberCount || 0, 10)
         realSubCount = rawCount === null ? '구독자 숨김' : (rawCount >= 10000 ? (rawCount / 10000).toFixed(1) + '만명' : rawCount + '명')
@@ -3421,7 +3675,8 @@ const toggleSubscribeFromCard = async (video) => {
     }
     creators.value.push(newCreator)
     db.transaction('creators', 'readwrite').objectStore('creators').put(newCreator)
-    await fetchChannelVideosParallel([newCreator])
+    await 
+fetchChannelVideosParallel([newCreator])
     alert(`'${newCreator.name}' 채널을 구독했습니다!`)
   }
 }
@@ -3431,7 +3686,8 @@ const toggleSubscribeFromPlayer = async () => {
   await toggleSubscribeFromCard(activeVideo.value)
 }
 
-const unsubscribeCreator = async (creator) => {
+const unsubscribeCreator = async (creator) => 
+{
   if (!confirm(`'${creator.name}' 채널 구독을 취소하시겠습니까?`)) return
   creators.value = creators.value.filter(c => c.id !== creator.id)
   const db = await openDB()
@@ -3439,7 +3695,8 @@ const unsubscribeCreator = async (creator) => {
   if (selectedCreator.value?.id === creator.id) selectDiscoverHeart()
 }
 
-const fetchChannelVideosParallel = async (targetCreators) => {
+const fetchChannelVideosParallel = 
+async (targetCreators) => {
   if (!targetCreators || targetCreators.length === 0 || API_KEYS.length === 0) return
   
   for (let i = 0; i < targetCreators.length; i += 50) {
@@ -3447,7 +3704,8 @@ const fetchChannelVideosParallel = async (targetCreators) => {
     const channelIds = chunk.map(c => c.id).join(',')
     try {
       const channelData = await fetchWithKeyRotation((key) => 
-        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails,statistics&id=${channelIds}&key=${key}`
+        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails,statistics&id
+=${channelIds}&key=${key}`
       )
       if (channelData.error || !channelData.items) continue
 
@@ -3456,6 +3714,7 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         const stat = item.statistics
         const rawCount = stat?.hiddenSubscriberCount ? null : parseInt(stat?.subscriberCount || 0, 10)
         const formattedSubCount = rawCount === null 
+
           ? '구독자 숨김' 
           : rawCount >= 10000 
             ? (rawCount / 10000).toFixed(1) + '만명' 
@@ -3467,7 +3726,8 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         if (targetCreator) {
           targetCreator.subCount = formattedSubCount
           openDB().then(db => {
-            db.transaction('creators', 'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(targetCreator)))
+            db.transaction('creators', 
+'readwrite').objectStore('creators').put(JSON.parse(JSON.stringify(targetCreator)))
           })
         }
 
@@ -3477,7 +3737,8 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         })
       })
 
-      await Promise.all(chunk.map(async (creator) => {
+      await Promise.all(chunk.map(async (creator) => 
+{
         const chInfo = channelMap.get(creator.id)
         if (!chInfo) return
 
@@ -3486,21 +3747,24 @@ const fetchChannelVideosParallel = async (targetCreators) => {
         )
 
         if (!data.error && data.items) {
-          if (data.nextPageToken) {
+          if (data.nextPageToken) 
+{
             channelNextPageTokens.value.set(creator.id, data.nextPageToken)
           } else {
             channelNextPageTokens.value.delete(creator.id)
           }
 
           const db = await openDB()
-          const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: v.duration, historyUpdatedAt: v.historyUpdatedAt, views: v.views }]))
+          const existingMap = new Map(videos.value.map(v => [v.id, { isFavorite: v.isFavorite, progressPercent: v.progressPercent, currentTime: v.currentTime, duration: 
+v.duration, historyUpdatedAt: v.historyUpdatedAt, views: v.views }]))
 
           const channelVideos = data.items.map(item => {
             const snippet = item.snippet
             const videoId = snippet.resourceId?.videoId || snippet.resourceId
             const title = snippet.title.toLowerCase()
             const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-            const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
+            const isShorts = 
+title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
 
             const parsed = {
               id: videoId,
@@ -3512,7 +3776,8 @@ const fetchChannelVideosParallel = async (targetCreators) => {
               thumbnail: thumbUrl,
               isShorts: isShorts,
               isFavorite: false,
-              views: 0,
+              views: 
+0,
               publishedAt: snippet.publishedAt,
               duration: 0,
               progressPercent: 0,
@@ -3534,7 +3799,8 @@ const fetchChannelVideosParallel = async (targetCreators) => {
           const store = tx.objectStore('videos')
           channelVideos.forEach(v => store.put(v))
           
-          channelVideos.forEach(cv => {
+          channelVideos.forEach(cv => 
+{
             if (!videos.value.some(v => v.id === cv.id)) {
               videos.value.push(cv)
             }
@@ -3556,7 +3822,8 @@ const fetchTrendingVideos = async () => {
 
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=25&key=${key}`
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regio
+nCode=KR&maxResults=25&key=${key}`
     )
 
     if (data.error || !data.items) return
@@ -3573,14 +3840,16 @@ const fetchTrendingVideos = async () => {
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
-    const parsedTrending = data.items.map(item => {
+    const parsedTrending = data.items.map(item => 
+{
       const snippet = item.snippet
       const videoId = item.id
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const dur = parseISO8601Duration(item.contentDetails?.duration)
       const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
-      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
+      const isShorts = title.includes('#shorts') || title.includes('shorts') || 
+title.includes('#쇼츠') || (dur > 0 && dur <= 120)
       const channelId = snippet.channelId
       const matchedCreator = creators.value.find(c => c.id === channelId)
       const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
@@ -3589,7 +3858,8 @@ const fetchTrendingVideos = async () => {
         id: videoId,
         youtubeId: videoId,
         creatorId: channelId,
-        creatorName: snippet.channelTitle,
+        creatorName: 
+snippet.channelTitle,
         creatorSubCount: subCount,
         title: snippet.title,
         thumbnail: thumbUrl,
@@ -3603,7 +3873,8 @@ const fetchTrendingVideos = async () => {
         historyUpdatedAt: null
       }
 
-      const h = historyMap.get(parsed.id)
+      const h = 
+historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
         parsed.duration = h.duration || parsed.duration
@@ -3613,7 +3884,8 @@ const fetchTrendingVideos = async () => {
         }
       }
       return parsed
-    })
+    
+})
 
     checkThumbnailAspectRatio(parsedTrending)
     trendingVideos.value = parsedTrending
@@ -3622,7 +3894,8 @@ const fetchTrendingVideos = async () => {
     const store = tx.objectStore('videos')
     parsedTrending.forEach(v => store.put(v))
   } catch (error) {
-    console.error('실시간 급상승 영상 불러오기 실패:', error)
+    console.error('실시간 급상승 영상 불러오기 실패:', 
+error)
   } finally {
     isLoading.value = false
   }
@@ -3636,6 +3909,7 @@ const fetchAlgorithmVideos = async () => {
   try {
     const seedKeywords = new Set()
     
+
     historyList.value.slice(0, 10).forEach(h => {
       const v = videos.value.find(vid => vid.id === h.videoId)
       if (v && v.title) {
@@ -3656,7 +3930,8 @@ const fetchAlgorithmVideos = async () => {
     const randomQuery = mergedKeywords[Math.floor(Math.random() * mergedKeywords.length)]
 
     const [searchRes, trendingRes] = await Promise.allSettled([
-      fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(randomQuery)}&type=video&key=${key}`),
+      fetchWithKeyRotation((key) => 
+`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(randomQuery)}&type=video&key=${key}`),
       fetchWithKeyRotation((key) => `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=15&key=${key}`)
     ])
 
@@ -3666,14 +3941,16 @@ const fetchAlgorithmVideos = async () => {
       algorithmNextPageToken.value = searchRes.value.nextPageToken || null
       const channelIds = searchRes.value.items.map(item => item.snippet?.channelId).filter(Boolean)
       const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
-      const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+      const existingMap = new 
+Map(videos.value.map(v => [v.id, v.isFavorite]))
 
       const searchParsed = searchRes.value.items.filter(item => item.id?.videoId).map(item => {
         const snippet = item.snippet
         const videoId = item.id.videoId
         const title = snippet.title.toLowerCase()
         const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
-        const channelId = snippet.channelId
+        const channelId = 
+snippet.channelId
 
         return {
           id: videoId,
@@ -3684,7 +3961,8 @@ const fetchAlgorithmVideos = async () => {
           title: snippet.title,
           thumbnail: thumbUrl,
           isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
-          isFavorite: existingMap.get(videoId) || false,
+          isFavorite: 
+existingMap.get(videoId) || false,
           views: 0,
           publishedAt: snippet.publishedAt,
           duration: 0,
@@ -3696,14 +3974,16 @@ const fetchAlgorithmVideos = async () => {
       candidateVideos.push(...searchParsed)
     }
 
-    if (trendingRes.status === 'fulfilled' && trendingRes.value?.items) {
+    if (trendingRes.status === 'fulfilled' && 
+trendingRes.value?.items) {
       const channelIds = trendingRes.value.items.map(item => item.snippet?.channelId).filter(Boolean)
       const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
       const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
       const trendingParsed = trendingRes.value.items.map(item => {
         const snippet = item.snippet
-        const videoId = item.id
+        const videoId = 
+item.id
         const title = snippet.title.toLowerCase()
         const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
         const channelId = snippet.channelId
@@ -3711,7 +3991,8 @@ const fetchAlgorithmVideos = async () => {
         const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
 
         return {
-          id: videoId,
+          id: 
+videoId,
           youtubeId: videoId,
           creatorId: channelId,
           creatorName: snippet.channelTitle,
@@ -3719,7 +4000,8 @@ const fetchAlgorithmVideos = async () => {
           title: snippet.title,
           thumbnail: thumbUrl,
           isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120),
-          isFavorite: existingMap.get(videoId) || false,
+          isFavorite: existingMap.get(videoId) || 
+false,
           views: viewsCount,
           publishedAt: snippet.publishedAt,
           duration: dur,
@@ -3732,7 +4014,8 @@ const fetchAlgorithmVideos = async () => {
     }
 
     const uniqueMap = new Map()
-    candidateVideos.forEach(v => {
+    candidateVideos.forEach(v => 
+{
       if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v)
     })
     
@@ -3742,7 +4025,8 @@ const fetchAlgorithmVideos = async () => {
       [combined[i], combined[j]] = [combined[j], combined[i]]
     }
 
-    await fetchAndUpdateVideoDetails(combined)
+    await 
+fetchAndUpdateVideoDetails(combined)
     checkThumbnailAspectRatio(combined)
     algorithmVideos.value = combined
   } catch (error) {
@@ -3753,14 +4037,16 @@ const fetchAlgorithmVideos = async () => {
 }
 
 const loadMoreAlgorithmVideos = async () => {
-  if (API_KEYS.length === 0 || !algorithmNextPageToken.value || isLoading.value) return
+  if (API_KEYS.length === 0 || 
+!algorithmNextPageToken.value || isLoading.value) return
   isLoading.value = true
 
   try {
     const recommendationKeywords = ['인기 추천 컨텐츠', '요즘 뜨는 트렌드', '알고리즘 추천 영상', '재밌는 영상 모음', '브이로그 추천', 'IT 테크 리뷰']
     const randomQuery = recommendationKeywords[Math.floor(Math.random() * recommendationKeywords.length)]
 
-    const data = await fetchWithKeyRotation((key) => 
+    const data = await 
+fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(randomQuery)}&pageToken=${algorithmNextPageToken.value}&type=video&key=${key}`
     )
 
@@ -3768,7 +4054,8 @@ const loadMoreAlgorithmVideos = async () => {
       algorithmNextPageToken.value = null
       isLoading.value = false
       return
-    }
+    
+}
 
     algorithmNextPageToken.value = data.nextPageToken || null
 
@@ -3776,7 +4063,8 @@ const loadMoreAlgorithmVideos = async () => {
     const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
-    const parsed = data.items.filter(item => item.id?.videoId).map(item => {
+    const parsed = 
+data.items.filter(item => item.id?.videoId).map(item => {
       const snippet = item.snippet
       const videoId = item.id.videoId
       const title = snippet.title.toLowerCase()
@@ -3786,7 +4074,8 @@ const loadMoreAlgorithmVideos = async () => {
       return {
         id: videoId,
         youtubeId: videoId,
-        creatorId: channelId,
+        creatorId: 
+channelId,
         creatorName: snippet.channelTitle,
         creatorSubCount: subCountMap.get(channelId) || '',
         title: snippet.title,
@@ -3794,7 +4083,8 @@ const loadMoreAlgorithmVideos = async () => {
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
         isFavorite: existingMap.get(videoId) || false,
         views: 0,
-        publishedAt: snippet.publishedAt,
+        publishedAt: 
+snippet.publishedAt,
         duration: 0,
         progressPercent: 0,
         currentTime: 0,
@@ -3805,7 +4095,8 @@ const loadMoreAlgorithmVideos = async () => {
     await fetchAndUpdateVideoDetails(parsed)
     checkThumbnailAspectRatio(parsed)
     
-    const existingIds = new Set(algorithmVideos.value.map(v => v.id))
+    const existingIds = new Set(algorithmVideos.value.map(v => 
+v.id))
     parsed.forEach(v => {
       if (!existingIds.has(v.id)) algorithmVideos.value.push(v)
     })
@@ -3818,7 +4109,8 @@ const loadMoreAlgorithmVideos = async () => {
 
 const fetchMusicVideos = async (query = '인기 가요 믹스') => {
   if (API_KEYS.length === 0) return
-  isLoading.value = true
+  isLoading.value = 
+true
 
   try {
     const data = await fetchWithKeyRotation((key) => 
@@ -3826,7 +4118,8 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
     )
     if (data.error || !data.items) return
 
-    const channelIds = [...new Set(data.items.map(item => item.snippet?.channelId).filter(Boolean))]
+    const channelIds = [...new Set(data.items.map(item => 
+item.snippet?.channelId).filter(Boolean))]
     const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
 
     const db = await openDB()
@@ -3834,14 +4127,16 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
       db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
     })
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
-    const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
+    const existingMap = new 
+Map(videos.value.map(v => [v.id, v.isFavorite]))
 
     const parsedMusic = data.items.filter(item => item.id?.videoId).map(item => {
       const snippet = item.snippet
       const videoId = item.id.videoId
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const channelId = snippet.channelId
-      const matchedCreator = creators.value.find(c => c.id === channelId)
+      const matchedCreator = creators.value.find(c => c.id === 
+channelId)
       const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
 
       const parsed = {
@@ -3853,7 +4148,8 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
         title: snippet.title,
         thumbnail: thumbUrl,
         isShorts: false,
-        isFavorite: existingMap.get(videoId) || false,
+        isFavorite: 
+existingMap.get(videoId) || false,
         views: 0,
         publishedAt: snippet.publishedAt,
         duration: 0,
@@ -3865,7 +4161,8 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
       const h = historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
-        parsed.duration = h.duration || 0
+        parsed.duration = h.duration || 
+0
         parsed.historyUpdatedAt = h.updatedAt || null
         if (parsed.currentTime > 0 && parsed.duration > 0) {
           parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
@@ -3875,7 +4172,8 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
     })
 
     await fetchAndUpdateVideoDetails(parsedMusic)
-    checkThumbnailAspectRatio(parsedMusic)
+    
+checkThumbnailAspectRatio(parsedMusic)
     musicVideos.value = parsedMusic
 
     const tx = db.transaction('videos', 'readwrite')
@@ -3885,7 +4183,8 @@ const fetchMusicVideos = async (query = '인기 가요 믹스') => {
     console.error('음악 데이터 로드 실패:', error)
   } finally {
     isLoading.value = false
-  }
+  
+}
 }
 
 const selectMusicCategory = async (catValue) => {
@@ -3905,7 +4204,8 @@ const loadMoreTrendingVideos = async () => {
 
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=25&pageToken=${trendingNextPageToken.value}&key=${key}`
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&regionCode=KR&maxResults=25&pag
+eToken=${trendingNextPageToken.value}&key=${key}`
     )
 
     if (data.error || !data.items) return
@@ -3922,14 +4222,16 @@ const loadMoreTrendingVideos = async () => {
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
-    const moreTrending = data.items.map(item => {
+    const moreTrending = data.items.map(item => 
+{
       const snippet = item.snippet
       const videoId = item.id
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const dur = parseISO8601Duration(item.contentDetails?.duration)
       const viewsCount = parseInt(item.statistics?.viewCount || 0, 10)
-      const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠') || (dur > 0 && dur <= 120)
+      const isShorts = title.includes('#shorts') || title.includes('shorts') || 
+title.includes('#쇼츠') || (dur > 0 && dur <= 120)
       const channelId = snippet.channelId
       const matchedCreator = creators.value.find(c => c.id === channelId)
       const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
@@ -3938,7 +4240,8 @@ const loadMoreTrendingVideos = async () => {
         id: videoId,
         youtubeId: videoId,
         creatorId: channelId,
-        creatorName: snippet.channelTitle,
+        creatorName: 
+snippet.channelTitle,
         creatorSubCount: subCount,
         title: snippet.title,
         thumbnail: thumbUrl,
@@ -3952,7 +4255,8 @@ const loadMoreTrendingVideos = async () => {
         historyUpdatedAt: null
       }
 
-      const h = historyMap.get(parsed.id)
+      const h = 
+historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
         parsed.duration = h.duration || parsed.duration
@@ -3962,7 +4266,8 @@ const loadMoreTrendingVideos = async () => {
         }
       }
       return parsed
-    })
+    
+})
 
     checkThumbnailAspectRatio(moreTrending)
     trendingVideos.value.push(...moreTrending)
@@ -3971,7 +4276,8 @@ const loadMoreTrendingVideos = async () => {
     const store = tx.objectStore('videos')
     moreTrending.forEach(v => store.put(v))
   } catch (error) {
-    console.error('실시간 급상승 추가 영상 로드 실패:', error)
+    console.error('실시간 급상승 
+추가 영상 로드 실패:', error)
   } finally {
     isLoading.value = false
   }
@@ -3983,7 +4289,8 @@ const loadMoreChannelVideos = async (creator) => {
   if (!pageToken) return
   isLoading.value = true
 
-  try {
+  try 
+{
     const channelData = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${creator.id}&key=${key}`
     )
@@ -3991,14 +4298,16 @@ const loadMoreChannelVideos = async (creator) => {
       isLoading.value = false
       return
     }
-    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+    const uploadsPlaylistId = 
+channelData.items[0].contentDetails.relatedPlaylists.uploads
 
     const data = await fetchWithKeyRotation((key) => 
       `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=25&playlistId=${uploadsPlaylistId}&pageToken=${pageToken}&key=${key}`
     )
     if (data.error || !data.items) {
       channelNextPageTokens.value.delete(creator.id)
-      isLoading.value = false
+      isLoading.value = 
+false
       return
     }
 
@@ -4009,7 +4318,8 @@ const loadMoreChannelVideos = async (creator) => {
     }
 
     const db = await openDB()
-    const dbHistory = await new Promise((resolve) => {
+    const dbHistory = await new Promise((resolve) => 
+{
       db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
     })
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
@@ -4017,7 +4327,8 @@ const loadMoreChannelVideos = async (creator) => {
 
     const moreVideos = data.items.map(item => {
       const snippet = item.snippet
-      const videoId = snippet.resourceId?.videoId || snippet.resourceId
+      const videoId = snippet.resourceId?.videoId || 
+snippet.resourceId
       const title = snippet.title.toLowerCase()
       const thumbUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url
       const isShorts = title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠')
@@ -4026,7 +4337,8 @@ const loadMoreChannelVideos = async (creator) => {
         id: videoId,
         youtubeId: videoId,
         creatorId: snippet.channelId,
-        creatorName: snippet.channelTitle,
+        creatorName: 
+snippet.channelTitle,
         creatorSubCount: creator.subCount,
         title: snippet.title,
         thumbnail: thumbUrl,
@@ -4047,7 +4359,8 @@ const loadMoreChannelVideos = async (creator) => {
         parsed.historyUpdatedAt = h.updatedAt || null
         if (parsed.currentTime > 0 && parsed.duration > 0) parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
       }
-      return parsed
+      return 
+parsed
     })
 
     await fetchAndUpdateVideoDetails(moreVideos)
@@ -4057,7 +4370,8 @@ const loadMoreChannelVideos = async (creator) => {
         videos.value.push(mv)
       }
     })
-    videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 
+0))
 
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
@@ -4066,7 +4380,8 @@ const loadMoreChannelVideos = async (creator) => {
 }
 
 const triggerTabSearchOrUpdate = async () => {
-  const query = searchQuery.value.trim()
+  const query = 
+searchQuery.value.trim()
   visibleLimit.value = 40
 
   if (isPlaylistMode.value || isHistoryMode.value) {
@@ -4078,7 +4393,8 @@ const triggerTabSearchOrUpdate = async () => {
     activeFilterQuery.value = query
     if (creators.value.length > 0) {
       isLoading.value = true
-      try {
+      try 
+{
         await fetchChannelVideosParallel(creators.value)
         await loadDataFromDB()
       } finally {
@@ -4090,7 +4406,8 @@ const triggerTabSearchOrUpdate = async () => {
 
   if (currentTab.value === 'discoverHeart' && !selectedCreator.value) {
     activeFilterQuery.value = query
-    const heartCreators = creators.value.filter(c => c.isFavorite)
+    const heartCreators = 
+creators.value.filter(c => c.isFavorite)
     const targetCreators = heartCreators.length > 0 ? heartCreators : creators.value
     
     if (targetCreators.length > 0) {
@@ -4102,7 +4419,8 @@ const triggerTabSearchOrUpdate = async () => {
         isLoading.value = false
       }
     }
-    return
+    
+return
   }
 
   isLoading.value = true
@@ -4116,7 +4434,8 @@ const triggerTabSearchOrUpdate = async () => {
     if (isMusicMode.value) {
       activeFilterQuery.value = ''
       await fetchMusicVideos(query || '인기 가요 믹스')
-      return
+      
+return
     }
 
     if (isTrendingMode.value) {
@@ -4130,7 +4449,8 @@ const triggerTabSearchOrUpdate = async () => {
         lastSearchQuery.value = query 
         await searchYouTubeVideos()
       }
-      return
+      
+return
     }
 
     activeFilterQuery.value = query
@@ -4141,7 +4461,8 @@ const triggerTabSearchOrUpdate = async () => {
 
 const handleSearch = async () => {
   visibleLimit.value = 40
-  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || currentTab.value === 'discoverHeart' || currentTab.value === 'discoverAll') {
+  if (isSearchMode.value || isMusicMode.value || isTrendingMode.value || isAlgorithmMode.value || currentTab.value === 
+'discoverHeart' || currentTab.value === 'discoverAll') {
     await triggerTabSearchOrUpdate()
   } else {
     activeFilterQuery.value = searchQuery.value.trim()
@@ -4151,7 +4472,8 @@ const handleSearch = async () => {
 const searchYouTubeVideos = async () => {
   if (!searchQuery.value.trim() || API_KEYS.length === 0) return
   const query = searchQuery.value.trim()
-  searchNextPageToken.value = null
+  searchNextPageToken.value 
+= null
   
   try {
     const data = await fetchWithKeyRotation((key) => 
@@ -4161,21 +4483,24 @@ const searchYouTubeVideos = async () => {
 
     searchNextPageToken.value = data.nextPageToken || null
     const db = await openDB()
-    const dbHistory = await new Promise((resolve) => {
+    const dbHistory = await new 
+Promise((resolve) => {
       db.transaction('history', 'readonly').objectStore('history').getAll().onsuccess = (e) => resolve(e.target.result)
     })
     const historyMap = new Map((dbHistory || []).map(h => [h.videoId, h]))
     const existingMap = new Map(videos.value.map(v => [v.id, v.isFavorite]))
 
     const channelIds = [...new Set(data.items.filter(item => item.snippet?.channelId).map(item => item.snippet.channelId))]
-    const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
+    const subCountMap = await 
+fetchSubscriberCountsForChannelIds(channelIds)
 
     const parseSearchItem = (item) => {
       const title = item.snippet.title.toLowerCase()
       const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
       const channelId = item.snippet.channelId
       
-      const matchedCreator = creators.value.find(c => c.id === channelId)
+      const matchedCreator = creators.value.find(c => c.id 
+=== channelId)
       const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
 
       return {
@@ -4186,7 +4511,8 @@ const searchYouTubeVideos = async () => {
         creatorSubCount: subCount,
         title: item.snippet.title,
         thumbnail: thumbUrl,
-        isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
+        isShorts: title.includes('#shorts') || 
+title.includes('shorts') || title.includes('#쇼츠'),
         isFavorite: existingMap.get(item.id.videoId) || false,
         views: 0,
         publishedAt: item.snippet.publishedAt,
@@ -4197,14 +4523,16 @@ const searchYouTubeVideos = async () => {
       }
     }
 
-    const apiVideos = data.items.filter(item => item.id?.videoId).map(item => {
+    const apiVideos = data.items.filter(item => item.id?.videoId).map(item => 
+{
       const parsed = parseSearchItem(item)
       const h = historyMap.get(parsed.id)
       if (h) {
         parsed.currentTime = h.currentTime || 0
         parsed.duration = h.duration || 0
         parsed.historyUpdatedAt = h.updatedAt || null
-        if (parsed.currentTime > 0 && parsed.duration > 0) parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 100))
+        if (parsed.currentTime > 0 && parsed.duration > 0) parsed.progressPercent = Math.min(100, Math.floor((parsed.currentTime / parsed.duration) * 
+100))
       }
       return parsed
     })
@@ -4215,7 +4543,8 @@ const searchYouTubeVideos = async () => {
     apiVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
     
     const uniqueMap = new Map()
-    apiVideos.forEach(v => {
+    apiVideos.forEach(v => 
+{
       if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v)
     })
     searchResultVideos.value = Array.from(uniqueMap.values())
@@ -4225,7 +4554,8 @@ const searchYouTubeVideos = async () => {
         videos.value.push(av)
       }
     })
-    videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    videos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 
+0))
 
     const dbTx = db.transaction('videos', 'readwrite')
     const store = dbTx.objectStore('videos')
@@ -4234,7 +4564,8 @@ const searchYouTubeVideos = async () => {
     })
 
     await nextTick()
-    scrollToTop(mainScrollRef.value)
+    
+scrollToTop(mainScrollRef.value)
   } catch (error) { console.error(error) }
 }
 
@@ -4242,7 +4573,8 @@ const loadMoreSearchVideos = async () => {
   if (!searchQuery.value.trim() || !searchNextPageToken.value || API_KEYS.length === 0 || isLoading.value) return
   
   const container = mainScrollRef.value?.$el || mainScrollRef.value
-  const currentScrollTop = container ? container.scrollTop : 0
+  const currentScrollTop = container ? container.scrollTop 
+: 0
 
   isLoading.value = true
   try {
@@ -4250,7 +4582,8 @@ const loadMoreSearchVideos = async () => {
       `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(searchQuery.value.trim())}&type=video&pageToken=${searchNextPageToken.value}&key=${key}`
     )
     if (data.error || !data.items) {
-      searchNextPageToken.value = null
+      searchNextPageToken.value = 
+null
       isLoading.value = false
       return
     }
@@ -4261,12 +4594,14 @@ const loadMoreSearchVideos = async () => {
     const subCountMap = await fetchSubscriberCountsForChannelIds(channelIds)
 
     const db = await openDB()
-    const moreVideos = data.items.filter(item => item.id?.videoId).map(item => {
+    const moreVideos = 
+data.items.filter(item => item.id?.videoId).map(item => {
       const title = item.snippet.title.toLowerCase()
       const thumbUrl = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
       const channelId = item.snippet.channelId
       const matchedCreator = creators.value.find(c => c.id === channelId)
-      const subCount = matchedCreator ? matchedCreator.subCount : (subCountMap.get(channelId) || '')
+      const subCount = matchedCreator ? matchedCreator.subCount : 
+(subCountMap.get(channelId) || '')
 
       return {
         id: item.id.videoId,
@@ -4278,7 +4613,8 @@ const loadMoreSearchVideos = async () => {
         thumbnail: thumbUrl,
         isShorts: title.includes('#shorts') || title.includes('shorts') || title.includes('#쇼츠'),
         isFavorite: false,
-        views: 0,
+        views: 
+0,
         publishedAt: item.snippet.publishedAt,
         duration: 0,
         progressPercent: 0,
@@ -4289,7 +4625,8 @@ const loadMoreSearchVideos = async () => {
     await fetchAndUpdateVideoDetails(moreVideos)
     checkThumbnailAspectRatio(moreVideos)
     
-    moreVideos.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    moreVideos.sort((a, b) => new Date(b.publishedAt || 0) - new 
+Date(a.publishedAt || 0))
     
     const existingIds = new Set(searchResultVideos.value.map(v => v.id))
     moreVideos.forEach(mv => {
@@ -4298,7 +4635,8 @@ const loadMoreSearchVideos = async () => {
         existingIds.add(mv.id)
       }
     })
-    searchResultVideos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    searchResultVideos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 
+0))
 
     moreVideos.forEach(mv => {
       if (!videos.value.some(v => v.id === mv.id)) {
@@ -4309,7 +4647,8 @@ const loadMoreSearchVideos = async () => {
 
     const tx = db.transaction('videos', 'readwrite')
     const store = tx.objectStore('videos')
-    moreVideos.forEach(v => store.put(v))
+    moreVideos.forEach(v => 
+store.put(v))
   } catch (error) { 
     console.error(error) 
   } finally { 
@@ -4325,7 +4664,8 @@ const loadMoreSearchVideos = async () => {
 }
 
 const selectDiscoverAll = () => {
-  visibleLimit.value = 40
+  visibleLimit.value = 
+40
   enableResume.value = true
   selectedCreator.value = null
   currentTab.value = 'discoverAll'
@@ -4339,7 +4679,8 @@ const selectDiscoverAll = () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  scrollToTop(mainScrollRef.value)
+  
+scrollToTop(mainScrollRef.value)
 }
 
 const selectDiscoverHeart = () => {
@@ -4352,7 +4693,8 @@ const selectDiscoverHeart = () => {
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
   isPlaylistMode.value = false
-  isMusicMode.value = false
+  isMusicMode.value = 
+false
   isAlgorithmMode.value = false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
@@ -4365,7 +4707,8 @@ const enableTrendingMode = async () => {
   enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
-  isSearchMode.value = false
+  isSearchMode.value = 
+false
   isTrendingMode.value = true
   isFavoriteVideosMode.value = false
   isHistoryMode.value = false
@@ -4378,7 +4721,8 @@ const enableTrendingMode = async () => {
   if (trendingVideos.value.length === 0) {
     await fetchTrendingVideos()
   }
-  scrollToTop(mainScrollRef.value)
+  
+scrollToTop(mainScrollRef.value)
 }
 
 const enableAlgorithmMode = async () => {
@@ -4392,7 +4736,8 @@ const enableAlgorithmMode = async () => {
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = false
-  isAlgorithmMode.value = true
+  isAlgorithmMode.value = 
+true
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
@@ -4402,7 +4747,8 @@ const enableAlgorithmMode = async () => {
   scrollToTop(mainScrollRef.value)
 }
 
-const enableFavoriteVideosMode = () => {
+const enableFavoriteVideosMode = () => 
+{
   visibleLimit.value = 40
   enableResume.value = true
   selectedCreator.value = null
@@ -4417,7 +4763,8 @@ const enableFavoriteVideosMode = () => {
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
-  scrollToTop(mainScrollRef.value)
+  
+scrollToTop(mainScrollRef.value)
 }
 
 const enableHistoryMode = () => {
@@ -4431,7 +4778,8 @@ const enableHistoryMode = () => {
   isHistoryMode.value = true
   isPlaylistMode.value = false
   isMusicMode.value = false
-  isAlgorithmMode.value = false
+  isAlgorithmMode.value = 
+false
   searchQuery.value = '' 
   activeFilterQuery.value = ''
   if (window.innerWidth < 960) drawer.value = false
@@ -4444,7 +4792,8 @@ const enablePlaylistMode = () => {
   currentTab.value = ''
   isSearchMode.value = false
   isTrendingMode.value = false
-  isFavoriteVideosMode.value = false
+  isFavoriteVideosMode.value = 
+false
   isHistoryMode.value = false
   isPlaylistMode.value = true
   isMusicMode.value = false
@@ -4457,7 +4806,8 @@ const enablePlaylistMode = () => {
 }
 
 const enableSearchMode = () => {
-  visibleLimit.value = 40
+  visibleLimit.value = 
+40
   enableResume.value = true
   selectedCreator.value = null
   currentTab.value = ''
@@ -4472,7 +4822,8 @@ const enableSearchMode = () => {
   if (lastSearchQuery.value) {
     searchQuery.value = lastSearchQuery.value
   }
-  activeFilterQuery.value = ''
+  activeFilterQuery.value = 
+''
 
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
@@ -4485,7 +4836,8 @@ const enableMusicMode = async () => {
   currentTab.value = ''
   isSearchMode.value = false
   isTrendingMode.value = false
-  isFavoriteVideosMode.value = false
+  isFavoriteVideosMode.value = 
+false
   isHistoryMode.value = false
   isPlaylistMode.value = false
   isMusicMode.value = true
@@ -4512,7 +4864,8 @@ const selectCreatorFilter = async (creator) => {
   isMusicMode.value = false
   isAlgorithmMode.value = false
   searchQuery.value = '' 
-  activeFilterQuery.value = ''
+  activeFilterQuery.value = 
+''
   if (window.innerWidth < 960) drawer.value = false
   scrollToTop(mainScrollRef.value)
 
@@ -4522,7 +4875,8 @@ const selectCreatorFilter = async (creator) => {
 }
 
 const handleVisibilityChange = () => {
-  if (document.visibilityState === 'visible') {
+  if (document.visibilityState === 'visible') 
+{
     // 백그라운드 복귀 시
   } 
 }
@@ -4533,7 +4887,8 @@ const handleTimePaste = (event) => {
   if (pastedText.includes(':')) {
     event.preventDefault() 
     
-    const parts = pastedText.split(':').map(val => parseInt(val, 10) || 0)
+    const parts = pastedText.split(':').map(val => parseInt(val, 10) || 
+0)
     
     if (parts.length === 3) {
       jumpMinutes.value = (parts[0] * 60) + parts[1]
@@ -4549,7 +4904,8 @@ onMounted(async () => {
   await getActiveApiKeyIndex()
   await loadDataFromDB()
   
-  if (creators.value.length > 0) {
+  if (creators.value.length > 0) 
+{
     fetchChannelVideosParallel(creators.value)
   }
 
@@ -4568,7 +4924,8 @@ onUnmounted(() => {
 })
 
 const getHeaderTitle = computed(() => {
-  if (selectedCreator.value) return selectedCreator.value.name
+  if (selectedCreator.value) return 
+selectedCreator.value.name
   if (isAlgorithmMode.value) return '알고리즘 추천 피드'
   if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
   if (isHistoryMode.value) return '시청 기록'
@@ -4578,7 +4935,8 @@ const getHeaderTitle = computed(() => {
       return pl ? `재생 목록: ${pl.name}` : '재생 목록'
     }
     return `재생 목록 (${getCurrentGroupName()})`
-  }
+  
+}
   if (isSearchMode.value) return '유튜브 검색'
   if (isTrendingMode.value) return '실시간 급상승 영상'
   if (isMusicMode.value) return '유튜브 음악 탭'
@@ -4599,14 +4957,16 @@ const allFilteredVideos = computed(() => {
     result = searchResultVideos.value
   } else if (selectedCreator.value) {
     result = result.filter(v => v.creatorId === selectedCreator.value.id)
-  } else if (isFavoriteVideosMode.value) {
+  } else if 
+(isFavoriteVideosMode.value) {
     result = result.filter(v => v.isFavorite)
   } else if (isHistoryMode.value) {
     const historyMap = new Map(historyList.value.map(h => [h.videoId, h.updatedAt]))
     result = result.filter(v => historyMap.has(v.id))
     result.sort((a, b) => new Date(historyMap.get(b.id) || '') - new Date(historyMap.get(a.id) || ''))
   } else if (isPlaylistMode.value && activePlaylistId.value) {
-    const itemsInPlaylist = playlistItems.value.filter(item => item.playlistId === activePlaylistId.value)
+    const itemsInPlaylist = playlistItems.value.filter(item => item.playlistId === 
+activePlaylistId.value)
     const orderedVideos = []
     itemsInPlaylist.forEach(item => {
       const v = result.find(video => video.id === item.videoId)
@@ -4615,7 +4975,8 @@ const allFilteredVideos = computed(() => {
     result = orderedVideos
   } else if (currentTab.value === 'discoverAll') {
     const subscribedIds = creators.value.map(c => c.id)
-    result = result.filter(v => subscribedIds.includes(v.creatorId))
+    result = result.filter(v => 
+subscribedIds.includes(v.creatorId))
   } else if (currentTab.value === 'discoverHeart') {
     const favoriteCreators = creators.value.filter(c => c.isFavorite)
     const targetCreatorIds = favoriteCreators.length > 0 
@@ -4623,14 +4984,16 @@ const allFilteredVideos = computed(() => {
       : creators.value.map(c => c.id)
 
     result = result.filter(v => targetCreatorIds.includes(v.creatorId))
-  }
+  
+}
 
   if (activeFilterQuery.value.trim() && !isSearchMode.value && !isMusicMode.value) {
     const query = activeFilterQuery.value.trim().toLowerCase()
     result = result.filter(v => v.title.toLowerCase().includes(query) || v.creatorName.toLowerCase().includes(query))
   }
 
-  if (!isPlaylistMode.value && !isTrendingMode.value && !isMusicMode.value && !isHistoryMode.value && !isAlgorithmMode.value) {
+  if (!isPlaylistMode.value && !isTrendingMode.value && 
+!isMusicMode.value && !isHistoryMode.value && !isAlgorithmMode.value) {
     result.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
   }
 
@@ -4676,7 +5039,8 @@ html, body {
   overflow-x: hidden !important;
   width: 100%;
   max-width: 100%;
-  margin: 0;
+  margin: 
+0;
   padding: 0;
   box-sizing: border-box;
   background-color: #06070a;
@@ -4690,7 +5054,8 @@ html, body {
   overflow-x: hidden !important;
   width: 100%;
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: 
+env(safe-area-inset-bottom);
 }
 
 .max-container-width {
@@ -4723,16 +5088,19 @@ html, body {
 .search-bar { max-width: 100%; }
 .search-bar .v-field { border-radius: 32px !important; background: rgba(0, 0, 0, 0.35) !important; color: white !important; font-size: 14px !important; }
 
-.video-checkbox-wrapper { position: absolute; top: 8px; right: 8px; z-index: 4; }
+.video-checkbox-wrapper { position: absolute; top: 8px; 
+right: 8px; z-index: 4; }
 .bg-dark-glass { background: rgba(0, 0, 0, 0.65) !important; backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, 0.2); }
 .jump-box-container { background: rgba(0, 0, 0, 0.55) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
 
 .custom-jump-input { width: 42px !important; }
-.custom-jump-input .v-field { background: rgba(0, 0, 0, 0.6) !important; border-radius: 8px !important; color: white !important; height: 30px !important; padding: 0 2px !important; }
+.custom-jump-input .v-field { background: rgba(0, 0, 0, 0.6) !important; border-radius: 8px !important; color: white 
+!important; height: 30px !important; padding: 0 2px !important; }
 .custom-jump-input .v-field__input { padding: 0 !important; min-height: 30px !important; height: 30px !important; line-height: 30px !important; font-size: 12px !important; text-align: center !important; }
 
 .custom-list-item { border-radius: 14px !important; margin-bottom: 6px; transition: all 0.3s ease; }
-.custom-list-item:hover { background: rgba(255, 255, 255, 0.08) !important; }
+.custom-list-item:hover { background: rgba(255, 255, 
+255, 0.08) !important; }
 .neon-active { background: linear-gradient(135deg, rgba(121, 40, 202, 0.45), rgba(0, 112, 243, 0.45)) !important; border: 1px solid rgba(167, 139, 250, 0.35) !important; }
 
 .glass-card { 
@@ -4741,11 +5109,13 @@ html, body {
   will-change: transform;
   transform: translateZ(0);
 }
-.glass-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(121, 40, 202, 0.25) !important; border-color: rgba(167, 139, 250, 0.45) !important; }
+.glass-card:hover { transform: translateY(-4px); box-shadow: 
+0 12px 30px rgba(121, 40, 202, 0.25) !important; border-color: rgba(167, 139, 250, 0.45) !important; }
 
 .playlist-list-item { transition: background 0.2s ease; cursor: pointer; }
 .playlist-list-item:hover { background: rgba(255, 255, 255, 0.08) !important; }
-.video-duration-badge-small { position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.85); color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 2; }
+.video-duration-badge-small { position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.85); color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 2; 
+}
 
 .video-thumbnail-wrapper {
   position: relative;
@@ -4760,31 +5130,37 @@ html, body {
   width: 100% !important;
 }
 
-.shorts-horizontal-scroll { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
+.shorts-horizontal-scroll { display: flex; gap: 14px; overflow-x: auto; 
+padding-bottom: 12px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
 .shorts-horizontal-scroll::-webkit-scrollbar { height: 6px; }
 .shorts-horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
 .shorts-card { width: 140px; min-width: 140px; }
 @media (min-width: 600px) { .shorts-card { width: 180px; min-width: 180px; } }
 
-.shorts-badge { position: absolute; top: 8px; left: 8px; background: rgba(255, 0, 0, 0.85); color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+.shorts-badge { position: 
+absolute; top: 8px; left: 8px; background: rgba(255, 0, 0, 0.85); color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; }
 .video-progress-bar-container { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background-color: rgba(255, 255, 255, 0.3); z-index: 3; }
 .video-progress-bar-fill { height: 100%; background-color: #ff0000; transition: width 0.3s ease; }
 
-.play-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.45); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+.play-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 
+0, 0, 0.45); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
 .video-thumbnail-wrapper:hover .play-overlay, .shorts-thumbnail-wrapper:hover .play-overlay { opacity: 1; }
 
 .video-duration-badge-left { position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.85); color: #fff; padding: 2px 6px; border-radius: 6px; font-size: 12px; font-weight: bold; z-index: 2; letter-spacing: 0.5px; }
-.safe-player-dialog { margin: 8px !important; max-height: 96vh !important; }
+.safe-player-dialog { margin: 
+8px !important; max-height: 96vh !important; }
 @media (max-width: 600px) { .safe-player-dialog { margin: 0 !important; max-height: 100vh !important; } }
 
 .main-content { overflow-y: auto !important; height: calc(100dvh - 68px); }
 .loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
-.loading-card { border: 1px solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
+.loading-card { border: 1px 
+solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
 
 .modal-vertical-container { max-height: calc(88vh - 40px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
 .modal-vertical-container::-webkit-scrollbar { width: 8px; }
-.modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
+.modal-vertical-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; 
+}
 
 .video-container {
   position: relative;
@@ -4799,14 +5175,16 @@ html, body {
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: aspect-ratio;
-  transition: aspect-ratio 0.2s ease-in-out;
+  transition: aspect-ratio 0.2s 
+ease-in-out;
 }
 .video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
 
 .radio-placeholder-card { background: rgba(121, 40, 202, 0.18); border-bottom: 1px solid rgba(167, 139, 250, 0.35); }
 .pulse-icon { animation: pulse 2s infinite; }
 @keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(1); opacity: 1; 
+}
   50% { transform: scale(1.18); opacity: 0.75; }
   100% { transform: scale(1); opacity: 1; }
 }
@@ -4826,34 +5204,38 @@ html, body {
 .comments-scroll-area { max-height: 480px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; padding-right: 16px; }
 .related-scroll-area-long { max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; padding-right: 16px; }
 
-.comments-scroll-area::-webkit-scrollbar, .related-scroll-area-long::-webkit-scrollbar { width: 6px; }
+.comments-scroll-area::-webkit-scrollbar, .related-scroll-area-long::-webkit-scrollbar { width: 
+6px; }
 .comments-scroll-area::-webkit-scrollbar-thumb, .related-scroll-area-long::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 4px; }
 
 .main-scroll-top-fab {
   position: fixed !important; 
-  bottom: 110px !important; /* 모바일 브라우저 하단 바 간섭 회피를 위해 높임 */
-  right: 24px !important;     
-  z-index: 9999 !important; /* 다른 레이어에 가려지지 않도록 최상단으로 상향 */
-  pointer-events: auto !important; /* 터치 이벤트 강제 활성화 */
+  bottom: 85px !important;    
+  right: 32px !important;     
+  z-index: 99 !important;     
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8) !important; 
 }
 
-.mobile-tight-header { min-height: 42px !important; }
+.mobile-tight-header { 
+min-height: 42px !important; }
 .border-top-glass { border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.2); }
 .border-bottom-glass { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
 .border-left-glass { border-left: 2px solid rgba(167, 139, 250, 0.35); }
 
 .related-video-item, .comment-item { transition: background 0.2s ease; }
-.related-video-item:hover { background: rgba(255, 255, 255, 0.08); }
+.related-video-item:hover { background: rgba(255, 255, 255, 0.08); 
+}
 
 .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .play-btn-circle { width: 56px; height: 56px; border-radius: 50%; background: rgba(167, 139, 250, 1); display: flex; justify-content: center; align-items: center; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); transition: transform 0.2s ease, background-color 0.2s ease; }
-.play-btn-circle:hover { transform: scale(1.12); background: #7c3aed; }
+.play-btn-circle:hover { transform: scale(1.12); background: #7c3aed; 
+}
 .shorts-play-btn { width: 44px; height: 44px; }
 
 .comment-text-content a { color: #a78bfa !important; text-decoration: underline !important; font-weight: 500; }
 .creator-author-badge { background: rgba(167, 139, 250, 0.28); color: #c4b5fd !important; padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.4); }
-.creator-name-link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.creator-name-link { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; 
+}
 .creator-name-link:hover { color: #a78bfa !important; }
 .v-checkbox .v-selection-control__label,
 .v-selection-control__wrapper + .v-label {
