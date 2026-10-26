@@ -5449,4 +5449,146 @@ html, body {
   }
 }
 
+
+/* FINAL FIX: full/detail mode and compact mode share the same stable mobile layout.
+   Keep the header (including wrapped action buttons) in normal flow above the video. */
+.safe-player-dialog .glass-modal {
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+.safe-player-dialog .glass-modal > .mobile-tight-header {
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  flex-wrap: wrap !important;
+  align-content: flex-start !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 8px 12px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  isolation: isolate !important;
+  z-index: 100 !important;
+  transform: none !important;
+  background: rgba(24, 24, 32, .98) !important;
+  line-height: normal !important;
+}
+.safe-player-dialog .glass-modal > .mobile-tight-header .player-drag-handle {
+  flex: 1 1 180px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+.safe-player-dialog .glass-modal > .mobile-tight-header .player-header-actions {
+  display: flex !important;
+  flex: 0 1 auto !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  position: relative !important;
+  isolation: isolate !important;
+  z-index: 101 !important;
+}
+.safe-player-dialog .glass-modal > .modal-vertical-container {
+  position: relative !important;
+  display: block !important;
+  flex: 0 1 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  line-height: normal !important;
+  transform: none !important;
+}
+.safe-player-dialog .glass-modal .video-container {
+  position: relative !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 16 / 9 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  transform: none !important;
+  transition: none !important;
+  line-height: 0 !important;
+  background: #000 !important;
+}
+.safe-player-dialog .glass-modal #youtube-player-div,
+.safe-player-dialog .glass-modal #youtube-player-div iframe,
+.safe-player-dialog .glass-modal .youtube-iframe {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  z-index: 0 !important;
+}
+.safe-player-dialog .glass-modal .floating-resize-handle {
+  position: absolute !important;
+  z-index: 10 !important;
+}
+@media (max-width: 600px) {
+  .safe-player-dialog .v-overlay__content {
+    left: 0 !important;
+    right: auto !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+  }
+  .safe-player-dialog .glass-modal > .mobile-tight-header {
+    justify-content: flex-start !important;
+    row-gap: 4px !important;
+    padding: 8px 12px !important;
+  }
+  .safe-player-dialog .glass-modal > .mobile-tight-header .player-drag-handle {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .safe-player-dialog .glass-modal > .mobile-tight-header .player-header-actions {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: flex-end !important;
+  }
+  .safe-player-dialog .glass-modal .video-container {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    min-height: 0 !important;
+  }
+  .safe-player-dialog .glass-modal:not(.player-compact-mode) .modal-vertical-container {
+    max-height: calc(100vh - 150px) !important;
+    max-height: calc(100dvh - 150px) !important;
+  }
+}
+
 </style>
