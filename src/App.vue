@@ -780,6 +780,16 @@
           </v-row>
 
           <template v-else>
+            <div v-if="isFavoriteVideosMode" class="d-flex align-center justify-end mb-3 px-1">
+              <v-checkbox
+                v-model="favoriteVideosContinueEnabled"
+                color="accent"
+                label="이어보기"
+                density="compact"
+                hide-details
+                class="text-caption ma-0 pa-0 text-white"
+              ></v-checkbox>
+            </div>
             <!-- 시청 기록 탭 리스트 뷰 -->
             <div v-if="isHistoryMode" class="d-flex flex-column gap-3">
               <v-card
@@ -1617,6 +1627,7 @@ const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
 const isTrendingMode = ref(false)
 const isFavoriteVideosMode = ref(false)
+const favoriteVideosContinueEnabled = ref(true)
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
 const isMusicMode = ref(false)
@@ -1921,8 +1932,13 @@ let scrollTimeout = null
 let searchPullStartY = null
 let searchPullWasAtBottom = false
 
+const shouldUsePullToLoad = () => (
+  isSearchMode.value || isTrendingMode.value || isAlgorithmMode.value ||
+  Boolean(selectedCreator.value) || currentTab.value === 'discoverAll' || currentTab.value === 'discoverHeart'
+)
+
 const onMainTouchStart = (e) => {
-  if (!isSearchMode.value || !e.touches?.length) {
+  if (!shouldUsePullToLoad() || !e.touches?.length) {
     searchPullStartY = null
     searchPullWasAtBottom = false
     return
@@ -1932,8 +1948,8 @@ const onMainTouchStart = (e) => {
   searchPullStartY = e.touches[0].clientY
 }
 
-const onMainTouchEnd = (e) => {
-  if (!isSearchMode.value || searchPullStartY === null || !searchPullWasAtBottom) {
+const onMainTouchEnd = async (e) => {
+  if (!shouldUsePullToLoad() || searchPullStartY === null || !searchPullWasAtBottom) {
     searchPullStartY = null
     searchPullWasAtBottom = false
     return
@@ -1942,9 +1958,34 @@ const onMainTouchEnd = (e) => {
   const pulledUp = typeof endY === 'number' && searchPullStartY - endY >= 65
   searchPullStartY = null
   searchPullWasAtBottom = false
+  if (!pulledUp || isLoading.value) return
 
-  if (pulledUp && searchNextPageToken.value && !isLoading.value) {
-    loadMoreSearchVideos()
+  // 이미 받아온 영상이 더 있으면 먼저 화면 목록을 확장합니다.
+  if (visibleLimit.value < allFilteredVideos.value.length) {
+    visibleLimit.value += 40
+    return
+  }
+
+  if (isSearchMode.value && searchNextPageToken.value) {
+    await loadMoreSearchVideos()
+  } else if (isTrendingMode.value && trendingNextPageToken.value) {
+    await loadMoreTrendingVideos()
+  } else if (isAlgorithmMode.value && algorithmNextPageToken.value) {
+    await loadMoreAlgorithmVideos()
+  } else if (selectedCreator.value) {
+    await loadMoreChannelVideos(selectedCreator.value)
+  } else if (currentTab.value === 'discoverAll' || currentTab.value === 'discoverHeart') {
+    const heartCreators = creators.value.filter(c => c.isFavorite)
+    const targets = currentTab.value === 'discoverHeart'
+      ? (heartCreators.length > 0 ? heartCreators : creators.value)
+      : creators.value
+    // 채널별 다음 페이지 토큰이 있는 채널만 순서대로 추가 조회합니다.
+    for (const creator of targets) {
+      if (channelNextPageTokens.value.has(creator.id) && !isLoading.value) {
+        await loadMoreChannelVideos(creator)
+      }
+    }
+    await loadDataFromDB()
   }
 }
 
@@ -1954,21 +1995,8 @@ const checkMainScroll = (e) => {
     const target = e.target
     showMainScrollTop.value = target.scrollTop > 100
 
-    const bottomReached = target.scrollTop + target.clientHeight >= target.scrollHeight - 100
-    if (bottomReached && !isLoading.value) {
-      if (visibleLimit.value < allFilteredVideos.value.length) {
-        visibleLimit.value += 40
-      } else if (isTrendingMode.value && trendingNextPageToken.value) {
-        loadMoreTrendingVideos()
-      } else if (isAlgorithmMode.value && algorithmNextPageToken.value) {
-        loadMoreAlgorithmVideos()
-      } else if (isSearchMode.value) {
-        // 유튜브 전체 검색은 끝까지 스크롤해도 자동 조회하지 않고,
-        // 마지막 영역에서 위로 당기는 제스처를 했을 때만 다음 페이지를 조회합니다.
-      } else if (selectedCreator.value) {
-        loadMoreChannelVideos(selectedCreator.value)
-      }
-    }
+    // 자동 무한 스크롤/자동 페이지 조회는 하지 않습니다.
+    // 지원 탭은 바닥에서 위로 당기는 제스처를 완료했을 때 onMainTouchEnd에서만 추가 로드합니다.
     scrollTimeout = null
   }, 100)
 }
@@ -3020,6 +3048,17 @@ const playVideo = async (video) => {
   if (!isPlaylistMode.value) {
     enableResume.value = true
   }
+
+  // 좋아요/즐겨찾기 탭에서는 '이어보기'가 켜져 있으면 현재 표시된 좋아요 영상들을 재생 큐로 사용합니다.
+  if (isFavoriteVideosMode.value && favoriteVideosContinueEnabled.value) {
+    const likedQueue = [...displayedVideos.value]
+    const startIndex = likedQueue.findIndex(item => item.id === video.id)
+    playlistQueue.value = likedQueue.length ? likedQueue : [video]
+    playlistIndex.value = startIndex >= 0 ? startIndex : 0
+    await playQueueIndex(playlistIndex.value)
+    return
+  }
+
   playlistQueue.value = [video]
   playlistIndex.value = 0
   await playQueueIndex(0)
