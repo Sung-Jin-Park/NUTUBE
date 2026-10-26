@@ -2933,9 +2933,6 @@ const initPreloadedYouTubePlayer = () => {
         origin: window.location.origin
       },
       events: {
-        onReady: (event) => {
-          // 플레이어가 준비됨
-        },
         onStateChange: async (event) => {
           if (event.data === 1) {
             if ('mediaSession' in navigator) {
