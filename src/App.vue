@@ -1506,6 +1506,35 @@
         </div>
       </v-card>
     </v-dialog>
+    <!-- 브라우저 기본 alert/confirm 대체 자체 메시지 팝업 -->
+    <v-dialog v-model="appMessage.visible" max-width="420" persistent>
+      <v-card class="glass-modal rounded-2xl pa-5 text-white app-message-card">
+        <div class="d-flex align-center mb-3">
+          <v-icon
+            :icon="appMessage.type === 'confirm' ? 'mdi-help-circle-outline' : 'mdi-information-outline'"
+            :color="appMessage.type === 'confirm' ? 'amber-lighten-2' : 'deep-purple-accent-2'"
+            size="28"
+            class="mr-2"
+          />
+          <h3 class="text-subtitle-1 font-weight-bold">{{ appMessage.title }}</h3>
+        </div>
+        <p class="text-body-2 text-grey-lighten-2 app-message-text">{{ appMessage.message }}</p>
+        <div class="d-flex justify-end gap-2 mt-5">
+          <v-btn
+            v-if="appMessage.type === 'confirm'"
+            variant="text"
+            color="grey-lighten-1"
+            @click="resolveAppConfirm(false)"
+          >취소</v-btn>
+          <v-btn
+            color="deep-purple-darken-2"
+            variant="flat"
+            class="text-white font-weight-bold rounded-pill px-5"
+            @click="appMessage.type === 'confirm' ? resolveAppConfirm(true) : closeAppAlert()"
+          >{{ appMessage.type === 'confirm' ? '확인' : '닫기' }}</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -1525,7 +1554,51 @@ const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
 const isMusicMode = ref(false)
 const isAlgorithmMode = ref(false)
+
 const isLoading = ref(false)
+
+// 브라우저 기본 alert/confirm 대신 사용하는 앱 내부 메시지 팝업
+const appMessage = reactive({
+  visible: false,
+  type: 'alert',
+  title: '알림',
+  message: '',
+})
+let appConfirmResolver = null
+
+const showAppAlert = (message, title = '알림') => {
+  appMessage.type = 'alert'
+  appMessage.title = title
+  appMessage.message = String(message ?? '')
+  appMessage.visible = true
+}
+
+const closeAppAlert = () => {
+  appMessage.visible = false
+}
+
+const showAppConfirm = (message, title = '확인') => {
+  // 연속 호출 시 이전 확인창의 Promise가 방치되지 않도록 취소 처리
+  if (appConfirmResolver) {
+    appConfirmResolver(false)
+    appConfirmResolver = null
+  }
+  appMessage.type = 'confirm'
+  appMessage.title = title
+  appMessage.message = String(message ?? '')
+  appMessage.visible = true
+  return new Promise(resolve => {
+    appConfirmResolver = resolve
+  })
+}
+
+const resolveAppConfirm = (result) => {
+  appMessage.visible = false
+  const resolve = appConfirmResolver
+  appConfirmResolver = null
+  if (resolve) resolve(Boolean(result))
+}
+
 
 // ⚡ 로컬 무한 스크롤(페이지네이션) 표시 개수 상태
 const visibleLimit = ref(40)
@@ -1586,7 +1659,7 @@ const hasPlaylistResumeMemory = (playlistId) => {
 
 const clearPlaylistResumeMemory = (playlistId) => {
   localStorage.removeItem(`neontube_playlist_last_index_${playlistId}`)
-  alert('해당 재생 목록의 이어보기 위치가 초기화되었습니다.')
+  showAppAlert('해당 재생 목록의 이어보기 위치가 초기화되었습니다.')
 }
 
 const isPlaylistDialogVisible = ref(false)
@@ -1740,7 +1813,7 @@ const setSleepTimer = (minutes) => {
 const setCustomSleepTimer = () => {
   const mins = Number(customSleepMinutes.value)
   if (!mins || mins <= 0) {
-    alert('올바른 분(Minute)을 입력해 주세요.')
+    showAppAlert('올바른 분(Minute)을 입력해 주세요.')
     return
   }
   setSleepTimer(mins)
@@ -2123,7 +2196,7 @@ const handleUploadCreators = async (event) => {
     try {
       const importedCreators = JSON.parse(e.target.result)
       if (!Array.isArray(importedCreators)) {
-        alert('올바르지 않은 구독 백업 파일 형식입니다.')
+        showAppAlert('올바르지 않은 구독 백업 파일 형식입니다.')
         isLoading.value = false
         return
       }
@@ -2144,7 +2217,7 @@ const handleUploadCreators = async (event) => {
       tx.oncomplete = async () => {
         await loadDataFromDB()
         isLoading.value = false
-        alert(`구독 불러오기 완료! 새로운 크리에이터 ${addedCount}명이 추가되었습니다.`)
+        showAppAlert(`구독 불러오기 완료! 새로운 크리에이터 ${addedCount}명이 추가되었습니다.`)
         if (addedCount > 0) {
           await fetchChannelVideosParallel(creators.value.filter(c => importedCreators.some(ic => ic.id === c.id)))
         }
@@ -2152,7 +2225,7 @@ const handleUploadCreators = async (event) => {
     } catch (err) {
       console.error(err)
       isLoading.value = false
-      alert('파일을 읽는 중 오류가 발생했습니다.')
+      showAppAlert('파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
     }
@@ -2228,12 +2301,12 @@ const handleUploadPlaylists = async (event) => {
       tx.oncomplete = async () => {
         await loadDataFromDB()
         isLoading.value = false
-        alert(`전체 재생 목록 불러오기 완료! (${addedPlCount}개 새로운 폴더 추가됨)`)
+        showAppAlert(`전체 재생 목록 불러오기 완료! (${addedPlCount}개 새로운 폴더 추가됨)`)
       }
     } catch (err) {
       console.error(err)
       isLoading.value = false
-      alert('재생 목록 파일을 읽는 중 오류가 발생했습니다.')
+      showAppAlert('재생 목록 파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
     }
@@ -2273,7 +2346,7 @@ const handleUploadSinglePlaylist = async (event) => {
       
       if (!imported.playlist || !imported.playlist.name) {
         isLoading.value = false
-        alert('올바르지 않은 개별 재생 목록 백업 파일 형식입니다.')
+        showAppAlert('올바르지 않은 개별 재생 목록 백업 파일 형식입니다.')
         return
       }
 
@@ -2305,7 +2378,7 @@ const handleUploadSinglePlaylist = async (event) => {
         tx.oncomplete = async () => {
           await loadDataFromDB()
           isLoading.value = false
-          alert(`새로운 재생 목록 폴더 "${importedName}"이(가) 자동 생성되고 영상들이 정상적으로 불러와졌습니다!`)
+          showAppAlert(`새로운 재생 목록 폴더 "${importedName}"이(가) 자동 생성되고 영상들이 정상적으로 불러와졌습니다!`)
         }
       } else {
         const tx = db.transaction(['playlistItems'], 'readwrite')
@@ -2324,13 +2397,13 @@ const handleUploadSinglePlaylist = async (event) => {
         tx.oncomplete = async () => {
           await loadDataFromDB()
           isLoading.value = false
-          alert(`"${targetFolder.name}" 폴더에 영상 ${addedCount}개가 성공적으로 추가되었습니다!`)
+          showAppAlert(`"${targetFolder.name}" 폴더에 영상 ${addedCount}개가 성공적으로 추가되었습니다!`)
         }
       }
     } catch (err) {
       console.error(err)
       isLoading.value = false
-      alert('파일을 읽는 중 오류가 발생했습니다.')
+      showAppAlert('파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
       targetUploadPlaylistObj = null
@@ -2366,14 +2439,14 @@ const handleUploadMusic = async (event) => {
         musicVideos.value = imported
         checkThumbnailAspectRatio(musicVideos.value)
         isLoading.value = false
-        alert('음악 탭 데이터를 성공적으로 불러왔습니다.')
+        showAppAlert('음악 탭 데이터를 성공적으로 불러왔습니다.')
       } else {
         isLoading.value = false
       }
     } catch (err) {
       console.error(err)
       isLoading.value = false
-      alert('음악 파일을 읽는 중 오류가 발생했습니다.')
+      showAppAlert('음악 파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       event.target.value = ''
     }
@@ -2389,11 +2462,11 @@ const openCreateGroupDialog = () => {
 
 const createPlaylistGroup = async () => {
   const name = groupFormName.value.trim()
-  if (!name) { alert('그룹 이름을 입력해 주세요.'); return }
+  if (!name) { showAppAlert('그룹 이름을 입력해 주세요.'); return }
 
   const isDuplicate = playlistGroups.value.some(g => g.name === name)
   if (isDuplicate) {
-    alert(`오류: 이미 동일한 이름("${name}")의 그룹이 존재합니다!`)
+    showAppAlert(`오류: 이미 동일한 이름("${name}")의 그룹이 존재합니다!`)
     return
   }
 
@@ -2413,10 +2486,10 @@ const createPlaylistGroup = async () => {
 
 const deletePlaylistGroup = async (group) => {
   if (group.id === 'g_default' || group.id === 'g_music') {
-    alert('기본 그룹 및 음악 그룹은 삭제할 수 없습니다.')
+    showAppAlert('기본 그룹 및 음악 그룹은 삭제할 수 없습니다.')
     return
   }
-  if (!confirm(`'${group.name}' 그룹을 삭제하시겠습니까? (소속된 재생 목록 폴더들은 '기본' 그룹으로 이동됩니다)`)) return
+  if (!await showAppConfirm(`'${group.name}' 그룹을 삭제하시겠습니까? (소속된 재생 목록 폴더들은 '기본' 그룹으로 이동됩니다)`)) return
 
   const db = await openDB()
   const tx = db.transaction(['playlistGroups', 'playlists'], 'readwrite')
@@ -2452,7 +2525,7 @@ const movePlaylistToGroup = async (playlist, targetGroupId) => {
   tx.oncomplete = async () => {
     await loadDataFromDB()
     const targetGroup = playlistGroups.value.find(g => g.id === targetGroupId)
-    alert(`"${playlist.name}" 폴더가 "${targetGroup ? targetGroup.name : '선택한'}" 그룹으로 성공적으로 이동되었습니다.`)
+    showAppAlert(`"${playlist.name}" 폴더가 "${targetGroup ? targetGroup.name : '선택한'}" 그룹으로 성공적으로 이동되었습니다.`)
   }
 }
 
@@ -2481,12 +2554,12 @@ const openEditPlaylistDialog = (playlist) => {
 
 const savePlaylistFolder = async () => {
   const name = playlistFormName.value.trim()
-  if (!name) { alert('폴더 이름을 입력해 주세요.'); return }
+  if (!name) { showAppAlert('폴더 이름을 입력해 주세요.'); return }
 
   const targetGroupId = playlistFormGroupId.value || activeGroupId.value
   const isDuplicateName = playlists.value.some(p => p.name === name && p.groupId === targetGroupId && p.id !== editingPlaylist.value?.id)
   if (isDuplicateName) {
-    alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 해당 그룹에 존재합니다!`)
+    showAppAlert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 해당 그룹에 존재합니다!`)
     return
   }
 
@@ -2515,11 +2588,11 @@ const savePlaylistFolder = async () => {
 
 const quickCreateAndSelectPlaylist = async () => {
   const name = quickNewPlaylistName.value.trim()
-  if (!name) { alert('새 폴더 이름을 입력해 주세요.'); return }
+  if (!name) { showAppAlert('새 폴더 이름을 입력해 주세요.'); return }
 
   const isDuplicateName = playlists.value.some(p => p.name === name && p.groupId === activeGroupId.value)
   if (isDuplicateName) {
-    alert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
+    showAppAlert(`오류: 이미 동일한 이름("${name}")의 재생 목록 폴더가 존재합니다!`)
     return
   }
 
@@ -2536,7 +2609,7 @@ const quickCreateAndSelectPlaylist = async () => {
 }
 
 const deletePlaylist = async (playlist) => {
-  if (!confirm(`'${playlist.name}' 재생 목록을 삭제하시겠습니까?`)) return
+  if (!await showAppConfirm(`'${playlist.name}' 재생 목록을 삭제하시겠습니까?`)) return
   const db = await openDB()
   const tx = db.transaction(['playlists', 'playlistItems'], 'readwrite')
   tx.objectStore('playlists').delete(playlist.id)
@@ -2683,7 +2756,7 @@ const confirmSaveToPlaylists = async () => {
   itemTx.oncomplete = async () => {
     isSaveToPlaylistDialogVisible.value = false
     selectedVideoIds.value = []
-    alert('선택한 영상이 재생 목록에 안전하게 저장되었습니다.')
+    showAppAlert('선택한 영상이 재생 목록에 안전하게 저장되었습니다.')
     await loadDataFromDB()
   }
 }
@@ -3382,7 +3455,7 @@ const toggleSubscribeFromCard = async (video) => {
 
   if (existingIndex !== -1) {
     const targetCreator = creators.value[existingIndex]
-    if (!confirm(`'${targetCreator.name}' 채널 구독을 취소하시겠습니까?`)) return
+    if (!await showAppConfirm(`'${targetCreator.name}' 채널 구독을 취소하시겠습니까?`)) return
     creators.value.splice(existingIndex, 1)
     db.transaction('creators', 'readwrite').objectStore('creators').delete(targetCreator.id)
     if (selectedCreator.value?.id === targetCreator.id) selectDiscoverHeart()
@@ -3411,7 +3484,7 @@ const toggleSubscribeFromCard = async (video) => {
     creators.value.push(newCreator)
     db.transaction('creators', 'readwrite').objectStore('creators').put(newCreator)
     await fetchChannelVideosParallel([newCreator])
-    alert(`'${newCreator.name}' 채널을 구독했습니다!`)
+    showAppAlert(`'${newCreator.name}' 채널을 구독했습니다!`)
   }
 }
 
@@ -3421,7 +3494,7 @@ const toggleSubscribeFromPlayer = async () => {
 }
 
 const unsubscribeCreator = async (creator) => {
-  if (!confirm(`'${creator.name}' 채널 구독을 취소하시겠습니까?`)) return
+  if (!await showAppConfirm(`'${creator.name}' 채널 구독을 취소하시겠습니까?`)) return
   creators.value = creators.value.filter(c => c.id !== creator.id)
   const db = await openDB()
   db.transaction('creators', 'readwrite').objectStore('creators').delete(creator.id)
@@ -4849,4 +4922,6 @@ html, body {
   font-weight: 400 !important;
   color: #ffffff !important;
 }
+.app-message-card { border: 1px solid rgba(167, 139, 250, 0.35); box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55); }
+.app-message-text { white-space: pre-line; line-height: 1.65; overflow-wrap: anywhere; }
 </style>
