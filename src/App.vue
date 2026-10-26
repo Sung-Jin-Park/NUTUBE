@@ -320,7 +320,7 @@
     </v-navigation-drawer>
 
     <!-- 메인 콘텐츠 영역 -->
-    <v-main ref="mainScrollRef" class="main-content position-relative" @scroll="checkMainScroll">
+    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode }" @scroll="checkMainScroll">
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
@@ -1154,8 +1154,8 @@
     </v-dialog>
 
     <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
-    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" scrim="black" class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
-      <v-card class="glass-modal rounded-2xl overflow-hidden pa-0">
+    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
+      <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode }">
         <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
           <div class="d-flex align-center overflow-hidden pr-2">
             <span v-if="playlistQueue.length > 1" class="text-accent text-caption font-weight-bold mr-2 flex-shrink-0">
@@ -1250,6 +1250,15 @@
               <v-icon :icon="isAudioOnlyMode ? 'mdi-radio-handheld' : 'mdi-radio-tower'" size="20"></v-icon>
             </v-btn>
 
+            <v-btn
+              :icon="isPlayerCompactMode ? 'mdi-arrow-expand' : 'mdi-arrow-collapse'"
+              variant="text"
+              size="small"
+              color="white"
+              class="mr-1"
+              :title="isPlayerCompactMode ? '플레이어 상세 화면 펼치기' : '목록 스크롤 모드로 전환'"
+              @click="isPlayerCompactMode = !isPlayerCompactMode"
+            ></v-btn>
             <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
           </div>
         </div>
@@ -1680,6 +1689,8 @@ const channelNextPageTokens = ref(new Map())
 const trendingNextPageToken = ref(null)
 
 const isPlayerOpen = ref(false)
+// 컴팩트 플레이어를 화면 상단에 고정해 재생 중에도 본문 목록을 스크롤할 수 있게 함
+const isPlayerCompactMode = ref(true)
 const activeVideo = ref(null)
 const showComments = ref(false)
 const showReplies = ref(true)               
@@ -2874,6 +2885,7 @@ const playQueueIndex = async (idx) => {
   jumpSeconds.value = 0
 
   if (!isPlayerOpen.value) {
+    isPlayerCompactMode.value = true
     window.history.pushState({ playerOpen: true }, '')
     window.addEventListener('popstate', handlePopState)
     isPlayerOpen.value = true
@@ -4837,8 +4849,43 @@ html, body {
 .video-thumbnail-wrapper:hover .play-overlay, .shorts-thumbnail-wrapper:hover .play-overlay { opacity: 1; }
 
 .video-duration-badge-left { position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.85); color: #fff; padding: 2px 6px; border-radius: 6px; font-size: 12px; font-weight: bold; z-index: 2; letter-spacing: 0.5px; }
-.safe-player-dialog { margin: 8px !important; max-height: 96vh !important; }
-@media (max-width: 600px) { .safe-player-dialog { margin: 0 !important; max-height: 100vh !important; } }
+/* 재생 중에도 본문 목록을 조작할 수 있도록 플레이어를 상단 고정 도킹 형태로 표시 */
+.safe-player-dialog {
+  pointer-events: none !important;
+  margin: 0 !important;
+  max-height: none !important;
+}
+.safe-player-dialog .v-overlay__content {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 auto !important;
+  transform: none !important;
+  width: min(880px, 100vw) !important;
+  max-width: 880px !important;
+  pointer-events: none !important;
+}
+.safe-player-dialog .glass-modal { pointer-events: auto !important; }
+.safe-player-dialog .player-compact-mode {
+  border-radius: 0 0 14px 14px !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .48) !important;
+}
+.safe-player-dialog .player-compact-mode .modal-vertical-container {
+  max-height: none !important;
+  overflow: visible !important;
+}
+.safe-player-dialog .player-compact-mode .modal-vertical-container > :not(.video-container):not(.radio-placeholder-card) {
+  display: none !important;
+}
+.main-content.player-dock-active {
+  padding-top: calc(min(56.25vw, 495px) + 48px) !important;
+}
+@media (max-width: 600px) {
+  .safe-player-dialog .v-overlay__content { width: 100vw !important; max-width: 100vw !important; }
+  .safe-player-dialog .player-compact-mode { border-radius: 0 0 12px 12px !important; }
+  .main-content.player-dock-active { padding-top: calc(56.25vw + 44px) !important; }
+}
 
 .main-content { overflow-y: auto !important; height: calc(100dvh - 68px); }
 .loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
