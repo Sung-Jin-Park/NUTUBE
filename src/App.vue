@@ -3018,11 +3018,6 @@ const startHistoryTracker = () => {
         const t = ytPlayer.value.getCurrentTime()
         const dur = ytPlayer.value.getDuration()
         if (t && t > 0 && dur && dur > 0) {
-          if (!isLoopMode.value && dur - t <= 0.8 && playlistIndex.value < playlistQueue.value.length - 1) {
-            await playNextInQueue()
-            return
-          }
-
           if (dur - t <= 5 && !isLoopMode.value) {
             currentPlayingTime = 0
             if (activeVideo.value) {
