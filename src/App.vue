@@ -1156,7 +1156,7 @@
     <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
     <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode, 'player-floating-mode': isPlayerCompactMode && isFloatingPlayerMode }" :style="isPlayerCompactMode && isFloatingPlayerMode ? floatingPlayerStyle : null">
-        <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header">
+        <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header" :class="{ 'player-floating-header': isPlayerCompactMode && isFloatingPlayerMode }">
           <div
             class="d-flex align-center overflow-hidden pr-2 player-drag-handle"
             :class="{ 'is-draggable': isPlayerCompactMode && isFloatingPlayerMode }"
@@ -1167,7 +1167,7 @@
             </span>
             <span class="text-white font-weight-bold text-caption text-md-subtitle-1 text-truncate">{{ activeVideo?.title }}</span>
           </div>
-          <div class="d-flex align-center flex-shrink-0">
+          <div class="d-flex align-center flex-shrink-0 player-header-actions">
             <v-btn 
               icon 
               variant="text" 
@@ -5059,6 +5059,42 @@ html, body {
 .player-drag-handle { min-width: 0; user-select: none; -webkit-user-select: none; }
 .player-drag-handle.is-draggable { cursor: move; touch-action: none; }
 .player-floating-mode .mobile-tight-header { border-radius: 12px 12px 0 0; min-height: 44px; }
+/* 좁은 플로팅 플레이어에서는 제목과 아이콘을 자동으로 여러 줄에 배치 */
+.player-floating-mode { container-type: inline-size; }
+.player-floating-mode .player-floating-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 2px;
+}
+.player-floating-mode .player-drag-handle {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.player-floating-mode .player-header-actions {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0;
+}
+.player-floating-mode .player-header-actions .v-btn { flex: 0 0 auto; }
+@container (max-width: 420px) {
+  .player-floating-mode .player-floating-header { justify-content: flex-start !important; }
+  .player-floating-mode .player-drag-handle {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+  .player-floating-mode .player-header-actions {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-end;
+  }
+}
 .player-floating-mode .video-container { min-height: 0; }
 .floating-resize-handle {
   position: absolute;
