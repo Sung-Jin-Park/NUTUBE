@@ -1710,10 +1710,21 @@ const checkRelatedScroll = () => {}
 const scrollToTop = (el) => {
   let targetElement = el
   if (el && el.$el) targetElement = el.$el
-  if (targetElement && typeof targetElement.scrollTo === 'function') {
+  
+  // v-main 내부의 실제 스크롤 컨테이너를 직접 타겟팅하도록 보완
+  if (targetElement && targetElement.classList && targetElement.classList.contains('main-content')) {
     targetElement.scrollTo({ top: 0, behavior: 'smooth' })
-  } else if (targetElement) {
-    targetElement.scrollTop = 0
+    return
+  }
+  
+  // 만약 다른 구조라면 document나 메인 영역 강제 스크롤 병행 처리
+  const mainEl = document.querySelector('.main-content')
+  if (mainEl) {
+    mainEl.scrollTo({ top: 0, behavior: 'smooth' })
+  } else if (targetElement && typeof targetElement.scrollTo === 'function') {
+    targetElement.scrollTo({ top: 0, behavior: 'smooth' })
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
@@ -4820,9 +4831,10 @@ html, body {
 
 .main-scroll-top-fab {
   position: fixed !important; 
-  bottom: 85px !important;    
-  right: 32px !important;     
-  z-index: 99 !important;     
+  bottom: 110px !important; /* 모바일 브라우저 하단 바 간섭 회피를 위해 높임 */
+  right: 24px !important;     
+  z-index: 9999 !important; /* 다른 레이어에 가려지지 않도록 최상단으로 상향 */
+  pointer-events: auto !important; /* 터치 이벤트 강제 활성화 */
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8) !important; 
 }
 
