@@ -19,7 +19,7 @@
 v-model="searchQuery"
 density="compact"
 variant="outlined"
-:placeholder="selectedCreator ? ${selectedCreator.name} 내 검색어 입력 후 엔터... : (isAlgorithmMode ? '알고리즘 추천 영상 내 검색어 입력 후 엔터...' : (isMusicMode ? '음악/아티스트 검색어 입력 후 엔터...' : (isTrendingMode ? '인기 급상승 영상 내 검색어 입력 후 엔터...' : (isSearchMode ? '유튜브 전체 검색어 입력 후 엔터...' : (isHistoryMode ? '시청 기록 내 검색어 입력 후 엔터...' : (isFavoriteVideosMode ? '즐겨찾기 영상 내 검색어 입력 후 엔터...' : (isPlaylistMode ? '재생 목록 내 검색어 입력 후 엔터...' : '구독 피드 내 검색어 입력 후 엔터 또는 돋보기 버튼 클릭...')))))))"
+:placeholder="getSearchPlaceholder"
 prepend-inner-icon="mdi-magnify"
 class="search-bar flex-grow-1 mx-2"
 hide-details
@@ -34,7 +34,7 @@ icon="mdi-playlist-play"
 size="small"
 variant="flat"
 color="accent"
-:title="선택한 ${selectedVideoIds.length}개 영상 연속 재생"
+:title="'선택한 ' + selectedVideoIds.length + '개 영상 연속 재생'"
 @click.stop="playSelectedVideos"
 >
 <template v-slot:default>
@@ -299,7 +299,12 @@ title="구독 취소"
 </v-list>
 </v-navigation-drawer>
 ​<!-- 메인 콘텐츠 영역 -->
-<v-main ref="mainScrollRef" class="main-content position-relative prevent-pull-to-refresh" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchend="onMainTouchEnd">
+<v-main
+ref="mainScrollRef"
+class="main-content position-relative prevent-pull-to-refresh"
+:class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }"
+@scroll="checkMainScroll"
+>
 <v-container fluid class="pa-3 pa-md-8 max-container-width">
 <v-card class="glass-banner mb-4 mb-md-6 p-4 p-md-6 rounded-2xl position-relative overflow-hidden">
 <div class="banner-glow"></div>
@@ -352,9 +357,39 @@ const isPlaylistMode = ref(false)
 const selectedCreator = ref(null)
 const currentTab = ref('discoverHeart')
 const isLoading = ref(false)
+const activePlaylistId = ref(null)
+const isPlayerOpen = ref(false)
+const isPlayerCompactMode = ref(false)
+const isFloatingPlayerMode = ref(false)
 ​const creators = ref([])
 const selectedVideoIds = ref([])
 const mainScrollRef = ref(null)
+​const isAllSelected = ref(false)
+const isIndeterminate = ref(false)
+​const getSearchPlaceholder = computed(() => {
+if (selectedCreator.value) {
+return selectedCreator.value.name + ' 내 검색어 입력 후 엔터...'
+}
+if (isAlgorithmMode.value) return '알고리즘 추천 영상 내 검색어 입력 후 엔터...'
+if (isMusicMode.value) return '음악/아티스트 검색어 입력 후 엔터...'
+if (isTrendingMode.value) return '인기 급상승 영상 내 검색어 입력 후 엔터...'
+if (isSearchMode.value) return '유튜브 전체 검색어 입력 후 엔터...'
+if (isHistoryMode.value) return '시청 기록 내 검색어 입력 후 엔터...'
+if (isFavoriteVideosMode.value) return '즐겨찾기 영상 내 검색어 입력 후 엔터...'
+if (isPlaylistMode.value) return '재생 목록 내 검색어 입력 후 엔터...'
+return '구독 피드 내 검색어 입력 후 엔터 또는 돋보기 버튼 클릭...'
+})
+​const getHeaderTitle = computed(() => {
+if (selectedCreator.value) return selectedCreator.value.name + ' 피드'
+if (isAlgorithmMode.value) return '알고리즘 추천'
+if (isMusicMode.value) return '음악'
+if (isTrendingMode.value) return '실시간 급상승'
+if (isSearchMode.value) return '검색 결과'
+if (isHistoryMode.value) return '시청 기록'
+if (isFavoriteVideosMode.value) return '즐겨찾기 영상'
+if (isPlaylistMode.value) return '재생 목록'
+return currentTab.value === 'discoverAll' ? '구독 전체 피드' : '구독 피드 모음'
+})
 ​// Kiwi 브라우저 제스처 차단을 위한 overscroll-behavior 훅 핸들러
 onMounted(() => {
 document.documentElement.style.overscrollBehaviorY = 'contain'
@@ -364,6 +399,46 @@ document.body.style.overscrollBehaviorY = 'contain'
 document.documentElement.style.overscrollBehaviorY = ''
 document.body.style.overscrollBehaviorY = ''
 })
+​function handleSearch() {}
+function triggerTabSearchOrUpdate() {}
+function selectDiscoverAll() { currentTab.value = 'discoverAll'; selectedCreator.value = null; disableModes(); }
+function selectDiscoverHeart() { currentTab.value = 'discoverHeart'; selectedCreator.value = null; disableModes(); }
+function enableAlgorithmMode() { resetModes(); isAlgorithmMode.value = true; }
+function enableFavoriteVideosMode() { resetModes(); isFavoriteVideosMode.value = true; }
+function enablePlaylistMode() { resetModes(); isPlaylistMode.value = true; }
+function enableHistoryMode() { resetModes(); isHistoryMode.value = true; }
+function enableSearchMode() { resetModes(); isSearchMode.value = true; }
+function enableTrendingMode() { resetModes(); isTrendingMode.value = true; }
+function enableMusicMode() { resetModes(); isMusicMode.value = true; }
+function disableModes() {
+isAlgorithmMode.value = false
+isMusicMode.value = false
+isTrendingMode.value = false
+isSearchMode.value = false
+isHistoryMode.value = false
+isFavoriteVideosMode.value = false
+isPlaylistMode.value = false
+}
+function resetModes() {
+selectedCreator.value = null
+disableModes()
+}
+function playSelectedVideos() {}
+function openSaveToPlaylistDialog() {}
+function clearSelectedVideos() { selectedVideoIds.value = [] }
+function downloadCreatorsBackup() {}
+function triggerUploadCreators() {}
+function handleUploadCreators() {}
+function handleUploadPlaylists() {}
+function handleUploadSinglePlaylist() {}
+function handleUploadMusic() {}
+function formatCreatorSubCount(count) { return count ? count.toLocaleString() : '0' }
+function selectCreatorFilter(creator) { resetModes(); selectedCreator.value = creator }
+function toggleCreatorFavorite(creator) { creator.isFavorite = !creator.isFavorite }
+function unsubscribeCreator(creator) { creators.value = creators.value.filter(c => c.id !== creator.id) }
+function toggleSelectAll() {}
+function fetchAlgorithmVideos() {}
+function checkMainScroll() {}
 </script>
 ​<style scoped>
 /* Kiwi 브라우저 Pull-to-Refresh 및 상하 제스처 충돌 방지 핵심 스타일 */
