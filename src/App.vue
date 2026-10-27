@@ -1,5 +1,5 @@
 <template>
-<v-app class="neon-youtube-app">
+<v-app class="neon-youtube-app prevent-pull-to-refresh">
 <!-- 배경 네온 블러 효과 요소 -->
 <div class="bg-blob blob-1"></div>
 <div class="bg-blob blob-2"></div>
@@ -301,7 +301,6 @@ title="구독 취소"
 ​<!-- 메인 콘텐츠 영역 -->
 <v-main ref="mainScrollRef" class="main-content position-relative prevent-pull-to-refresh" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchend="onMainTouchEnd">
 <v-container fluid class="pa-3 pa-md-8 max-container-width">
-<!-- 콘텐츠 내역 -->
 <v-card class="glass-banner mb-4 mb-md-6 p-4 p-md-6 rounded-2xl position-relative overflow-hidden">
 <div class="banner-glow"></div>
 <div style="z-index: 2; position: relative;" class="d-flex align-center justify-space-between gap-3 flex-wrap">
@@ -334,13 +333,12 @@ class="text-white font-weight-bold rounded-pill px-4"
 </v-btn>
 </div>
 </v-card>
-​<!-- (후략: 기존 메인 콘텐츠 템플릿 유지) -->
 </v-container>
 </v-main>
 </v-app>
 </template>
 ​<script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 ​const drawer = ref(false)
 const searchQuery = ref('')
 const currentApiKeyNumber = ref(1)
@@ -357,7 +355,7 @@ const isLoading = ref(false)
 ​const creators = ref([])
 const selectedVideoIds = ref([])
 const mainScrollRef = ref(null)
-​// Kiwi 브라우저 제스처 차단을 위한 overscroll-behavior 핸들러
+​// Kiwi 브라우저 제스처 차단을 위한 overscroll-behavior 훅 핸들러
 onMounted(() => {
 document.documentElement.style.overscrollBehaviorY = 'contain'
 document.body.style.overscrollBehaviorY = 'contain'
@@ -368,10 +366,12 @@ document.body.style.overscrollBehaviorY = ''
 })
 </script>
 ​<style scoped>
-/* Kiwi 브라우저 Pull-to-Refresh 및 불필요 바운스 제스처 방지 핵심 스타일 */
-html, body, .neon-youtube-app {
+/* Kiwi 브라우저 Pull-to-Refresh 및 상하 제스처 충돌 방지 핵심 스타일 */
+html,
+body,
+.neon-youtube-app,
+.prevent-pull-to-refresh {
 overscroll-behavior-y: contain !important;
-overscroll-behavior-x: none;
 touch-action: pan-x pan-y;
 }
 ​.main-content.prevent-pull-to-refresh {
