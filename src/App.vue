@@ -1002,7 +1002,8 @@
           variant="flat"
           class="main-scroll-top-fab text-white rounded-circle"
           title="최상위로 이동"
-          @click="scrollToTop(mainScrollRef)"
+          @click.stop.prevent="scrollToTop(mainScrollRef)"
+          @touchend.stop.prevent="scrollToTop(mainScrollRef)"
         >
           <v-icon icon="mdi-chevron-up" color="white" size="24"></v-icon>
         </v-btn>
@@ -2005,11 +2006,9 @@ const onMainTouchEnd = async (e) => {
 const checkMainScroll = (e) => {
   if (scrollTimeout) return
   scrollTimeout = setTimeout(() => {
-    const target = e.target
-    showMainScrollTop.value = target.scrollTop > 100
-
-    // 자동 무한 스크롤/자동 페이지 조회는 하지 않습니다.
-    // 지원 탭은 바닥에서 위로 당기는 제스처를 완료했을 때 onMainTouchEnd에서만 추가 로드합니다.
+    const target = e?.target || document.querySelector('.main-content')
+    const scrollTop = target ? target.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0)
+    showMainScrollTop.value = scrollTop > 100
     scrollTimeout = null
   }, 100)
 }
@@ -2031,12 +2030,30 @@ const checkCommentsScroll = (e) => {
 const checkRelatedScroll = () => {}
 
 const scrollToTop = (el) => {
-  let targetElement = el
-  if (el && el.$el) targetElement = el.$el
-  if (targetElement && typeof targetElement.scrollTo === 'function') {
-    targetElement.scrollTo({ top: 0, behavior: 'smooth' })
-  } else if (targetElement) {
+  let targetElement = null
+  if (el && el.$el) {
+    targetElement = el.$el
+  } else if (el instanceof HTMLElement) {
+    targetElement = el
+  }
+  
+  if (!targetElement) {
+    targetElement = document.querySelector('.main-content') || document.querySelector('main')
+  }
+
+  if (targetElement) {
+    if (typeof targetElement.scrollTo === 'function') {
+      targetElement.scrollTo({ top: 0, behavior: 'smooth' })
+    }
     targetElement.scrollTop = 0
+  }
+
+  try {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (document.documentElement) document.documentElement.scrollTop = 0
+    if (document.body) document.body.scrollTop = 0
+  } catch (e) {
+    console.debug(e)
   }
 }
 
@@ -4897,6 +4914,7 @@ onMounted(async () => {
   initPreloadedYouTubePlayer()
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('scroll', checkMainScroll, { passive: true })
   window.addEventListener('popstate', handlePopState)
   window.addEventListener('resize', handlePlayerViewportResize)
   window.visualViewport?.addEventListener('resize', handlePlayerViewportResize)
@@ -4907,6 +4925,7 @@ onUnmounted(() => {
   stopHistoryTracker()
   clearSleepTimer()
   stopPlayerPointerInteraction()
+  window.removeEventListener('scroll', checkMainScroll)
   window.removeEventListener('popstate', handlePopState)
   window.removeEventListener('resize', handlePlayerViewportResize)
   window.visualViewport?.removeEventListener('resize', handlePlayerViewportResize)
@@ -5315,8 +5334,9 @@ html, body {
 .main-scroll-top-fab {
   position: fixed !important; 
   bottom: 85px !important;    
-  right: 32px !important;     
-  z-index: 99 !important;     
+  right: 24px !important;     
+  z-index: 99999 !important;     
+  pointer-events: auto !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8) !important; 
 }
 
