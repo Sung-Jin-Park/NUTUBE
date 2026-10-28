@@ -780,16 +780,6 @@
           </v-row>
 
           <template v-else>
-            <div v-if="isFavoriteVideosMode" class="d-flex align-center justify-end mb-3 px-1">
-              <v-checkbox
-                v-model="favoriteVideosContinueEnabled"
-                color="accent"
-                label="이어보기"
-                density="compact"
-                hide-details
-                class="text-caption ma-0 pa-0 text-white"
-              ></v-checkbox>
-            </div>
             <!-- 시청 기록 탭 리스트 뷰 -->
             <div v-if="isHistoryMode" class="d-flex flex-column gap-3">
               <v-card
@@ -883,6 +873,17 @@
                             <span class="text-accent">({{ getCreatorSubCount(video.creatorId, video) }})</span>
                           </p>
                           <div class="d-flex align-center">
+                            <v-checkbox
+                              v-if="isFavoriteVideosMode"
+                              :model-value="isFavoriteVideoResumeEnabled(video)"
+                              color="accent"
+                              label="이어보기"
+                              density="compact"
+                              hide-details
+                              class="ma-0 pa-0 text-caption"
+                              @click.stop
+                              @update:model-value="toggleFavoriteVideoResume(video, $event)"
+                            ></v-checkbox>
                             <v-btn
                               icon="mdi-folder-plus"
                               size="x-small"
@@ -955,6 +956,17 @@
                             <span class="text-grey-darken-1 text-caption mb-0.5">{{ formatRelativeTime(video.publishedAt) }}</span>
                             <span v-if="video.views > 0" class="text-grey-darken-1 text-caption mb-1">{{ formatViewCount(video.views) }}</span>
                             <div class="d-flex align-center">
+                              <v-checkbox
+                                v-if="isFavoriteVideosMode"
+                                :model-value="isFavoriteVideoResumeEnabled(video)"
+                                color="accent"
+                                label="이어보기"
+                                density="compact"
+                                hide-details
+                                class="ma-0 pa-0 text-caption"
+                                @click.stop
+                                @update:model-value="toggleFavoriteVideoResume(video, $event)"
+                              ></v-checkbox>
                               <v-btn 
                                 icon="mdi-folder-plus" 
                                 size="x-small" 
@@ -1628,7 +1640,26 @@ const currentTab = ref('discoverHeart')
 const isSearchMode = ref(false)
 const isTrendingMode = ref(false)
 const isFavoriteVideosMode = ref(false)
-const favoriteVideosContinueEnabled = ref(true)
+// 좋아요 탭의 이어보기는 영상별로 독립 저장합니다.
+const favoriteVideoResumeStates = reactive({})
+const isFavoriteVideoResumeEnabled = (video) => {
+  const saved = favoriteVideoResumeStates[video.id]
+  return saved === undefined ? true : saved
+}
+const toggleFavoriteVideoResume = (video, value) => {
+  favoriteVideoResumeStates[video.id] = value
+  try {
+    const key = 'neontube_favorite_video_resume_states'
+    const saved = JSON.parse(localStorage.getItem(key) || '{}')
+    saved[video.id] = value
+    localStorage.setItem(key, JSON.stringify(saved))
+  } catch (e) { console.debug('좋아요 영상 이어보기 설정 저장 실패:', e) }
+}
+const loadFavoriteVideoResumeStates = () => {
+  try {
+    Object.assign(favoriteVideoResumeStates, JSON.parse(localStorage.getItem('neontube_favorite_video_resume_states') || '{}'))
+  } catch (e) { console.debug('좋아요 영상 이어보기 설정 불러오기 실패:', e) }
+}
 const isHistoryMode = ref(false)
 const isPlaylistMode = ref(false)
 const isMusicMode = ref(false)
@@ -1897,6 +1928,7 @@ const totalCommentCount = ref(0)
 const commentsOrder = ref('relevance')
 
 const initialWatchedTime = ref(0)
+const pendingResumeSeek = ref(null)
 const savedResumeSetting = localStorage.getItem('neontube_enable_resume')
 const enableResume = ref(savedResumeSetting !== null ? savedResumeSetting === 'true' : true)
 
@@ -3075,18 +3107,12 @@ const playPlaylistFolder = async (playlist) => {
 }
 
 const playVideo = async (video) => {
-  if (!isPlaylistMode.value) {
+  // 좋아요 탭은 각 영상 카드의 이어보기 체크 상태를 사용합니다.
+  // 그 외 탭은 플레이어의 공통 이어보기 설정을 사용합니다.
+  if (isFavoriteVideosMode.value) {
+    enableResume.value = isFavoriteVideoResumeEnabled(video)
+  } else if (!isPlaylistMode.value) {
     enableResume.value = true
-  }
-
-  // 좋아요/즐겨찾기 탭에서는 '이어보기'가 켜져 있으면 현재 표시된 좋아요 영상들을 재생 큐로 사용합니다.
-  if (isFavoriteVideosMode.value && favoriteVideosContinueEnabled.value) {
-    const likedQueue = [...displayedVideos.value]
-    const startIndex = likedQueue.findIndex(item => item.id === video.id)
-    playlistQueue.value = likedQueue.length ? likedQueue : [video]
-    playlistIndex.value = startIndex >= 0 ? startIndex : 0
-    await playQueueIndex(playlistIndex.value)
-    return
   }
 
   playlistQueue.value = [video]
@@ -3160,6 +3186,7 @@ const playQueueIndex = async (idx) => {
   totalCommentCount.value = 0
   commentsOrder.value = 'relevance'
   initialWatchedTime.value = 0
+  pendingResumeSeek.value = null
   currentPlayingTime = 0
   jumpMinutes.value = 0
   jumpSeconds.value = 0
@@ -3198,11 +3225,21 @@ const playQueueIndex = async (idx) => {
     const req = tx.objectStore('history').get(video.id)
     req.onsuccess = (e) => {
       const result = e.target.result
+      // 비동기 조회가 끝났을 때 다른 영상으로 이미 이동했다면 오래된 위치를 적용하지 않습니다.
+      if (!activeVideo.value || activeVideo.value.id !== video.id) return
       const watchedTime = result && result.currentTime ? Math.floor(result.currentTime) : 0
-      initialWatchedTime.value = watchedTime
-      currentPlayingTime = watchedTime
-      if (enableResume.value && watchedTime > 5 && ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
-        ytPlayer.value.seekTo(watchedTime, true)
+      const resumeTime = enableResume.value && watchedTime > 5 ? watchedTime : 0
+      initialWatchedTime.value = resumeTime
+      currentPlayingTime = resumeTime
+      pendingResumeSeek.value = resumeTime > 0 ? { videoId: video.id, seconds: resumeTime } : null
+      // 플레이어가 이미 해당 영상을 재생 중일 때만 즉시 이동합니다.
+      if (resumeTime > 0 && ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
+        try {
+          if (typeof ytPlayer.value.getPlayerState !== 'function' || ytPlayer.value.getPlayerState() === 1) {
+            ytPlayer.value.seekTo(resumeTime, true)
+            pendingResumeSeek.value = null
+          }
+        } catch (seekError) { console.debug('이어보기 위치 적용 대기:', seekError) }
       }
     }
   } catch (err) { console.error(err) }
@@ -3301,6 +3338,13 @@ const initPreloadedYouTubePlayer = () => {
       events: {
         onStateChange: async (event) => {
           if (event.data === 1) {
+            // 영상 로딩이 완료된 뒤 이어보기 위치를 적용해 seek 경쟁 상태를 방지합니다.
+            const pending = pendingResumeSeek.value
+            if (pending && activeVideo.value && pending.videoId === activeVideo.value.id &&
+                ytPlayer.value && typeof ytPlayer.value.seekTo === 'function') {
+              ytPlayer.value.seekTo(pending.seconds, true)
+              pendingResumeSeek.value = null
+            }
             // 재생 시작/영상 전환 후에도 라디오 모드 화질 설정을 다시 요청합니다.
             applyRadioPlaybackQuality()
             if ('mediaSession' in navigator) {
@@ -4903,6 +4947,7 @@ const handleTimePaste = (event) => {
 }
 
 onMounted(async () => {
+  loadFavoriteVideoResumeStates()
   await getActiveApiKeyIndex()
   await loadDataFromDB()
   
