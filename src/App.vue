@@ -5730,4 +5730,35 @@ html, body {
   }
 }
 
+
+/* Final override: radio placeholder must occupy exactly one video-sized 16:9 slot.
+   Avoid vw-based fixed heights and flex stretching on mobile browsers. */
+.safe-player-dialog .glass-modal .modal-vertical-container > .radio-placeholder-card,
+.safe-player-dialog .player-compact-mode .modal-vertical-container > .radio-placeholder-card {
+  display: flex !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  align-self: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 16 / 9 !important;
+  padding: clamp(12px, 3vw, 24px) !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+.safe-player-dialog .glass-modal .modal-vertical-container > .video-container.audio-only-hidden {
+  display: none !important;
+  width: 100% !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
 </style>
