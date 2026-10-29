@@ -320,7 +320,7 @@
     </v-navigation-drawer>
 
     <!-- 메인 콘텐츠 영역 -->
-    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchend="onMainTouchEnd">
+    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchmove="onMainTouchMove" @touchend="onMainTouchEnd">
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
@@ -1977,6 +1977,22 @@ const showModalScrollTop = ref(false)
 let scrollTimeout = null
 let searchPullStartY = null
 let searchPullWasAtBottom = false
+let mainTouchLastY = null
+
+// Kiwi/Chromium의 당겨서 새로고침을 차단하되, 일반적인 세로 스크롤은 허용합니다.
+// 메인 스크롤 영역의 맨 위에서 손가락을 아래로 끌 때만 기본 터치 동작을 막습니다.
+const onMainTouchMove = (e) => {
+  const touch = e.touches?.[0]
+  if (!touch) return
+  const container = e.currentTarget
+  const currentY = touch.clientY
+  const movingDown = mainTouchLastY !== null && currentY > mainTouchLastY
+  mainTouchLastY = currentY
+
+  if (container && container.scrollTop <= 1 && movingDown && e.cancelable) {
+    e.preventDefault()
+  }
+}
 
 const shouldUsePullToLoad = () => (
   isSearchMode.value || isTrendingMode.value || isAlgorithmMode.value ||
@@ -1984,6 +2000,7 @@ const shouldUsePullToLoad = () => (
 )
 
 const onMainTouchStart = (e) => {
+  mainTouchLastY = e.touches?.[0]?.clientY ?? null
   if (!shouldUsePullToLoad() || !e.touches?.length) {
     searchPullStartY = null
     searchPullWasAtBottom = false
@@ -1995,6 +2012,7 @@ const onMainTouchStart = (e) => {
 }
 
 const onMainTouchEnd = async (e) => {
+  mainTouchLastY = null
   if (!shouldUsePullToLoad() || searchPullStartY === null || !searchPullWasAtBottom) {
     searchPullStartY = null
     searchPullWasAtBottom = false
@@ -5333,9 +5351,19 @@ html, body {
 }
 
 /* Kiwi/Chromium Android: 문서 끝에서 아래로 당길 때 브라우저 새로고침이 실행되는 오버스크롤 차단 */
-html, body, #app {
+html, body, #app, .v-application {
   overscroll-behavior-y: none !important;
   overscroll-behavior: none !important;
+}
+html, body {
+  max-height: 100%;
+  overflow: hidden !important;
+  touch-action: pan-x pan-y;
+}
+#app, .v-application {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden !important;
 }
 .main-content {
   overflow-y: auto !important;
@@ -5374,19 +5402,26 @@ html, body, #app {
   background: rgba(121, 40, 202, 0.18);
   border-bottom: 1px solid rgba(167, 139, 250, 0.35);
   box-sizing: border-box !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
   width: 100% !important;
-  height: auto !important;
+  height: min(56.25vw, 495px) !important;
   min-height: 0 !important;
-  aspect-ratio: 16 / 9 !important;
+  max-height: 495px !important;
+  aspect-ratio: auto !important;
+  padding: clamp(12px, 3vw, 24px) !important;
   line-height: normal !important;
   overflow: hidden !important;
 }
 .safe-player-dialog .player-compact-mode .radio-placeholder-card,
 .safe-player-dialog .glass-modal .radio-placeholder-card {
+  display: flex !important;
+  flex: 0 0 auto !important;
   width: 100% !important;
-  height: auto !important;
+  height: min(56.25vw, 495px) !important;
   min-height: 0 !important;
-  aspect-ratio: 16 / 9 !important;
+  max-height: 495px !important;
+  aspect-ratio: auto !important;
   box-sizing: border-box !important;
   line-height: normal !important;
 }
