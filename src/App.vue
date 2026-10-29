@@ -2089,15 +2089,23 @@ const scrollToTop = (el) => {
   }
 }
 
-// 라디오 모드에서는 가능한 최저 화질을 YouTube 플레이어에 요청합니다.
-// YouTube가 이 요청을 무시하고 자동 화질을 선택할 수 있습니다.
+// 라디오 모드에서는 YouTube IFrame API가 지원하는 최저 화질(tiny)을 반복 요청합니다.
+// YouTube 측 자동 화질 정책에 따라 실제 적용 화질은 플레이어가 결정할 수 있습니다.
 const applyRadioPlaybackQuality = () => {
   if (!isAudioOnlyMode.value || !ytPlayer.value) return
-  if (typeof ytPlayer.value.setPlaybackQuality !== 'function') return
   try {
-    ytPlayer.value.setPlaybackQuality('tiny')
+    if (typeof ytPlayer.value.setPlaybackQuality === 'function') {
+      ytPlayer.value.setPlaybackQuality('tiny')
+    }
+    if (typeof ytPlayer.value.getAvailableQualityLevels === 'function' &&
+        typeof ytPlayer.value.setPlaybackQuality === 'function') {
+      const levels = ytPlayer.value.getAvailableQualityLevels()
+      if (Array.isArray(levels) && levels.includes('tiny')) {
+        ytPlayer.value.setPlaybackQuality('tiny')
+      }
+    }
   } catch (error) {
-    console.debug('라디오 모드 화질 설정을 적용하지 못했습니다:', error)
+    console.debug('라디오 모드 최저 화질 설정 요청 실패:', error)
   }
 }
 
@@ -3207,7 +3215,7 @@ const playQueueIndex = async (idx) => {
   // 이미 사전 생성된 ytPlayer 인스턴스에 즉시 동기 명령 전달 (제스처 컨텍스트 유지)
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
     try {
-      ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec })
+      ytPlayer.value.loadVideoById({ videoId: video.youtubeId, startSeconds: startSec, ...(isAudioOnlyMode.value ? { suggestedQuality: 'tiny' } : {}) })
       ytPlayer.value.playVideo()
       applyRadioPlaybackQuality()
       startHistoryTracker()
@@ -3414,7 +3422,7 @@ const initPreloadedYouTubePlayer = () => {
 const initYouTubePlayer = (youtubeId, startTime) => {
   const startPos = startTime > 5 ? startTime : 0
   if (ytPlayer.value && typeof ytPlayer.value.loadVideoById === 'function') {
-    ytPlayer.value.loadVideoById({ videoId: youtubeId, startSeconds: startPos })
+    ytPlayer.value.loadVideoById({ videoId: youtubeId, startSeconds: startPos, ...(isAudioOnlyMode.value ? { suggestedQuality: 'tiny' } : {}) })
     ytPlayer.value.playVideo()
     startHistoryTracker()
   } else {
@@ -5324,7 +5332,18 @@ html, body {
   .main-content.player-dock-active { padding-top: calc(56.25vw + 44px) !important; }
 }
 
-.main-content { overflow-y: auto !important; height: calc(100vh - 68px); height: calc(100dvh - 68px); }
+/* Kiwi/Chromium Android: 문서 끝에서 아래로 당길 때 브라우저 새로고침이 실행되는 오버스크롤 차단 */
+html, body, #app {
+  overscroll-behavior-y: none !important;
+  overscroll-behavior: none !important;
+}
+.main-content {
+  overflow-y: auto !important;
+  height: calc(100vh - 68px);
+  height: calc(100dvh - 68px);
+  overscroll-behavior-y: contain !important;
+  overscroll-behavior: contain !important;
+}
 .loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
 .loading-card { border: 1px solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
 
@@ -5350,7 +5369,27 @@ html, body {
 }
 .video-container.audio-only-hidden { height: 0 !important; min-height: 0 !important; aspect-ratio: unset !important; opacity: 0; pointer-events: none; }
 
-.radio-placeholder-card { background: rgba(121, 40, 202, 0.18); border-bottom: 1px solid rgba(167, 139, 250, 0.35); }
+/* 라디오 모드도 영상 모드와 동일한 16:9 영역을 유지해 플레이어 높이가 튀지 않게 합니다. */
+.radio-placeholder-card {
+  background: rgba(121, 40, 202, 0.18);
+  border-bottom: 1px solid rgba(167, 139, 250, 0.35);
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  aspect-ratio: 16 / 9 !important;
+  line-height: normal !important;
+  overflow: hidden !important;
+}
+.safe-player-dialog .player-compact-mode .radio-placeholder-card,
+.safe-player-dialog .glass-modal .radio-placeholder-card {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  aspect-ratio: 16 / 9 !important;
+  box-sizing: border-box !important;
+  line-height: normal !important;
+}
 .pulse-icon { animation: pulse 2s infinite; }
 @keyframes pulse {
   0% { transform: scale(1); opacity: 1; }
