@@ -320,8 +320,8 @@
     </v-navigation-drawer>
 
     <!-- 메인 콘텐츠 영역 -->
-    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchend="onMainTouchEnd">
-      <v-container fluid class="pa-3 pa-md-8 max-container-width">
+    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchend="onMainTouchEnd" @touchcancel="onMainTouchCancel">
+      <v-container fluid class="pa-3 pa-md-8 max-container-width main-content-container">
         
         <!-- 타이틀 영역 -->
         <v-card class="glass-banner mb-4 mb-md-6 p-4 p-md-6 rounded-2xl position-relative overflow-hidden">
@@ -1977,6 +1977,9 @@ const showModalScrollTop = ref(false)
 let scrollTimeout = null
 let searchPullStartY = null
 let searchPullWasAtBottom = false
+let pullToRefreshStartY = null
+let pullToRefreshWasAtTop = false
+let pullToRefreshBlocked = false
 
 const shouldUsePullToLoad = () => (
   isSearchMode.value || isTrendingMode.value || isAlgorithmMode.value ||
@@ -1984,26 +1987,64 @@ const shouldUsePullToLoad = () => (
 )
 
 const onMainTouchStart = (e) => {
-  if (!shouldUsePullToLoad() || !e.touches?.length) {
+  const container = e.currentTarget
+  if (!e.touches?.length || !container) {
+    searchPullStartY = null
+    searchPullWasAtBottom = false
+    pullToRefreshStartY = null
+    pullToRefreshWasAtTop = false
+    return
+  }
+
+  const touchTarget = e.target
+  pullToRefreshBlocked = Boolean(touchTarget?.closest?.(
+    'input, textarea, select, button, a, [contenteditable="true"], .video-container, .player-floating-mode, .safe-player-dialog'
+  ))
+  pullToRefreshWasAtTop = container.scrollTop <= 4 && !pullToRefreshBlocked
+  pullToRefreshStartY = e.touches[0].clientY
+
+  // 기존 맨 아래 당겨서 추가 로딩하는 동작은 그대로 유지합니다.
+  if (!shouldUsePullToLoad()) {
     searchPullStartY = null
     searchPullWasAtBottom = false
     return
   }
-  const container = e.currentTarget
   searchPullWasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 35
   searchPullStartY = e.touches[0].clientY
 }
 
-const onMainTouchEnd = async (e) => {
-  if (!shouldUsePullToLoad() || searchPullStartY === null || !searchPullWasAtBottom) {
-    searchPullStartY = null
-    searchPullWasAtBottom = false
-    return
-  }
-  const endY = e.changedTouches?.[0]?.clientY
-  const pulledUp = typeof endY === 'number' && searchPullStartY - endY >= 65
+const resetPullGestureState = () => {
   searchPullStartY = null
   searchPullWasAtBottom = false
+  pullToRefreshStartY = null
+  pullToRefreshWasAtTop = false
+  pullToRefreshBlocked = false
+}
+
+const onMainTouchCancel = () => {
+  resetPullGestureState()
+}
+
+const onMainTouchEnd = async (e) => {
+  const endY = e.changedTouches?.[0]?.clientY
+  const refreshStartY = pullToRefreshStartY
+  const refreshWasAtTop = pullToRefreshWasAtTop
+  const refreshBlocked = pullToRefreshBlocked
+  const loadStartY = searchPullStartY
+  const loadWasAtBottom = searchPullWasAtBottom
+  resetPullGestureState()
+
+  // 목록 최상단에서 아래로 충분히 당긴 경우 페이지를 새로고침합니다.
+  // 브라우저 기본 당겨서 새로고침과 중복되지 않도록 .main-content에서 제스처를 처리합니다.
+  const pulledDown = typeof endY === 'number' && typeof refreshStartY === 'number' && endY - refreshStartY >= 75
+  if (pulledDown && refreshWasAtTop && !refreshBlocked && !isLoading.value) {
+    window.location.reload()
+    return
+  }
+
+  // 기존 목록 맨 아래에서 위로 당겨 추가 영상을 불러오는 동작
+  if (!shouldUsePullToLoad() || loadStartY === null || !loadWasAtBottom) return
+  const pulledUp = typeof endY === 'number' && loadStartY - endY >= 65
   if (!pulledUp || isLoading.value) return
 
   // 이미 받아온 영상이 더 있으면 먼저 화면 목록을 확장합니다.
@@ -5346,9 +5387,14 @@ html, body {
   overflow-y: auto !important;
   height: calc(100vh - 68px);
   height: calc(100dvh - 68px);
-  overscroll-behavior-y: auto !important;
-  overscroll-behavior: auto !important;
+  /* 내부 스크롤에서 제스처를 처리해 브라우저 기본 새로고침과 충돌하지 않게 합니다. */
+  overscroll-behavior-y: contain !important;
+  overscroll-behavior: contain !important;
   touch-action: pan-x pan-y;
+}
+/* 모든 탭/목록의 마지막 항목이 브라우저 하단 고정 도구 모음에 가려지지 않도록 공통 여백 */
+.main-content-container {
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
 }
 .loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
 .loading-card { border: 1px solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
