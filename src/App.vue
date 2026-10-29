@@ -320,7 +320,7 @@
     </v-navigation-drawer>
 
     <!-- 메인 콘텐츠 영역 -->
-    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchmove="onMainTouchMove" @touchend="onMainTouchEnd">
+    <v-main ref="mainScrollRef" class="main-content position-relative" :class="{ 'player-dock-active': isPlayerOpen && isPlayerCompactMode && !isFloatingPlayerMode }" @scroll="checkMainScroll" @touchstart="onMainTouchStart" @touchend="onMainTouchEnd">
       <v-container fluid class="pa-3 pa-md-8 max-container-width">
         
         <!-- 타이틀 영역 -->
@@ -1977,22 +1977,6 @@ const showModalScrollTop = ref(false)
 let scrollTimeout = null
 let searchPullStartY = null
 let searchPullWasAtBottom = false
-let mainTouchLastY = null
-
-// Kiwi/Chromium의 당겨서 새로고침을 차단하되, 일반적인 세로 스크롤은 허용합니다.
-// 메인 스크롤 영역의 맨 위에서 손가락을 아래로 끌 때만 기본 터치 동작을 막습니다.
-const onMainTouchMove = (e) => {
-  const touch = e.touches?.[0]
-  if (!touch) return
-  const container = e.currentTarget
-  const currentY = touch.clientY
-  const movingDown = mainTouchLastY !== null && currentY > mainTouchLastY
-  mainTouchLastY = currentY
-
-  if (container && container.scrollTop <= 1 && movingDown && e.cancelable) {
-    e.preventDefault()
-  }
-}
 
 const shouldUsePullToLoad = () => (
   isSearchMode.value || isTrendingMode.value || isAlgorithmMode.value ||
@@ -2000,7 +1984,6 @@ const shouldUsePullToLoad = () => (
 )
 
 const onMainTouchStart = (e) => {
-  mainTouchLastY = e.touches?.[0]?.clientY ?? null
   if (!shouldUsePullToLoad() || !e.touches?.length) {
     searchPullStartY = null
     searchPullWasAtBottom = false
@@ -2012,7 +1995,6 @@ const onMainTouchStart = (e) => {
 }
 
 const onMainTouchEnd = async (e) => {
-  mainTouchLastY = null
   if (!shouldUsePullToLoad() || searchPullStartY === null || !searchPullWasAtBottom) {
     searchPullStartY = null
     searchPullWasAtBottom = false
@@ -5350,15 +5332,10 @@ html, body {
   .main-content.player-dock-active { padding-top: calc(56.25vw + 44px) !important; }
 }
 
-/* Kiwi/Chromium Android: 문서 끝에서 아래로 당길 때 브라우저 새로고침이 실행되는 오버스크롤 차단 */
-html, body, #app, .v-application {
-  overscroll-behavior-y: none !important;
-  overscroll-behavior: none !important;
-}
+/* 모바일 브라우저의 기본 당겨서 새로고침 동작을 허용합니다. */
 html, body {
   max-height: 100%;
   overflow: hidden !important;
-  touch-action: pan-x pan-y;
 }
 #app, .v-application {
   height: 100%;
@@ -5369,8 +5346,9 @@ html, body {
   overflow-y: auto !important;
   height: calc(100vh - 68px);
   height: calc(100dvh - 68px);
-  overscroll-behavior-y: contain !important;
-  overscroll-behavior: contain !important;
+  overscroll-behavior-y: auto !important;
+  overscroll-behavior: auto !important;
+  touch-action: pan-x pan-y;
 }
 .loading-overlay-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(6px); z-index: 2000; display: flex; justify-content: center; align-items: center; }
 .loading-card { border: 1px solid rgba(167, 139, 250, 0.35) !important; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85) !important; min-width: 240px; text-align: center; }
