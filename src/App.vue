@@ -3408,10 +3408,20 @@ const closePlayer = () => {
   try {
     if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
       const exitResult = document.exitFullscreen()
-      if (exitResult && typeof exitResult.catch === 'function') exitResult.catch(() => {})
+      if (exitResult && typeof exitResult.catch === 'function') {
+        exitResult.catch((error) => {
+          console.debug('전체화면 종료 처리:', error)
+        })
+      }
     }
-  } catch (error) {}
-  try { screen.orientation?.unlock?.() } catch (error) {}
+  } catch (error) {
+    console.debug('전체화면 종료 중 예외:', error)
+  }
+  try {
+    screen.orientation?.unlock?.()
+  } catch (error) {
+    console.debug('화면 방향 잠금 해제 처리:', error)
+  }
   stopPlayerPointerInteraction()
   saveCurrentHistoryToDB()
 
