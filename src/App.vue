@@ -1177,8 +1177,8 @@
     </v-dialog>
 
     <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
-    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" eager @update:model-value="onDialogModelUpdate">
-      <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode, 'player-floating-mode': isPlayerCompactMode && isFloatingPlayerMode }" :style="isPlayerCompactMode && isFloatingPlayerMode ? floatingPlayerStyle : null">
+    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" :class="{ 'app-player-fullscreen-active': isAppPlayerFullscreen }" eager @update:model-value="onDialogModelUpdate">
+      <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode, 'player-floating-mode': isPlayerCompactMode && isFloatingPlayerMode, 'app-player-fullscreen-mode': isAppPlayerFullscreen }" :style="isPlayerCompactMode && isFloatingPlayerMode ? floatingPlayerStyle : null">
         <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header" :class="{ 'player-floating-header': isPlayerCompactMode && isFloatingPlayerMode }">
           <div
             class="d-flex align-center overflow-hidden pr-2 player-drag-handle"
@@ -1319,6 +1319,16 @@
               class="mr-1"
               :title="isFloatingPlayerMode ? '상단 고정 모드로 돌아가기' : '자유 이동 플로팅 모드'"
               @click="toggleFloatingPlayerMode"
+            ></v-btn>
+
+            <v-btn
+              :icon="isAppPlayerFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+              variant="text"
+              size="small"
+              color="white"
+              class="mr-1"
+              :title="isAppPlayerFullscreen ? '앱 전체화면 종료' : '앱 전체화면'"
+              @click="toggleAppPlayerFullscreen"
             ></v-btn>
 
             <v-btn
@@ -1793,6 +1803,9 @@ const isPlayerOpen = ref(false)
 // 컴팩트 플레이어는 기본 상단 고정이며, 필요하면 자유 이동 플로팅 모드로 전환
 const isPlayerCompactMode = ref(false)
 const isFloatingPlayerMode = ref(false)
+// 앱 자체 전체화면은 YouTube 네이티브 전체화면과 별도로 동작합니다.
+const isAppPlayerFullscreen = ref(false)
+let appFullscreenRestoreState = null
 const getVisibleViewport = () => {
   if (typeof window === 'undefined') return { width: 1024, height: 768 }
   const vv = window.visualViewport
@@ -1856,6 +1869,69 @@ const toggleFloatingPlayerMode = () => {
 const togglePlayerCompactMode = () => {
   isPlayerCompactMode.value = !isPlayerCompactMode.value
   if (!isPlayerCompactMode.value) isFloatingPlayerMode.value = false
+}
+
+const toggleAppPlayerFullscreen = () => {
+  if (!isAppPlayerFullscreen.value) {
+    appFullscreenRestoreState = {
+      compact: isPlayerCompactMode.value,
+      floating: isFloatingPlayerMode.value
+    }
+    // 앱 전체화면과 플로팅/컴팩트 레이아웃이 겹치지 않도록 상세 모드에서 표시합니다.
+    isPlayerCompactMode.value = false
+    isFloatingPlayerMode.value = false
+    isAppPlayerFullscreen.value = true
+
+    // Fullscreen API가 지원되는 브라우저에서는 브라우저 UI까지 숨기도록 요청합니다.
+    // iOS Safari에서는 지원 여부/정책에 따라 거부될 수 있으며 CSS 전체화면은 계속 유지됩니다.
+    try {
+      const requestFullscreen = document.documentElement?.requestFullscreen
+      if (typeof requestFullscreen === 'function') {
+        const fullscreenResult = requestFullscreen.call(document.documentElement)
+        if (fullscreenResult && typeof fullscreenResult.catch === 'function') {
+          fullscreenResult.catch(() => {})
+        }
+      }
+    } catch (error) {
+      // CSS 기반 앱 전체화면으로 대체합니다.
+    }
+
+    // Android 등 지원 브라우저에서는 가로 방향 잠금을 시도합니다.
+    // iOS Safari/Chrome 등 미지원 환경에서는 사용자가 기기를 회전하면 CSS가 화면에 맞춥니다.
+    try {
+      const orientationLock = screen.orientation?.lock
+      if (typeof orientationLock === 'function') {
+        const lockResult = orientationLock.call(screen.orientation, 'landscape')
+        if (lockResult && typeof lockResult.catch === 'function') {
+          lockResult.catch(() => {})
+        }
+      }
+    } catch (error) {
+      // 회전 잠금 미지원/거부는 전체화면 표시 자체에 영향을 주지 않습니다.
+    }
+  } else {
+    isAppPlayerFullscreen.value = false
+    try {
+      if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+        const exitResult = document.exitFullscreen()
+        if (exitResult && typeof exitResult.catch === 'function') {
+          exitResult.catch(() => {})
+        }
+      }
+    } catch (error) {
+      // Browser fullscreen may already have been exited by the user.
+    }
+    try {
+      screen.orientation?.unlock?.()
+    } catch (error) {
+      // Orientation unlock is best-effort only.
+    }
+    if (appFullscreenRestoreState) {
+      isPlayerCompactMode.value = appFullscreenRestoreState.compact
+      isFloatingPlayerMode.value = appFullscreenRestoreState.floating
+    }
+    appFullscreenRestoreState = null
+  }
 }
 
 const startPlayerDrag = (event) => {
@@ -3327,6 +3403,15 @@ const closePlayer = () => {
   
   isPlayerOpen.value = false
   isFloatingPlayerMode.value = false
+  isAppPlayerFullscreen.value = false
+  appFullscreenRestoreState = null
+  try {
+    if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+      const exitResult = document.exitFullscreen()
+      if (exitResult && typeof exitResult.catch === 'function') exitResult.catch(() => {})
+    }
+  } catch (error) {}
+  try { screen.orientation?.unlock?.() } catch (error) {}
   stopPlayerPointerInteraction()
   saveCurrentHistoryToDB()
 
@@ -3375,17 +3460,15 @@ const initPreloadedYouTubePlayer = () => {
     const playerDiv = document.getElementById('youtube-player-div')
     if (!playerDiv || ytPlayer.value) return
 
-    // iPhone/iPad는 YouTube의 네이티브 전체화면 재생을 사용하도록 설정합니다.
-    // playsinline=1이면 iOS에서 인라인 재생이 우선되어 가로 전체화면 전환이 제한될 수 있습니다.
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    // 인라인 재생을 유지해 앱 자체 전체화면과 YouTube 기본 전체화면을 모두 선택할 수 있게 합니다.
+    // YouTube 플레이어의 기본 전체화면 버튼은 fs=1 및 iframe fullscreen 권한으로 계속 활성화됩니다.
 
     ytPlayer.value = new window.YT.Player('youtube-player-div', {
       height: '100%',
       width: '100%',
       playerVars: { 
         autoplay: 0, 
-        playsinline: isIOSDevice ? 0 : 1,
+        playsinline: 1,
         fs: 1,
         enablejsapi: 1,
         origin: window.location.origin
@@ -5804,6 +5887,137 @@ html, body {
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;
+}
+
+
+
+/* Dual fullscreen support:
+   - YouTube's own fullscreen control remains enabled (playerVars.fs=1).
+   - This separate app fullscreen mode expands the app player to the visible viewport. */
+.safe-player-dialog.app-player-fullscreen-active {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 3000 !important;
+}
+.safe-player-dialog.app-player-fullscreen-active .v-overlay__scrim {
+  display: none !important;
+}
+.safe-player-dialog.app-player-fullscreen-active .v-overlay__content {
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+  overflow: hidden !important;
+}
+.safe-player-dialog .glass-modal.app-player-fullscreen-mode {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  background: #000 !important;
+  box-shadow: none !important;
+}
+.safe-player-dialog .app-player-fullscreen-mode > .mobile-tight-header {
+  flex: 0 0 auto !important;
+  min-height: 44px !important;
+  padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+  padding-left: max(8px, env(safe-area-inset-left, 0px)) !important;
+  padding-right: max(8px, env(safe-area-inset-right, 0px)) !important;
+  background: rgba(18, 18, 24, .98) !important;
+}
+.safe-player-dialog .app-player-fullscreen-mode .modal-vertical-container {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #000 !important;
+}
+.safe-player-dialog .app-player-fullscreen-mode .modal-vertical-container > :not(.video-container):not(.radio-placeholder-card) {
+  display: none !important;
+}
+.safe-player-dialog .app-player-fullscreen-mode .video-container {
+  position: relative !important;
+  display: block !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #000 !important;
+}
+.safe-player-dialog .app-player-fullscreen-mode #youtube-player-div,
+.safe-player-dialog .app-player-fullscreen-mode #youtube-player-div iframe,
+.safe-player-dialog .app-player-fullscreen-mode .youtube-iframe {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+.safe-player-dialog .app-player-fullscreen-mode .radio-placeholder-card {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+@supports (height: 100dvh) {
+  .safe-player-dialog.app-player-fullscreen-active,
+  .safe-player-dialog.app-player-fullscreen-active .v-overlay__content,
+  .safe-player-dialog .glass-modal.app-player-fullscreen-mode {
+    height: 100dvh !important;
+  }
+}
+@media (orientation: landscape) {
+  .safe-player-dialog .app-player-fullscreen-mode > .mobile-tight-header {
+    min-height: 40px !important;
+    padding-top: max(3px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 3px !important;
+  }
 }
 
 </style>
