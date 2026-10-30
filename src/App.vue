@@ -1177,7 +1177,7 @@
     </v-dialog>
 
     <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
-    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" :class="{ 'app-player-fullscreen-active': isAppPlayerFullscreen }" eager @update:model-value="onDialogModelUpdate">
+    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" :class="{ 'app-player-fullscreen-active': isAppPlayerFullscreen, 'ios-landscape-emulated': isIOSDevice }" eager @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode, 'player-floating-mode': isPlayerCompactMode && isFloatingPlayerMode, 'app-player-fullscreen-mode': isAppPlayerFullscreen }" :style="isPlayerCompactMode && isFloatingPlayerMode ? floatingPlayerStyle : null">
         <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header" :class="{ 'player-floating-header': isPlayerCompactMode && isFloatingPlayerMode }">
           <div
@@ -1805,6 +1805,11 @@ const isPlayerCompactMode = ref(false)
 const isFloatingPlayerMode = ref(false)
 // 앱 자체 전체화면은 YouTube 네이티브 전체화면과 별도로 동작합니다.
 const isAppPlayerFullscreen = ref(false)
+// iOS는 Screen Orientation API의 가로 잠금이 제한되므로 앱 전체화면에서 CSS 회전 레이아웃을 사용합니다.
+const isIOSDevice = typeof navigator !== 'undefined' && (
+  /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+)
 let appFullscreenRestoreState = null
 const getVisibleViewport = () => {
   if (typeof window === 'undefined') return { width: 1024, height: 768 }
@@ -6027,6 +6032,37 @@ html, body {
     min-height: 40px !important;
     padding-top: max(3px, env(safe-area-inset-top, 0px)) !important;
     padding-bottom: 3px !important;
+  }
+}
+
+
+/* iPhone/iPad: 세로 상태에서도 앱 전체화면 플레이어를 가로 화면처럼 표시 */
+@media (orientation: portrait) {
+  .safe-player-dialog.ios-landscape-emulated.app-player-fullscreen-active .v-overlay__content {
+    inset: auto !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100vh !important;
+    height: 100vw !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center center !important;
+    overflow: hidden !important;
+  }
+  .safe-player-dialog.ios-landscape-emulated .glass-modal.app-player-fullscreen-mode {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+}
+@supports (height: 100dvh) {
+  @media (orientation: portrait) {
+    .safe-player-dialog.ios-landscape-emulated.app-player-fullscreen-active .v-overlay__content {
+      width: 100dvh !important;
+      height: 100vw !important;
+    }
   }
 }
 
