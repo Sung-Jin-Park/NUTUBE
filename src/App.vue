@@ -3375,16 +3375,37 @@ const initPreloadedYouTubePlayer = () => {
     const playerDiv = document.getElementById('youtube-player-div')
     if (!playerDiv || ytPlayer.value) return
 
+    // iPhone/iPad는 YouTube의 네이티브 전체화면 재생을 사용하도록 설정합니다.
+    // playsinline=1이면 iOS에서 인라인 재생이 우선되어 가로 전체화면 전환이 제한될 수 있습니다.
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
     ytPlayer.value = new window.YT.Player('youtube-player-div', {
       height: '100%',
       width: '100%',
       playerVars: { 
         autoplay: 0, 
-        playsinline: 1, 
+        playsinline: isIOSDevice ? 0 : 1,
+        fs: 1,
         enablejsapi: 1,
         origin: window.location.origin
       },
       events: {
+        onReady: (event) => {
+          // iOS Safari/Chrome/Brave에서 YouTube iframe의 네이티브 전체화면 권한을 명시합니다.
+          try {
+            const iframe = event.target?.getIframe?.()
+            if (iframe) {
+              iframe.setAttribute('allowfullscreen', '')
+              const currentAllow = iframe.getAttribute('allow') || ''
+              if (!/(^|;\s*)fullscreen($|;)/i.test(currentAllow)) {
+                iframe.setAttribute('allow', currentAllow ? `${currentAllow}; fullscreen` : 'fullscreen')
+              }
+            }
+          } catch (error) {
+            console.debug('YouTube 전체화면 권한 설정 건너뜀:', error)
+          }
+        },
         onStateChange: async (event) => {
           if (event.data === 1) {
             // 영상 로딩이 완료된 뒤 이어보기 위치를 적용해 seek 경쟁 상태를 방지합니다.
