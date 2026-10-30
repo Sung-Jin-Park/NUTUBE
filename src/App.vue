@@ -1177,9 +1177,9 @@
     </v-dialog>
 
     <!-- 시네마틱 영상 재생 모달 (eager 속성 유지) -->
-    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" :class="{ 'app-player-fullscreen-active': isAppPlayerFullscreen, 'ios-landscape-emulated': isIOSDevice }" eager @update:model-value="onDialogModelUpdate">
+    <v-dialog v-model="isPlayerOpen" max-width="880px" width="100%" :scrim="false" persistent class="safe-player-dialog" :class="{ 'app-player-fullscreen-active': isAppPlayerFullscreen, 'app-landscape-emulated': true }" eager @update:model-value="onDialogModelUpdate">
       <v-card class="glass-modal rounded-2xl overflow-hidden pa-0" :class="{ 'player-compact-mode': isPlayerCompactMode, 'player-floating-mode': isPlayerCompactMode && isFloatingPlayerMode, 'app-player-fullscreen-mode': isAppPlayerFullscreen }" :style="isPlayerCompactMode && isFloatingPlayerMode ? floatingPlayerStyle : null">
-        <div class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header" :class="{ 'player-floating-header': isPlayerCompactMode && isFloatingPlayerMode }">
+        <div v-if="!isAppPlayerFullscreen" class="d-flex justify-space-between align-center px-3 py-2 px-md-5 bg-glass-bar mobile-tight-header" :class="{ 'player-floating-header': isPlayerCompactMode && isFloatingPlayerMode }">
           <div
             class="d-flex align-center overflow-hidden pr-2 player-drag-handle"
             :class="{ 'is-draggable': isPlayerCompactMode && isFloatingPlayerMode }"
@@ -1343,6 +1343,19 @@
             <v-btn icon="mdi-close" variant="text" size="x-small" color="white" @click="closePlayer"></v-btn>
           </div>
         </div>
+
+        <!-- 자체 가로 전체화면에서는 제목과 기존 도구 모음을 숨기고 종료 버튼 하나만 표시 -->
+        <v-btn
+          v-if="isAppPlayerFullscreen"
+          class="app-fullscreen-exit-button"
+          icon="mdi-fullscreen-exit"
+          size="large"
+          color="white"
+          variant="tonal"
+          aria-label="가로 전체화면 종료"
+          title="가로 전체화면 종료"
+          @click="toggleAppPlayerFullscreen"
+        ></v-btn>
 
         <div ref="modalScrollRef" class="modal-vertical-container position-relative" @scroll="checkModalScroll">
           <div 
@@ -1805,11 +1818,6 @@ const isPlayerCompactMode = ref(false)
 const isFloatingPlayerMode = ref(false)
 // 앱 자체 전체화면은 YouTube 네이티브 전체화면과 별도로 동작합니다.
 const isAppPlayerFullscreen = ref(false)
-// iOS는 Screen Orientation API의 가로 잠금이 제한되므로 앱 전체화면에서 CSS 회전 레이아웃을 사용합니다.
-const isIOSDevice = typeof navigator !== 'undefined' && (
-  /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-)
 let appFullscreenRestoreState = null
 const getVisibleViewport = () => {
   if (typeof window === 'undefined') return { width: 1024, height: 768 }
@@ -6036,9 +6044,9 @@ html, body {
 }
 
 
-/* iPhone/iPad: 세로 상태에서도 앱 전체화면 플레이어를 가로 화면처럼 표시 */
+/* Android/iOS 공통: 세로 상태에서 자체 전체화면 플레이어를 가로 화면처럼 표시 */
 @media (orientation: portrait) {
-  .safe-player-dialog.ios-landscape-emulated.app-player-fullscreen-active .v-overlay__content {
+  .safe-player-dialog.app-landscape-emulated.app-player-fullscreen-active .v-overlay__content {
     inset: auto !important;
     top: 50% !important;
     left: 50% !important;
@@ -6050,7 +6058,7 @@ html, body {
     transform-origin: center center !important;
     overflow: hidden !important;
   }
-  .safe-player-dialog.ios-landscape-emulated .glass-modal.app-player-fullscreen-mode {
+  .safe-player-dialog.app-landscape-emulated .glass-modal.app-player-fullscreen-mode {
     width: 100% !important;
     height: 100% !important;
     min-width: 0 !important;
@@ -6059,11 +6067,32 @@ html, body {
 }
 @supports (height: 100dvh) {
   @media (orientation: portrait) {
-    .safe-player-dialog.ios-landscape-emulated.app-player-fullscreen-active .v-overlay__content {
+    .safe-player-dialog.app-landscape-emulated.app-player-fullscreen-active .v-overlay__content {
       width: 100dvh !important;
       height: 100vw !important;
     }
   }
+}
+
+
+/* 자체 가로모드에서는 종료 버튼 하나만 영상 위에 플로팅 */
+.safe-player-dialog .app-fullscreen-exit-button {
+  position: absolute !important;
+  top: max(12px, env(safe-area-inset-top, 0px)) !important;
+  right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  z-index: 10050 !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  border-radius: 50% !important;
+  background: rgba(20, 20, 24, .62) !important;
+  color: #fff !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .35) !important;
+}
+.safe-player-dialog .app-fullscreen-exit-button .v-icon {
+  font-size: 25px !important;
 }
 
 </style>
