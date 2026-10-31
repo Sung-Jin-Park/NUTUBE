@@ -1884,6 +1884,61 @@ const togglePlayerCompactMode = () => {
   if (!isPlayerCompactMode.value) isFloatingPlayerMode.value = false
 }
 
+// App.vue 단독 모바일 뷰포트 및 전체화면 보정
+const isIOSDevice = () => {
+  if (typeof navigator === 'undefined') return false
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
+const isStandalonePwa = () => {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia?.('(display-mode: standalone)').matches === true ||
+    window.navigator.standalone === true
+}
+
+const setupAppOnlyMobileViewport = () => {
+  if (typeof document === 'undefined') return
+  const ensureMeta = (name, content) => {
+    let meta = document.head.querySelector(`meta[name="${name}"]`)
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = name
+      document.head.appendChild(meta)
+    }
+    meta.content = content
+  }
+
+  // 기존 viewport 설정을 보존하고 iPhone 노치/홈 인디케이터 영역만 활성화합니다.
+  let viewport = document.head.querySelector('meta[name="viewport"]')
+  if (!viewport) {
+    viewport = document.createElement('meta')
+    viewport.name = 'viewport'
+    document.head.appendChild(viewport)
+  }
+  const viewportParts = (viewport.content || 'width=device-width, initial-scale=1').split(',').map(v => v.trim()).filter(Boolean)
+  const filteredViewport = viewportParts.filter(v => !/^viewport-fit\s*=/.test(v))
+  filteredViewport.push('viewport-fit=cover')
+  viewport.content = filteredViewport.join(', ')
+
+  ensureMeta('apple-mobile-web-app-capable', 'yes')
+  ensureMeta('mobile-web-app-capable', 'yes')
+  ensureMeta('apple-mobile-web-app-status-bar-style', 'black-translucent')
+  ensureMeta('theme-color', '#06070a')
+
+  // App.vue 단독 구성: manifest 및 service worker 파일을 참조하거나 등록하지 않습니다.
+
+  document.documentElement.classList.toggle('ios-device', isIOSDevice())
+  document.documentElement.classList.toggle('standalone-pwa', isStandalonePwa())
+}
+
+const handleFullscreenChange = () => {
+  // 브라우저의 ESC/시스템 제스처로 네이티브 전체화면이 종료된 경우 앱 UI 상태도 맞춥니다.
+  if (!document.fullscreenElement && isAppPlayerFullscreen.value && !isIOSDevice()) {
+    // 앱 자체 전체화면 상태는 유지합니다. 사용자가 종료 버튼을 눌러야 레이아웃 복구됩니다.
+  }
+}
+
 const toggleAppPlayerFullscreen = () => {
   if (!isAppPlayerFullscreen.value) {
     appFullscreenRestoreState = {
@@ -1895,18 +1950,22 @@ const toggleAppPlayerFullscreen = () => {
     isFloatingPlayerMode.value = false
     isAppPlayerFullscreen.value = true
 
-    // Fullscreen API가 지원되는 브라우저에서는 브라우저 UI까지 숨기도록 요청합니다.
-    // iOS Safari에서는 지원 여부/정책에 따라 거부될 수 있으며 CSS 전체화면은 계속 유지됩니다.
-    try {
-      const requestFullscreen = document.documentElement?.requestFullscreen
-      if (typeof requestFullscreen === 'function') {
-        const fullscreenResult = requestFullscreen.call(document.documentElement)
-        if (fullscreenResult && typeof fullscreenResult.catch === 'function') {
-          fullscreenResult.catch(() => {})
+    // 표준 Fullscreen API는 사용자 클릭 직후 호출합니다.
+    // iPhone Safari는 일반 DOM 요소 전체화면을 제공하지 않는 버전이 많으므로
+    // 불필요한 실패 호출을 피하고 CSS 전체화면/PWA standalone으로 표시합니다.
+    if (!isIOSDevice()) {
+      try {
+        const root = document.documentElement
+        const requestFullscreen = root?.requestFullscreen || root?.webkitRequestFullscreen
+        if (typeof requestFullscreen === 'function') {
+          const fullscreenResult = requestFullscreen.call(root)
+          if (fullscreenResult && typeof fullscreenResult.catch === 'function') {
+            fullscreenResult.catch(() => {})
+          }
         }
+      } catch (error) {
+        // 브라우저 정책상 거부되면 CSS 기반 앱 전체화면을 유지합니다.
       }
-    } catch (error) {
-      // CSS 기반 앱 전체화면으로 대체합니다.
     }
 
     // Android 등 지원 브라우저에서는 가로 방향 잠금을 시도합니다.
@@ -5249,6 +5308,8 @@ const handleTimePaste = (event) => {
 }
 
 onMounted(async () => {
+  setupAppOnlyMobileViewport()
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
   loadFavoriteVideoResumeStates()
   await getActiveApiKeyIndex()
   await loadDataFromDB()
@@ -5269,6 +5330,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleFullscreenChange)
   saveCurrentHistoryToDB()
   stopHistoryTracker()
   clearSleepTimer()
@@ -6220,6 +6282,61 @@ html, body {
 }
 .safe-player-dialog .app-fullscreen-exit-button .v-icon {
   font-size: 25px !important;
+}
+
+
+
+/* iPhone safe-area + standalone PWA fullscreen refinements */
+html.ios-device,
+html.standalone-pwa,
+html.ios-device body,
+html.standalone-pwa body {
+  width: 100%;
+  min-height: 100%;
+  overscroll-behavior: none;
+}
+html.standalone-pwa body,
+html.standalone-pwa #app {
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+.safe-player-dialog.app-player-fullscreen-active,
+.safe-player-dialog.app-player-fullscreen-active .v-overlay__content,
+.safe-player-dialog .glass-modal.app-player-fullscreen-mode {
+  width: 100vw !important;
+  width: 100dvw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+.safe-player-dialog.app-player-fullscreen-active .v-overlay__content {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  padding: 0 !important;
+}
+.safe-player-dialog .glass-modal.app-player-fullscreen-mode {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-right: env(safe-area-inset-right, 0px) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  padding-left: env(safe-area-inset-left, 0px) !important;
+}
+.safe-player-dialog .app-fullscreen-exit-button {
+  top: max(14px, env(safe-area-inset-top, 0px)) !important;
+  right: max(14px, env(safe-area-inset-right, 0px)) !important;
+}
+@media (display-mode: standalone) {
+  html, body, #app { min-height: 100%; }
+  body { overscroll-behavior-y: none; }
+}
+@media (orientation: landscape) and (max-width: 960px) {
+  .safe-player-dialog.app-player-fullscreen-active .v-overlay__content,
+  .safe-player-dialog .glass-modal.app-player-fullscreen-mode {
+    height: 100vh !important;
+    height: 100dvh !important;
+  }
 }
 
 </style>
