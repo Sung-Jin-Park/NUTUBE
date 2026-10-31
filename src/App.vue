@@ -2036,9 +2036,11 @@ const sleepTimerSecondsLeft = ref(0)
 const customSleepMinutes = ref(null)
 let sleepTimerInterval = null
 
-const ytPlayer = ref(null)        
-let historyInterval = null   
-let currentPlayingTime = 0   
+const ytPlayer = ref(null)
+let historyInterval = null
+let currentPlayingTime = 0
+let lastHistoryPersistAt = 0
+const HISTORY_PERSIST_INTERVAL_MS = 10000
 
 const searchNextPageToken = ref(null)
 const draggedIndex = ref(null)
@@ -2322,29 +2324,88 @@ const formatCreatorSubCount = (subCount) => {
   return `${str} 구독자`
 }
 
+// 썸네일 비율 확인은 URL별로 중복 요청하지 않고, 동시 로딩 수도 제한합니다.
+// 동일 썸네일을 여러 목록에서 재사용할 때 이미지 다운로드와 디코딩 비용을 줄입니다.
+const thumbnailAspectCache = new Map()
+const thumbnailAspectInFlight = new Map()
+const thumbnailAspectQueue = []
+let activeThumbnailChecks = 0
+const MAX_CONCURRENT_THUMBNAIL_CHECKS = 4
+const MAX_THUMBNAIL_ASPECT_CACHE = 500
+
+const processThumbnailAspectQueue = () => {
+  while (activeThumbnailChecks < MAX_CONCURRENT_THUMBNAIL_CHECKS && thumbnailAspectQueue.length > 0) {
+    const thumbnailUrl = thumbnailAspectQueue.shift()
+    const waitingVideos = thumbnailAspectInFlight.get(thumbnailUrl)
+    if (!waitingVideos) continue
+
+    activeThumbnailChecks += 1
+    const img = new Image()
+    img.decoding = 'async'
+    const finish = (isPortrait = false, cacheResult = false) => {
+      if (cacheResult) {
+        thumbnailAspectCache.set(thumbnailUrl, isPortrait)
+        if (thumbnailAspectCache.size > MAX_THUMBNAIL_ASPECT_CACHE) {
+          const oldestKey = thumbnailAspectCache.keys().next().value
+          thumbnailAspectCache.delete(oldestKey)
+        }
+      }
+      const targets = thumbnailAspectInFlight.get(thumbnailUrl) || []
+      targets.forEach(video => {
+        if (video && video.thumbnail === thumbnailUrl && isPortrait) video.isShorts = true
+      })
+      thumbnailAspectInFlight.delete(thumbnailUrl)
+      img.onload = null
+      img.onerror = null
+      activeThumbnailChecks = Math.max(0, activeThumbnailChecks - 1)
+      processThumbnailAspectQueue()
+    }
+    img.onload = () => finish(img.naturalHeight > img.naturalWidth, true)
+    img.onerror = () => finish(false, false)
+    img.src = thumbnailUrl
+  }
+}
+
 const checkThumbnailAspectRatio = (videoList) => {
   if (!Array.isArray(videoList)) return
   videoList.forEach(video => {
-    if (!video.isShorts && video.thumbnail) {
-      const img = new Image()
-      img.onload = () => {
-        if (img.naturalHeight > img.naturalWidth) {
-          video.isShorts = true
-        }
-      }
-      img.src = video.thumbnail
+    if (!video || video.isShorts || !video.thumbnail) return
+    const thumbnailUrl = video.thumbnail
+    if (thumbnailAspectCache.has(thumbnailUrl)) {
+      if (thumbnailAspectCache.get(thumbnailUrl) && video.thumbnail === thumbnailUrl) video.isShorts = true
+      return
     }
+    const pendingVideos = thumbnailAspectInFlight.get(thumbnailUrl)
+    if (pendingVideos) {
+      pendingVideos.push(video)
+      return
+    }
+    thumbnailAspectInFlight.set(thumbnailUrl, [video])
+    thumbnailAspectQueue.push(thumbnailUrl)
   })
+  processThumbnailAspectQueue()
 }
 
 const DB_NAME = 'NeonTubeDB_Clean'
 const DB_VERSION = 5
+let dbPromise = null
 
+// 앱 실행 중에는 IndexedDB 연결을 재사용합니다. DB 버전 변경 시에는 안전하게 재연결합니다.
 const openDB = () => {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise
+
+  dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = () => {
+      const db = request.result
+      db.onversionchange = () => {
+        db.close()
+        dbPromise = null
+      }
+      db.onclose = () => { dbPromise = null }
+      resolve(db)
+    }
     request.onupgradeneeded = (event) => {
       const db = event.target.result
       if (!db.objectStoreNames.contains('creators')) db.createObjectStore('creators', { keyPath: 'id' })
@@ -2355,7 +2416,12 @@ const openDB = () => {
       if (!db.objectStoreNames.contains('playlistItems')) db.createObjectStore('playlistItems', { keyPath: 'id', autoIncrement: true })
       if (!db.objectStoreNames.contains('playlistGroups')) db.createObjectStore('playlistGroups', { keyPath: 'id' })
     }
+  }).catch(error => {
+    dbPromise = null
+    throw error
   })
+
+  return dbPromise
 }
 
 const API_KEYS = [
@@ -2507,6 +2573,15 @@ const fetchAndUpdateVideoDetails = async (videoList) => {
   const targetVideos = videoList.filter(v => !v.duration || v.duration === 0 || !v.views || v.views === 0)
   if (targetVideos.length === 0) return videoList
 
+  // 응답 영상 ID를 전체 목록에서 매번 선형 검색하지 않도록 한 번만 인덱싱합니다.
+  const videosByYoutubeId = new Map()
+  videoList.forEach(video => {
+    if (!video.youtubeId) return
+    const matches = videosByYoutubeId.get(video.youtubeId) || []
+    matches.push(video)
+    videosByYoutubeId.set(video.youtubeId, matches)
+  })
+
   for (let i = 0; i < targetVideos.length; i += 50) {
     const chunk = targetVideos.slice(i, i + 50)
     const ids = chunk.map(v => v.youtubeId).join(',')
@@ -2515,24 +2590,16 @@ const fetchAndUpdateVideoDetails = async (videoList) => {
         `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${ids}&key=${key}`
       )
       if (data.items) {
-        const detailMap = new Map()
         data.items.forEach(item => {
-          detailMap.set(item.id, {
-            duration: parseISO8601Duration(item.contentDetails?.duration),
-            views: parseInt(item.statistics?.viewCount || 0, 10)
+          const matches = videosByYoutubeId.get(item.id)
+          if (!matches) return
+          const duration = parseISO8601Duration(item.contentDetails?.duration)
+          const views = parseInt(item.statistics?.viewCount || 0, 10)
+          matches.forEach(video => {
+            video.duration = duration
+            video.views = views
+            if (duration > 0 && duration <= 120) video.isShorts = true
           })
-        })
-        
-        videoList.forEach(v => {
-          if (detailMap.has(v.youtubeId)) {
-            const info = detailMap.get(v.youtubeId)
-            v.duration = info.duration
-            v.views = info.views
-            
-            if (info.duration > 0 && info.duration <= 120) {
-              v.isShorts = true
-            }
-          }
         })
       }
     } catch (err) { console.error('영상 상세 정보 일괄 조회 실패:', err) }
@@ -3539,6 +3606,7 @@ const initPreloadedYouTubePlayer = () => {
               navigator.mediaSession.playbackState = 'playing'
             }
           } else if (event.data === 2) {
+            saveCurrentHistoryToDB()
             if ('mediaSession' in navigator) {
               navigator.mediaSession.playbackState = 'paused'
             }
@@ -3612,6 +3680,7 @@ const initYouTubePlayer = (youtubeId, startTime) => {
 
 const startHistoryTracker = () => {
   stopHistoryTracker()
+  lastHistoryPersistAt = 0
   historyInterval = setInterval(async () => {
     if (ytPlayer.value && typeof ytPlayer.value.getCurrentTime === 'function' && typeof ytPlayer.value.getDuration === 'function') {
       try {
@@ -3634,7 +3703,9 @@ const startHistoryTracker = () => {
             }
           } else {
             currentPlayingTime = Math.floor(t)
-            saveCurrentHistoryToDB()
+            if (Date.now() - lastHistoryPersistAt >= HISTORY_PERSIST_INTERVAL_MS) {
+              saveCurrentHistoryToDB(false)
+            }
           }
         }
       } catch (e) { console.debug(e) }
@@ -3649,28 +3720,51 @@ const stopHistoryTracker = () => {
   }
 }
 
-const saveCurrentHistoryToDB = async () => {
-  if (!activeVideo.value || currentPlayingTime <= 0) return
-  const dur = (ytPlayer.value && typeof ytPlayer.value.getDuration === 'function') ? ytPlayer.value.getDuration() : (activeVideo.value.duration || 0)
+let historySaveInFlight = false
+let historySavePending = false
+const saveCurrentHistoryToDB = async (throttled = false) => {
+  const video = activeVideo.value
+  const savedTime = Math.floor(currentPlayingTime)
+  if (!video || savedTime <= 0) return
+  if (throttled && Date.now() - lastHistoryPersistAt < HISTORY_PERSIST_INTERVAL_MS) return
+  if (historySaveInFlight) {
+    if (!throttled) historySavePending = true
+    return
+  }
+
+  historySaveInFlight = true
+  const dur = (ytPlayer.value && typeof ytPlayer.value.getDuration === 'function')
+    ? ytPlayer.value.getDuration()
+    : (video.duration || 0)
+  const updatedAt = new Date().toISOString()
 
   try {
     const db = await openDB()
     const tx = db.transaction('history', 'readwrite')
     tx.objectStore('history').put({
-      videoId: activeVideo.value.id,
-      currentTime: Math.floor(currentPlayingTime),
+      videoId: video.id,
+      currentTime: savedTime,
       duration: dur,
-      updatedAt: new Date().toISOString()
+      updatedAt
     })
-    
-    const targetVideo = videos.value.find(v => v.id === activeVideo.value.id)
+
+    const targetVideo = videos.value.find(v => v.id === video.id)
     if (targetVideo) {
-      targetVideo.currentTime = Math.floor(currentPlayingTime)
+      targetVideo.currentTime = savedTime
       targetVideo.duration = dur
-      targetVideo.historyUpdatedAt = new Date().toISOString()
-      if (dur > 0) targetVideo.progressPercent = Math.min(100, Math.floor((currentPlayingTime / dur) * 100))
+      targetVideo.historyUpdatedAt = updatedAt
+      if (dur > 0) targetVideo.progressPercent = Math.min(100, Math.floor((savedTime / dur) * 100))
     }
-  } catch (err) { console.error(err) }
+    lastHistoryPersistAt = Date.now()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    historySaveInFlight = false
+    if (historySavePending) {
+      historySavePending = false
+      saveCurrentHistoryToDB()
+    }
+  }
 }
 
 const jumpToTime = () => {
@@ -5130,9 +5224,10 @@ const selectCreatorFilter = async (creator) => {
 }
 
 const handleVisibilityChange = () => {
-  if (document.visibilityState === 'visible') {
-    // 백그라운드 복귀 시
-  } 
+  if (document.visibilityState === 'hidden') {
+    // 백그라운드 진입 전 최신 시청 위치를 저장해 타이머 제한으로 인한 기록 손실을 줄입니다.
+    saveCurrentHistoryToDB()
+  }
 }
 
 const handleTimePaste = (event) => {
@@ -5174,6 +5269,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  saveCurrentHistoryToDB()
   stopHistoryTracker()
   clearSleepTimer()
   stopPlayerPointerInteraction()
