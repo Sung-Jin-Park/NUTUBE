@@ -3245,6 +3245,11 @@ const playPlaylistFolder = async (playlist) => {
 }
 
 const playVideo = async (video) => {
+  // 목록에서 새 영상을 직접 선택하면 이전 영상의 라디오/스크롤 UI 상태를 이어받지 않습니다.
+  isAudioOnlyMode.value = false
+  isPlayerCompactMode.value = false
+  isFloatingPlayerMode.value = false
+
   // 좋아요 탭은 각 영상 카드의 이어보기 체크 상태를 사용합니다.
   // 그 외 탭은 플레이어의 공통 이어보기 설정을 사용합니다.
   if (isFavoriteVideosMode.value) {
@@ -3256,6 +3261,13 @@ const playVideo = async (video) => {
   playlistQueue.value = [video]
   playlistIndex.value = 0
   await playQueueIndex(0)
+  await nextTick()
+  const modalElement = modalScrollRef.value?.$el || modalScrollRef.value
+  if (modalElement) {
+    modalElement.scrollTo?.({ top: 0, behavior: 'auto' })
+    modalElement.scrollTop = 0
+  }
+  showModalScrollTop.value = false
 }
 
 const playSelectedVideos = async () => {
@@ -4725,6 +4737,25 @@ const handleSearch = async () => {
   }
 }
 
+// 유튜브 전체 검색 탭 전용: 같은 채널 영상이 연속으로 몰리지 않도록 채널별로 교차 배치합니다.
+const diversifySearchResultsByChannel = (items) => {
+  const channelBuckets = new Map()
+  items.forEach((video) => {
+    const channelKey = video.creatorId || video.creatorName || video.id
+    if (!channelBuckets.has(channelKey)) channelBuckets.set(channelKey, [])
+    channelBuckets.get(channelKey).push(video)
+  })
+
+  const diversified = []
+  const buckets = Array.from(channelBuckets.values())
+  while (buckets.some(bucket => bucket.length > 0)) {
+    buckets.forEach(bucket => {
+      if (bucket.length > 0) diversified.push(bucket.shift())
+    })
+  }
+  return diversified
+}
+
 const searchYouTubeVideos = async () => {
   if (!searchQuery.value.trim() || API_KEYS.length === 0) return
   const query = searchQuery.value.trim()
@@ -4732,7 +4763,7 @@ const searchYouTubeVideos = async () => {
   
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(query)}&type=video&key=${key}`
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=${encodeURIComponent(query)}&type=video&relevanceLanguage=ko&key=${key}`
     )
     if (data.error) return
 
@@ -4795,7 +4826,7 @@ const searchYouTubeVideos = async () => {
     apiVideos.forEach(v => {
       if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v)
     })
-    searchResultVideos.value = Array.from(uniqueMap.values())
+    searchResultVideos.value = diversifySearchResultsByChannel(Array.from(uniqueMap.values()))
 
     searchResultVideos.value.forEach(av => {
       if (!videos.value.some(v => v.id === av.id)) {
@@ -4824,7 +4855,7 @@ const loadMoreSearchVideos = async () => {
   isLoading.value = true
   try {
     const data = await fetchWithKeyRotation((key) => 
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(searchQuery.value.trim())}&type=video&pageToken=${searchNextPageToken.value}&key=${key}`
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=${encodeURIComponent(searchQuery.value.trim())}&type=video&relevanceLanguage=ko&pageToken=${searchNextPageToken.value}&key=${key}`
     )
     if (data.error || !data.items) {
       searchNextPageToken.value = null
@@ -4875,7 +4906,7 @@ const loadMoreSearchVideos = async () => {
         existingIds.add(mv.id)
       }
     })
-    searchResultVideos.value.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    searchResultVideos.value = diversifySearchResultsByChannel(searchResultVideos.value)
 
     moreVideos.forEach(mv => {
       if (!videos.value.some(v => v.id === mv.id)) {
